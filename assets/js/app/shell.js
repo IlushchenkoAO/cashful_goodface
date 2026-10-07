@@ -29,7 +29,7 @@
       { id: 'download', label: 'Download app', icon: 'download', href: 'download.html' },
       referralsOn ? { id: 'referrals', label: 'Referrals', icon: 'users', href: 'referrals.html' } : null,
       { id: 'payouts', label: 'Payouts', icon: 'wallet', href: 'payouts.html' },
-      { id: 'settings', label: 'Settings', icon: 'settings' }
+      { id: 'settings', label: 'Settings', icon: 'settings', href: 'settings.html' }
     ].filter(Boolean),
     developer: [
       { id: 'analytics', label: 'Analytics', icon: 'chart', href: 'analytics.html' },

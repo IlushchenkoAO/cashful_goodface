@@ -1,6 +1,6 @@
 /* Payouts — one page for both accounts (Personal and Developer).
    Sections: balance, payout methods, payout history. Flows (modals): request payout, add method, remove method.
-   A Developer account is locked until KYC is approved. State is in memory — see data/payouts.js. */
+   A Developer account is locked until KYC is approved. State lives in the prototype store — see data/payouts.js. */
 (function () {
   if (!Cashful.app) return;
   var ui = Cashful.ui;
@@ -8,9 +8,8 @@
   var esc = ui.esc;
   var cfg = P.config;
 
-  var scenario = ui.params.get('state');
-  if (!P.SCENARIOS.some(function (s) { return s.id === scenario; })) scenario = 'default';
-  var state = P.createState(scenario);
+  // ?state= starts a scenario; without it the saved state continues (shared with Settings)
+  var state = P.loadState(ui.params.get('state'));
 
   var user = Cashful.app.user;
   var locked = Cashful.app.account === 'developer' && !(user.dev && user.dev.status === 'approved');
@@ -31,31 +30,9 @@
 
   /* ---------- Form helpers ---------- */
 
-  function field(o) {
-    return '<div class="cf-input"><label class="cf-input__label" for="' + o.id + '">' + esc(o.label) + '</label>' +
-      '<div class="cf-field"><input class="cf-field__input" id="' + o.id + '" name="' + o.name + '" value="' + esc(o.value || '') + '"' +
-      (o.placeholder ? ' placeholder="' + esc(o.placeholder) + '"' : '') +
-      (o.inputmode ? ' inputmode="' + o.inputmode + '"' : '') +
-      (o.autocomplete ? ' autocomplete="' + o.autocomplete + '"' : ' autocomplete="off"') +
-      (o.maxlength ? ' maxlength="' + o.maxlength + '"' : '') +
-      (o.spellcheck === false ? ' spellcheck="false"' : '') +
-      (o.autofocus ? ' data-autofocus' : '') + '></div>' +
-      '<div class="cf-input__helper">' + esc(o.helper || '') + '</div></div>';
-  }
-
-  function selectField(o) {
-    return '<div class="cf-input"><label class="cf-input__label" for="' + o.id + '">' + esc(o.label) + '</label>' +
-      '<div class="cf-field cf-field--select"><select class="cf-field__input" id="' + o.id + '" name="' + o.name + '">' +
-      selectOptions(o.options, o.value) + '</select>' + icon('chevron-down') + '</div>' +
-      '<div class="cf-input__helper">' + esc(o.helper || '') + '</div></div>';
-  }
-
-  function selectOptions(options, value) {
-    return options.map(function (opt) {
-      if (typeof opt === 'string') opt = { value: opt, label: opt };
-      return '<option value="' + esc(opt.value) + '"' + (opt.value === value ? ' selected' : '') + '>' + esc(opt.label) + '</option>';
-    }).join('');
-  }
+  var field = ui.fieldHtml;
+  var selectField = ui.selectHtml;
+  var selectOptions = ui.selectOptions;
 
   function readValues(form) {
     var v = {};
@@ -68,6 +45,7 @@
   /* ---------- Page ---------- */
 
   function render() {
+    P.saveState(state);
     root.innerHTML =
       '<header class="cf-pagehead"><div class="cf-pagehead__row"><div class="cf-pagehead__titles">' +
         '<h1 class="cf-pagehead__title">Payouts</h1>' +

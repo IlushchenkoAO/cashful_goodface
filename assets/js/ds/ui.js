@@ -50,6 +50,37 @@
     if (t.matches && t.matches('.cf-check__input') && t.checked && t.closest('.cf-check-group.is-error')) ui.setError(t, '');
   });
 
+  /* ---------- Field markup (for pages that render forms from JS) ----------
+     ui.fieldHtml({ id, name, label, value, type, placeholder, helper, inputmode, autocomplete, maxlength,
+                    spellcheck, autofocus, disabled, required })
+     ui.selectHtml({ id, name, label, options, value, helper }) — options: strings or { value, label } */
+  ui.selectOptions = function (options, value) {
+    return options.map(function (opt) {
+      if (typeof opt === 'string') opt = { value: opt, label: opt };
+      return '<option value="' + esc(opt.value) + '"' + (opt.value === value ? ' selected' : '') + '>' + esc(opt.label) + '</option>';
+    }).join('');
+  };
+
+  ui.fieldHtml = function (o) {
+    return '<div class="cf-input' + (o.disabled ? ' is-disabled' : '') + '"><label class="cf-input__label" for="' + o.id + '">' + esc(o.label) + '</label>' +
+      '<div class="cf-field"><input class="cf-field__input" id="' + o.id + '" name="' + o.name + '" type="' + (o.type || 'text') + '" value="' + esc(o.value || '') + '"' +
+      (o.placeholder ? ' placeholder="' + esc(o.placeholder) + '"' : '') +
+      (o.inputmode ? ' inputmode="' + o.inputmode + '"' : '') +
+      ' autocomplete="' + (o.autocomplete || 'off') + '"' +
+      (o.maxlength ? ' maxlength="' + o.maxlength + '"' : '') +
+      (o.spellcheck === false ? ' spellcheck="false"' : '') +
+      (o.autofocus ? ' data-autofocus' : '') +
+      (o.disabled ? ' disabled' : '') + '></div>' +
+      '<div class="cf-input__helper">' + (o.helperHtml || esc(o.helper || '')) + '</div></div>';
+  };
+
+  ui.selectHtml = function (o) {
+    return '<div class="cf-input"><label class="cf-input__label" for="' + o.id + '">' + esc(o.label) + '</label>' +
+      '<div class="cf-field cf-field--select"><select class="cf-field__input" id="' + o.id + '" name="' + o.name + '">' +
+      ui.selectOptions(o.options, o.value) + '</select><cf-icon name="chevron-down" size="20"></cf-icon></div>' +
+      '<div class="cf-input__helper">' + esc(o.helper || '') + '</div></div>';
+  };
+
   /* ---------- Validators ---------- */
   ui.isEmail = function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()); };
   ui.isStrongPassword = function (v) { return v.length >= 8 && /\d/.test(v); };

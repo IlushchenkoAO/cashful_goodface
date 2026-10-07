@@ -233,8 +233,28 @@
     return state;
   }
 
+  /* ---------- Shared state ----------
+     The Payouts state lives in the prototype store, so other pages (Settings → delete account) read the same
+     balance and the same payout in progress. A page that is opened with ?state= starts that scenario afresh. */
+
+  function saveState(state) {
+    Cashful.store.update(function (db) { db.demo = db.demo || {}; db.demo.payouts = state; });
+  }
+
+  /** `scenarioName` (from ?state=) starts a scenario; without it the saved state continues. */
+  function loadState(scenarioName) {
+    if (scenarioName && SCENARIOS.some(function (s) { return s.id === scenarioName; })) {
+      var fresh = createState(scenarioName);
+      saveState(fresh);
+      return fresh;
+    }
+    var saved = Cashful.store.get().demo;
+    return (saved && saved.payouts) || createState('default');
+  }
+
   Cashful.payouts = {
     config: cfg,
+    loadState: loadState, saveState: saveState,
     TYPES: TYPES, TYPE_ORDER: TYPE_ORDER, STATUSES: STATUSES, STATUS_TONE: STATUS_TONE, PERIODS: PERIODS, SCENARIOS: SCENARIOS,
     money: money, date: date, toCents: toCents, describe: describe,
     feeFor: feeFor, feeLabel: feeLabel, feeText: feeText,

@@ -26,6 +26,7 @@
 .cf-check__input:checked + .cf-radio__box::after { content: ""; width: 8px; height: 8px; border-radius: 999px; background: var(--icon-inverse); }
 .cf-check__input:focus-visible + .cf-checkbox__box,
 .cf-check__input:focus-visible + .cf-radio__box { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+.cf-check__input:focus-visible + .cf-toggle__box { outline: 2px solid var(--border-focus); outline-offset: 2px; }
 .cf-check__input:disabled + .cf-checkbox__box { background: var(--bg-disabled); border-color: var(--border-subtle); }
 
 .cf-check-group { display: flex; flex-direction: column; gap: var(--space-6); }

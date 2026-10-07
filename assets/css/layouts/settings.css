@@ -1,0 +1,47 @@
+/* Settings page: stacked cards that save on their own. */
+
+.set-stack { display: flex; flex-direction: column; gap: var(--space-24); max-width: 760px; }
+.set-card { gap: var(--space-20); }
+.set-card__head { display: flex; flex-direction: column; gap: var(--space-4); }
+.set-card__head .cf-card__title { flex: none; }
+
+.set-form { display: flex; flex-direction: column; gap: var(--space-16); }
+.set-sub { display: flex; align-items: center; gap: var(--space-8); font: 600 16px/24px var(--font-text); letter-spacing: -0.01em; }
+.set-divider { height: 1px; background: var(--border-subtle); }
+
+/* Save row inside a card */
+.set-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-12); }
+.set-saved { display: inline-flex; align-items: center; gap: var(--space-6); font: 600 14px/20px var(--font-text); color: var(--text-success); }
+.set-saved:empty { display: none; }
+
+/* Pending email change */
+.set-pending { display: flex; flex-direction: column; gap: var(--space-12); }
+.set-pending__actions { display: flex; gap: var(--space-8); }
+
+/* A row with text on the left and one action on the right (2FA, account type) */
+.set-row { display: flex; align-items: center; gap: var(--space-16); }
+.set-row__icon { flex: none; width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--bg-brand-muted); color: var(--icon-brand); display: flex; align-items: center; justify-content: center; }
+.set-row__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+
+/* Notification toggles */
+.set-toggle { display: flex; align-items: center; justify-content: space-between; gap: var(--space-16); padding: var(--space-12) 0; border-bottom: 1px solid var(--border-subtle); }
+.set-toggle:first-child { padding-top: 0; }
+.set-toggle__text { display: flex; flex-direction: column; gap: 2px; }
+.set-toggle__title { font: 600 14px/20px var(--font-text); }
+.set-toggle__desc { font: 500 14px/20px var(--font-text); color: var(--text-secondary); }
+
+/* 2FA dialog */
+.set-qr-wrap { align-self: center; padding: var(--space-12); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-surface); }
+.set-qr { display: block; width: 168px; height: 168px; }
+
+/* Legal */
+.set-links { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-8); }
+.set-links a { display: inline-flex; align-items: center; gap: var(--space-6); }
+
+/* Delete account: separated and in the error colours */
+.set-danger { margin-top: var(--space-16); border-color: var(--border-error); }
+.set-danger .cf-card__title { color: var(--text-error); }
+
+@media (max-width: 700px) {
+  .set-row { flex-wrap: wrap; }
+}

@@ -140,6 +140,28 @@
     </section>
 
     <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Settings (Personal) <span class="cf-badge cf-badge--warning"><span class="cf-badge__dot"></span>Not in design</span></h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">—</td><td>Default — no developer account, 2FA off</td><td><a href="settings.html?state=default" data-accounts="personal">settings.html?state=default</a></td></tr>
+          <tr><td class="map__key">—</td><td>Profile with unsaved changes</td><td><a href="settings.html?state=profile-dirty" data-accounts="personal">settings.html?state=profile-dirty</a></td></tr>
+          <tr><td class="map__key">—</td><td>Email verification pending</td><td><a href="settings.html?state=email-pending" data-accounts="personal">settings.html?state=email-pending</a></td></tr>
+          <tr><td class="map__key">—</td><td>Password: wrong current password</td><td><a href="settings.html?state=password-error" data-accounts="personal">settings.html?state=password-error</a></td></tr>
+          <tr><td class="map__key">—</td><td>Password: updated</td><td><a href="settings.html?state=password-success" data-accounts="personal">settings.html?state=password-success</a></td></tr>
+          <tr><td class="map__key">—</td><td>2FA: setup, step 1 (QR and key)</td><td><a href="settings.html?state=2fa-setup" data-accounts="personal">settings.html?state=2fa-setup</a></td></tr>
+          <tr><td class="map__key">—</td><td>2FA: setup, wrong code (000000)</td><td><a href="settings.html?state=2fa-wrong-code" data-accounts="personal">settings.html?state=2fa-wrong-code</a></td></tr>
+          <tr><td class="map__key">—</td><td>2FA: on</td><td><a href="settings.html?state=2fa-on" data-accounts="personal">settings.html?state=2fa-on</a></td></tr>
+          <tr><td class="map__key">—</td><td>2FA section off in the config</td><td><a href="settings.html?state=2fa-hidden" data-accounts="personal">settings.html?state=2fa-hidden</a></td></tr>
+          <tr><td class="map__key">—</td><td>Notifications: all on / all off</td><td><a href="settings.html?state=notifications-on" data-accounts="personal">notifications-on</a> · <a href="settings.html?state=notifications-off" data-accounts="personal">notifications-off</a></td></tr>
+          <tr><td class="map__key">—</td><td>Developer account exists (“Switch to Developer”)</td><td><a href="settings.html?state=default" data-accounts="personal,developer" data-account="personal" data-dev-status="approved">settings.html (personal + developer)</a></td></tr>
+          <tr><td class="map__key">—</td><td>Delete: blocked by a payout in progress</td><td><a href="settings.html?state=delete-blocked" data-accounts="personal">settings.html?state=delete-blocked</a></td></tr>
+          <tr><td class="map__key">—</td><td>Delete: balance warning</td><td><a href="settings.html?state=delete-balance" data-accounts="personal">settings.html?state=delete-balance</a></td></tr>
+          <tr><td class="map__key">—</td><td>Delete: zero balance</td><td><a href="settings.html?state=delete-zero" data-accounts="personal">settings.html?state=delete-zero</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
       <div class="cf-card__head"><h3 class="cf-card__title">Referrals <span class="cf-badge cf-badge--warning"><span class="cf-badge__dot"></span>Not in design</span></h3></div>
       <table class="cf-table">
         <tbody>

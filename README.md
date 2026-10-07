@@ -189,7 +189,29 @@ design file, so it is built from the existing components.
 - **Rewards and payouts:** referral earnings are described as part of the Available balance. There is no
   separate withdrawal. The Payouts mock balance is independent of the Referrals mock numbers.
 
+### Settings (Personal)
+
+`settings.html` is for Personal accounts. The Developer account's Settings item is still a "coming later" toast.
+It is not in the design file, so it is built from the existing components. Six stacked cards, and the ones
+with a form save on their own: Profile, Security (password and two-factor), Notifications, Account type, Legal,
+Delete account.
+
+- **Business values:** `assets/js/data/settings.config.js` is the only file the client edits (support email,
+  country editable, 2FA on/off, notification defaults and which are locked, legal links and accepted version,
+  delete confirm word and rules).
+- **Mock data and rules:** `assets/js/data/settings.js` (presets, password strength and validation, the
+  placeholder 2FA QR). Profile, 2FA and notification values live in memory; a reload restores the preset.
+- **Shared Payouts state:** the Payouts state now lives in the prototype store, so "Delete account" reads the
+  same balance and the same payout in progress that the Payouts page shows. Opening Payouts with `?state=`
+  starts that scenario afresh; without it the saved state continues.
+- **Mock rules:** current password `wrong-password` fails; any 6 digits pass the 2FA check and `000000` fails.
+  Passwords and codes are never logged or stored.
+- **Account type:** "Create developer account" opens the same confirmation as the sidebar prompt, then the
+  developer onboarding. "Switch to Developer" uses the account switcher state.
+- **Presets:** `?state=default|profile-dirty|email-pending|password-error|password-success|2fa-setup|2fa-wrong-code|2fa-on|2fa-hidden|notifications-on|notifications-off|delete-blocked|delete-balance|delete-zero`.
+  The demo control also switches between a login with and without a developer account.
+
 ## Not in the design yet
 
-These show a "coming later" toast: Settings, Help center, SDK, Create app, SDK guide,
+These show a "coming later" toast: Developer settings, Help center, SDK, Create app, SDK guide,
 the agreement documents, and installer downloads.

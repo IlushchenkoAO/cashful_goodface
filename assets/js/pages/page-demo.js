@@ -1,6 +1,7 @@
-/* Dev-only demo control: jumps between the states of the page it sits on (Payouts, Referrals).
+/* Dev-only demo control: jumps between the states of the page it sits on (Payouts, Referrals, Settings).
    Not product UI — remove its <script> tag from the page to hide it.
-   To add a page: give it a PAGES entry with its states and `url`. */
+   To add a page: give it a PAGES entry with its states and `url`. A page that depends on the login
+   (accounts, KYC) also gets an `accounts` list: each option says which accounts the demo login has. */
 (function () {
   if (!Cashful.app) return;
   var ui = Cashful.ui;
@@ -9,6 +10,7 @@
 
   var user = Cashful.app.user;
   var devStatus = (user.dev && user.dev.status) || 'approved';
+  var BOTH = ['personal', 'developer'];
 
   var PAGES = {
     payouts: {
@@ -18,16 +20,29 @@
       current: function () { return ui.params.get('state') || 'default'; },
       // Developer payouts depend on KYC, so the account is part of the demo
       accounts: [
-        { id: 'personal', label: 'Personal' },
-        { id: 'dev-kyc', label: 'Developer · KYC required' },
-        { id: 'dev-ok', label: 'Developer · KYC approved' }
-      ]
+        { id: 'personal', label: 'Personal', accounts: BOTH, active: 'personal' },
+        { id: 'dev-kyc', label: 'Developer · KYC required', accounts: BOTH, active: 'developer', devStatus: 'in_review' },
+        { id: 'dev-ok', label: 'Developer · KYC approved', accounts: BOTH, active: 'developer', devStatus: 'approved' }
+      ],
+      currentAccount: function () { return Cashful.app.account === 'personal' ? 'personal' : (devStatus === 'approved' ? 'dev-ok' : 'dev-kyc'); }
     },
     referrals: {
       title: 'Dev only · Referrals states',
       url: 'referrals.html',
       states: Cashful.referral && Cashful.referral.SCENARIOS,
       current: function () { return Cashful.referral.scenario(); }
+    },
+    settings: {
+      title: 'Dev only · Settings states',
+      url: 'settings.html',
+      states: Cashful.settings && Cashful.settings.PRESETS,
+      current: function () { return Cashful.settings.preset(ui.params.get('state')); },
+      // "Account type" shows a different button depending on whether a developer account exists
+      accounts: [
+        { id: 'personal-only', label: 'Personal only (no developer account)', accounts: ['personal'], active: 'personal' },
+        { id: 'both', label: 'Personal + Developer account', accounts: BOTH, active: 'personal', devStatus: 'approved' }
+      ],
+      currentAccount: function () { return user.accounts.indexOf('developer') > -1 ? 'both' : 'personal-only'; }
     }
   };
   var cfg = PAGES[page];
@@ -40,7 +55,7 @@
       '</select><cf-icon name="chevron-down" size="20"></cf-icon></div></div>';
   }
 
-  var currentAccount = Cashful.app.account === 'personal' ? 'personal' : (devStatus === 'approved' ? 'dev-ok' : 'dev-kyc');
+  var currentAccount = cfg.accounts ? cfg.currentAccount() : null;
 
   var el = document.createElement('div');
   el.className = 'demo';
@@ -65,11 +80,8 @@
     var accountSelect = ui.$('#demo-account', el);
     var state = ui.$('#demo-state', el).value;
     if (accountSelect && accountSelect.value !== currentAccount) {
-      var account = accountSelect.value;
-      api.demo.signInWith(['personal', 'developer'], {
-        account: account === 'personal' ? 'personal' : 'developer',
-        dev: { status: account === 'dev-kyc' ? 'in_review' : (account === 'dev-ok' ? 'approved' : devStatus) }
-      });
+      var o = cfg.accounts.filter(function (a) { return a.id === accountSelect.value; })[0];
+      api.demo.signInWith(o.accounts, { account: o.active, dev: { status: o.devStatus || devStatus } });
     }
     location.href = cfg.url + '?state=' + state;
   }
