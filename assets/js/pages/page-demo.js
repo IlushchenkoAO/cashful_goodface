@@ -37,12 +37,16 @@
       url: 'settings.html',
       states: Cashful.settings && Cashful.settings.PRESETS,
       current: function () { return Cashful.settings.preset(ui.params.get('state')); },
-      // "Account type" shows a different button depending on whether a developer account exists
+      // The "Account type" card has three states, set by the developer account of this login
       accounts: [
-        { id: 'personal-only', label: 'Personal only (no developer account)', accounts: ['personal'], active: 'personal' },
-        { id: 'both', label: 'Personal + Developer account', accounts: BOTH, active: 'personal', devStatus: 'approved' }
+        { id: 'dev-none', label: 'Developer: not started', accounts: ['personal'], active: 'personal' },
+        { id: 'dev-draft', label: 'Developer: setup in progress', accounts: BOTH, active: 'personal', dev: { status: 'in_progress', step: 'apps' } },
+        { id: 'dev-submitted', label: 'Developer: submitted', accounts: BOTH, active: 'personal', dev: { status: 'in_review', step: 'review' } }
       ],
-      currentAccount: function () { return user.accounts.indexOf('developer') > -1 ? 'both' : 'personal-only'; }
+      currentAccount: function () {
+        if (user.accounts.indexOf('developer') < 0 || !user.dev || user.dev.status === 'not_started') return 'dev-none';
+        return user.dev.status === 'in_progress' ? 'dev-draft' : 'dev-submitted';
+      }
     }
   };
   var cfg = PAGES[page];
@@ -81,7 +85,7 @@
     var state = ui.$('#demo-state', el).value;
     if (accountSelect && accountSelect.value !== currentAccount) {
       var o = cfg.accounts.filter(function (a) { return a.id === accountSelect.value; })[0];
-      api.demo.signInWith(o.accounts, { account: o.active, dev: { status: o.devStatus || devStatus } });
+      api.demo.signInWith(o.accounts, { account: o.active, dev: o.dev || { status: o.devStatus || devStatus } });
     }
     location.href = cfg.url + '?state=' + state;
   }

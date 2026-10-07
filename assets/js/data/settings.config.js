@@ -1,5 +1,6 @@
 /* Settings (Personal) — placeholder business values. The client edits this file only.
-   notifications.<key>.locked   transactional emails the person can't switch off ("Always on")
+   avatar.acceptedTypes / maxSizeMb  what the profile photo may be; outputSizePx is the square it is cropped to
+   notifications.<key>.locked  transactional emails the person can't switch off ("Always on")
    notifications.<key>.default  the initial value
    deletion.warnWhenBalanceAbove  dollars: above this (Available + Pending) the delete dialog warns about the balance */
 window.Cashful = window.Cashful || {};
@@ -7,6 +8,11 @@ Cashful.settingsConfig = {
   supportEmail: 'support@cashful.example',
   countryEditable: false,
   twoFactorEnabled: true,
+  avatar: {
+    acceptedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    maxSizeMb: 2,
+    outputSizePx: 256
+  },
   notifications: {
     payoutUpdates:   { locked: true,  default: true },
     earningsSummary: { locked: false, default: true },

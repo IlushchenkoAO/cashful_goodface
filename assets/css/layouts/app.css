@@ -162,7 +162,7 @@
   .cf-shell { flex-direction: column; }
   .cf-shell .cf-sidebar { position: static; width: 100%; height: auto; border-right: 0; border-bottom: 1px solid var(--border-subtle); gap: 16px; }
   .cf-sidebar__menu { flex-direction: row; flex-wrap: wrap; }
-  .cf-sidebar__spacer, .cf-sidebar > .cf-nav { display: none; }
+  .cf-sidebar__spacer { display: none; }
   .cf-shell__content { padding: 24px 16px; }
 }
 @media (max-width: 640px) {

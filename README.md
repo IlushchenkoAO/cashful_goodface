@@ -96,8 +96,8 @@ login doesn't have redirects to the login's home page.
 The chart data is taken 1:1 from the design (`assets/js/data/earnings.js`). The devices, alerts and
 cards are in `assets/js/data/peer.js`.
 
-Download buttons, Payouts, Referrals, Settings, Help and "Become a developer" show a "coming later"
-toast. These sections are not part of the design yet.
+Download buttons and the Developer menu items that have no page yet show a "coming later" toast. These
+sections are not part of the design yet. Help center is not part of the MVP and has been removed.
 
 ## Structure
 
@@ -206,12 +206,16 @@ Delete account.
   starts that scenario afresh; without it the saved state continues.
 - **Mock rules:** current password `wrong-password` fails; any 6 digits pass the 2FA check and `000000` fails.
   Passwords and codes are never logged or stored.
-- **Account type:** "Create developer account" opens the same confirmation as the sidebar prompt, then the
-  developer onboarding. "Switch to Developer" uses the account switcher state.
-- **Presets:** `?state=default|profile-dirty|email-pending|password-error|password-success|2fa-setup|2fa-wrong-code|2fa-on|2fa-hidden|notifications-on|notifications-off|delete-blocked|delete-balance|delete-zero`.
-  The demo control also switches between a login with and without a developer account.
+- **Profile photo:** a round 96px avatar with Upload photo and Remove. The accepted types and the size limit
+  are in `settings.config.js` (`avatar`), and the error texts are generated from them. A chosen image is
+  centre-cropped to a square and shown as a preview; it is applied with the Save button like the other fields
+  and stored as a data URL on the login. The user card in the sidebar shows the same photo (or the initials).
+- **Account type:** three states from the developer account of the login. Not started: "Create developer
+  account" adds the account and opens the onboarding. In progress: "Continue setup" with "You started setting up
+  a Developer account." Submitted: "Switch to Developer". The demo control switches between them.
+- **Presets:** `?state=default|profile-dirty|avatar-none|avatar-set|avatar-preview|avatar-invalid|avatar-too-large|email-pending|password-error|password-success|2fa-setup|2fa-wrong-code|2fa-on|2fa-hidden|notifications-on|notifications-off|delete-blocked|delete-balance|delete-zero`.
 
 ## Not in the design yet
 
-These show a "coming later" toast: Developer settings, Help center, SDK, Create app, SDK guide,
+These show a "coming later" toast: Developer settings, SDK, Create app, SDK guide,
 the agreement documents, and installer downloads.

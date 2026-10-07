@@ -17,6 +17,11 @@
   var PRESETS = [
     { id: 'default', label: 'Default' },
     { id: 'profile-dirty', label: 'Profile with unsaved changes' },
+    { id: 'avatar-none', label: 'Avatar: no photo' },
+    { id: 'avatar-set', label: 'Avatar: photo set' },
+    { id: 'avatar-preview', label: 'Avatar: preview before save' },
+    { id: 'avatar-invalid', label: 'Avatar: invalid format' },
+    { id: 'avatar-too-large', label: 'Avatar: file too large' },
     { id: 'email-pending', label: 'Email verification pending' },
     { id: 'password-error', label: 'Password: wrong current password' },
     { id: 'password-success', label: 'Password: updated' },
@@ -47,7 +52,7 @@
     NOTIFICATIONS.forEach(function (item) { if (cfg.notifications[item.key].locked) n[item.key] = true; });
 
     return {
-      profile: { name: user.name || user.email.split('@')[0], email: user.email, country: 'Germany' },
+      profile: { name: user.name || user.email.split('@')[0], email: user.email, country: 'Germany', avatar: user.avatar || null },
       emailPending: presetId === 'email-pending' ? 'alex.morgan@example.com' : null,
       tfa: { enabled: presetId === '2fa-on' },
       notifications: n
@@ -78,6 +83,71 @@
     return e;
   }
 
+  /* ---------- Profile photo ---------- */
+
+  var TYPE_NAMES = { 'image/jpeg': 'JPG', 'image/png': 'PNG', 'image/webp': 'WebP', 'image/gif': 'GIF' };
+
+  /** "JPG, PNG or WebP" from the accepted types in the config. */
+  function avatarFormats() {
+    var names = cfg.avatar.acceptedTypes.map(function (t) { return TYPE_NAMES[t] || t; });
+    return names.length > 1 ? names.slice(0, -1).join(', ') + ' or ' + names[names.length - 1] : names[0];
+  }
+  function avatarFormatError() { return 'Use a ' + avatarFormats() + ' image.'; }
+  function avatarSizeError() { return 'Image must be under ' + cfg.avatar.maxSizeMb + ' MB.'; }
+  function avatarHint() { return avatarFormats() + ', up to ' + cfg.avatar.maxSizeMb + ' MB.'; }
+
+  /** @returns an error message, or '' when the file can be used. */
+  function checkAvatarFile(file) {
+    if (cfg.avatar.acceptedTypes.indexOf(file.type) < 0) return avatarFormatError();
+    if (file.size > cfg.avatar.maxSizeMb * 1024 * 1024) return avatarSizeError();
+    return '';
+  }
+
+  /** Centre-crops the image to a square and returns it as a data URL. */
+  function cropToSquare(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var side = Math.min(img.width, img.height);
+        var out = cfg.avatar.outputSizePx;
+        var canvas = document.createElement('canvas');
+        canvas.width = canvas.height = out;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, out, out);
+        ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, out, out);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', 0.9));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('unreadable')); };
+      img.src = url;
+    });
+  }
+
+  /** A drawn, non-square portrait for the demo presets (so the crop is visible). */
+  function sampleFile() {
+    return new Promise(function (resolve) {
+      var canvas = document.createElement('canvas');
+      canvas.width = 480; canvas.height = 320;
+      var ctx = canvas.getContext('2d');
+      var bg = ctx.createLinearGradient(0, 0, 480, 320);
+      bg.addColorStop(0, '#7b5cf0'); bg.addColorStop(1, '#ffc83d');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, 480, 320);
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(240, 130, 62, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(240, 320, 120, 110, 0, Math.PI, 0); ctx.fill();
+      canvas.toBlob(function (blob) { resolve(new File([blob], 'sample.jpg', { type: 'image/jpeg' })); }, 'image/jpeg', 0.9);
+    });
+  }
+
+  /** Files for the "invalid" demo presets. */
+  function badFile(kind) {
+    return kind === 'format'
+      ? new File(['gif'], 'photo.gif', { type: 'image/gif' })
+      : new File([new ArrayBuffer(cfg.avatar.maxSizeMb * 1024 * 1024 + 1)], 'huge.png', { type: 'image/png' });
+  }
+
   /* ---------- Placeholder QR for the 2FA setup (a pattern, not a real code) ---------- */
 
   function qrPlaceholder() {
@@ -102,6 +172,7 @@
   Cashful.settings = {
     config: cfg, NOTIFICATIONS: NOTIFICATIONS, COUNTRIES: COUNTRIES, PRESETS: PRESETS, SETUP_KEY: 'JBSW Y3DP EHPK 3PXP',
     preset: preset, settings: settings, createState: createState,
-    passwordStrength: passwordStrength, validatePassword: validatePassword, qrPlaceholder: qrPlaceholder
+    passwordStrength: passwordStrength, validatePassword: validatePassword, qrPlaceholder: qrPlaceholder,
+    avatarHint: avatarHint, checkAvatarFile: checkAvatarFile, cropToSquare: cropToSquare, sampleFile: sampleFile, badFile: badFile
   };
 })();

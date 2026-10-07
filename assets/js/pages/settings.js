@@ -41,6 +41,51 @@
 
   /* ---------- Profile ---------- */
 
+  // The photo waiting for Save (a data URL, or null for "no photo"); saved with the other fields
+  var avatarDraft = state.profile.avatar;
+
+  function avatarButtons() {
+    return '<button type="button" class="cf-btn cf-btn--secondary cf-btn--sm" data-act="avatar-upload">' + icon('upload', 16) + '<span>Upload photo</span></button>' +
+      (avatarDraft ? '<button type="button" class="cf-btn cf-btn--ghost cf-btn--sm" data-act="avatar-remove">Remove</button>' : '');
+  }
+  function avatarContent() {
+    return avatarDraft ? '<img src="' + esc(avatarDraft) + '" alt="">' : esc(Cashful.app.initials(state.profile.name));
+  }
+  function avatarHtml() {
+    return '<div class="set-avatar">' +
+      '<span class="cf-avatar cf-avatar--xl" id="avatar-img" role="img" aria-label="Profile photo">' + avatarContent() + '</span>' +
+      '<div class="set-avatar__body">' +
+        '<div class="set-avatar__buttons" id="avatar-buttons">' + avatarButtons() + '</div>' +
+        '<div class="cf-input__helper" id="avatar-hint">' + esc(S.avatarHint()) + '</div>' +
+        '<p class="set-avatar__error" id="avatar-error" role="alert" hidden></p>' +
+      '</div>' +
+      '<input type="file" id="avatar-file" accept="' + esc(c.avatar.acceptedTypes.join(',')) + '" hidden aria-label="Upload a profile photo">' +
+    '</div>';
+  }
+  function refreshAvatar() {
+    ui.$('#avatar-img', root).innerHTML = avatarContent();
+    ui.$('#avatar-buttons', root).innerHTML = avatarButtons();
+  }
+  function showAvatarError(message) {
+    var el = ui.$('#avatar-error', root);
+    el.textContent = message;
+    el.hidden = !message;
+  }
+  /** Checks the file, crops it to a square and shows the preview. Resolves true when it was accepted. */
+  function pickAvatar(file) {
+    var error = S.checkAvatarFile(file);
+    showAvatarError(error);
+    if (error) return Promise.resolve(false);
+    return S.cropToSquare(file).then(function (url) {
+      avatarDraft = url;
+      refreshAvatar();
+      return true;
+    }, function () {
+      showAvatarError('We couldn’t read this image. Try another one.');
+      return false;
+    });
+  }
+
   function renderProfile(savedText) {
     var p = state.profile;
     var pending = state.emailPending;
@@ -57,7 +102,7 @@
           '<button type="button" class="cf-btn cf-btn--ghost cf-btn--sm" data-act="cancel-email">Cancel change</button></div></div>'
       : '';
 
-    body('profile').innerHTML = '<form class="set-form" id="profile-form" novalidate>' +
+    body('profile').innerHTML = '<form class="set-form" id="profile-form" novalidate>' + avatarHtml() +
       ui.fieldHtml({ id: 'set-name', name: 'name', label: 'Name', value: p.name, autocomplete: 'name' }) +
       ui.fieldHtml({ id: 'set-email', name: 'email', label: 'Email', value: p.email, type: 'email', autocomplete: 'email', spellcheck: false, disabled: !!pending,
         helper: pending ? '' : 'If you change it, we send a link to confirm the new address.' }) +
@@ -69,7 +114,8 @@
 
     function dirty() {
       var v = readProfile();
-      return v.name !== p.name || (!pending && v.email !== p.email) || (c.countryEditable && v.country !== p.country);
+      return v.name !== p.name || (!pending && v.email !== p.email) || (c.countryEditable && v.country !== p.country) ||
+        avatarDraft !== (p.avatar || null);
     }
     function readProfile() {
       return {
@@ -94,23 +140,38 @@
       ui.withLoading(save, function () { return later(400); }).then(function () {
         p.name = v.name;
         p.country = v.country;
+        p.avatar = avatarDraft;
         if (emailChanged) state.emailPending = v.email;
-        var nameEl = ui.$('.cf-usercard__name');
-        if (nameEl) nameEl.textContent = p.name;
+        // Saved on the login, so the user card on every page shows the same name and photo
+        api.updateProfile({ name: p.name, avatar: p.avatar });
+        Cashful.app.refreshUser();
         renderProfile(emailChanged ? 'Saved. Verify your new email to finish.' : 'Changes saved.');
       });
     });
 
-    ui.$$('[data-act]', form).forEach(function (b) {
-      b.addEventListener('click', function () {
-        if (b.dataset.act === 'resend') {
-          ui.toast('Verification email sent again');
-        } else {
-          state.emailPending = null;
-          renderProfile();
-          ui.$('#set-email', root).focus();
-        }
-      });
+    form.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-act]');
+      if (!b) return;
+      if (b.dataset.act === 'avatar-upload') ui.$('#avatar-file', form).click();
+      else if (b.dataset.act === 'avatar-remove') {
+        avatarDraft = null;
+        showAvatarError('');
+        refreshAvatar();
+        sync();
+        ui.$('[data-act="avatar-upload"]', form).focus();
+      } else if (b.dataset.act === 'resend') {
+        ui.toast('Verification email sent again');
+      } else if (b.dataset.act === 'cancel-email') {
+        state.emailPending = null;
+        renderProfile();
+        ui.$('#set-email', root).focus();
+      }
+    });
+
+    ui.$('#avatar-file', form).addEventListener('change', function (e) {
+      var file = e.target.files[0];
+      e.target.value = '';   // so choosing the same file again still fires
+      if (file) pickAvatar(file).then(sync);
     });
   }
 
@@ -300,20 +361,38 @@
 
   /* ---------- Account type ---------- */
 
+  /** 'none' (not started) · 'draft' (setup begun, not submitted) · 'submitted' (in review, approved or needs action) */
+  function developerState() {
+    var u = Cashful.app.user;
+    var dev = u.accounts.indexOf('developer') > -1 ? u.dev : null;
+    if (!dev || dev.status === 'not_started') return 'none';
+    return dev.status === 'in_progress' ? 'draft' : 'submitted';
+  }
+
+  var ACCOUNT_TYPE = {
+    none: { text: 'Monetize your own app with the Cashful SDK. You keep one login and switch between accounts in the sidebar. Your personal earnings aren’t affected.', label: 'Create developer account', tone: 'secondary' },
+    draft: { text: 'You started setting up a Developer account.', label: 'Continue setup', tone: 'primary' },
+    submitted: { text: 'You have a developer account on this login. Switch to manage your apps and developer earnings.', label: 'Switch to Developer', tone: 'primary' }
+  };
+
   function renderAccountType() {
-    var hasDev = user.accounts.indexOf('developer') > -1;
+    var s = developerState();
+    var t = ACCOUNT_TYPE[s];
     body('account-type').innerHTML = '<div class="set-row">' +
       '<span class="set-row__icon">' + icon('code') + '</span>' +
-      '<div class="set-row__text"><h3 class="set-sub">Developer account</h3><p class="t-muted">' +
-        (hasDev
-          ? 'You have a developer account on this login. Switch to manage your apps and developer earnings.'
-          : 'Monetize your own app with the Cashful SDK. You keep one login and switch between accounts in the sidebar. Your personal earnings aren’t affected.') +
-      '</p></div>' +
-      '<button type="button" class="cf-btn ' + (hasDev ? 'cf-btn--primary' : 'cf-btn--secondary') + '" data-act="' + (hasDev ? 'switch' : 'create') + '">' + (hasDev ? 'Switch to Developer' : 'Create developer account') + '</button></div>';
+      '<div class="set-row__text"><h3 class="set-sub">Developer account</h3><p class="t-muted">' + esc(t.text) + '</p></div>' +
+      '<button type="button" class="cf-btn cf-btn--' + t.tone + '" data-act="account-type">' + t.label + '</button></div>';
 
-    ui.$('[data-act]', body('account-type')).addEventListener('click', function (e) {
-      if (e.currentTarget.dataset.act === 'switch') ui.go(api.switchAccount('developer'));
-      else Cashful.app.openBecomeDeveloper();
+    ui.$('[data-act]', body('account-type')).addEventListener('click', function () {
+      if (s === 'none') {
+        // Adds the developer account to this login and opens the onboarding
+        api.addDeveloperAccount().then(function (res) { ui.go(res.redirect); });
+      } else if (s === 'draft') {
+        api.switchAccount('developer');
+        ui.go('developer-verification.html?resume=1');
+      } else {
+        ui.go(api.switchAccount('developer'));
+      }
     });
   }
 
@@ -432,11 +511,34 @@
     P.saveState(s);
   }
 
+  /** Removes the saved photo (on the login too), so a preset starts from "no photo". */
+  function clearAvatar() {
+    api.updateProfile({ avatar: null });
+    state.profile.avatar = null;
+    avatarDraft = null;
+    Cashful.app.refreshUser();
+    renderProfile();
+  }
+  function syncProfile() { ui.$('#profile-form', root).dispatchEvent(new Event('input', { bubbles: true })); }
+
   if (presetId === 'profile-dirty') {
     var nameInput = ui.$('#set-name', root);
     nameInput.value = 'Alex Morgan';
     nameInput.dispatchEvent(new Event('input', { bubbles: true }));
-  } else if (presetId === 'password-error') fillPassword('wrong-password', 'new-password-1');
+  } else if (presetId === 'avatar-none') clearAvatar();
+  else if (presetId === 'avatar-set') {
+    S.sampleFile().then(S.cropToSquare).then(function (url) {
+      state.profile.avatar = avatarDraft = url;
+      api.updateProfile({ avatar: url });
+      Cashful.app.refreshUser();
+      renderProfile();
+    });
+  } else if (presetId === 'avatar-preview') {
+    clearAvatar();
+    S.sampleFile().then(pickAvatar).then(syncProfile);
+  } else if (presetId === 'avatar-invalid') { clearAvatar(); pickAvatar(S.badFile('format')); }
+  else if (presetId === 'avatar-too-large') { clearAvatar(); pickAvatar(S.badFile('size')); }
+  else if (presetId === 'password-error') fillPassword('wrong-password', 'new-password-1');
   else if (presetId === 'password-success') fillPassword('old-password-1', 'new-password-1');
   else if (presetId === '2fa-setup') openTfaSetup();
   else if (presetId === '2fa-wrong-code') openTfaSetup({ wrongCode: true });

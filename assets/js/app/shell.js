@@ -52,6 +52,21 @@
     return s.toUpperCase();
   }
 
+  /** The photo when there is one, otherwise the initials. */
+  function avatarContent(u) {
+    return u.avatar ? '<img src="' + esc(u.avatar) + '" alt="">' : esc(initials(u.name || u.email.split('@')[0]));
+  }
+
+  /** Re-reads the signed-in user (after Settings saved a new name or photo) and updates the user card. */
+  function refreshUser() {
+    user = api.currentUser();
+    Cashful.app.user = user;
+    ui.$$('.cf-usercard').forEach(function (card) {
+      ui.$('.cf-usercard__name', card).textContent = user.name || user.email.split('@')[0];
+      ui.$('[data-user-avatar]', card).innerHTML = avatarContent(user);
+    });
+  }
+
   function navItem(item, active) {
     var cls = 'cf-nav' + (item.id === active ? ' is-active' : '');
     var attrs = item.href ? 'href="' + item.href + '"' : 'href="#" data-soon="' + esc(item.label) + '"';
@@ -85,9 +100,8 @@
       (user.accounts.length > 1 ? switcher() : prompt()) +
       '<nav class="cf-sidebar__menu" aria-label="Main">' + MENUS[account].map(function (n) { return navItem(n, active); }).join('') + '</nav>' +
       '<div class="cf-sidebar__spacer"></div>' +
-      navItem({ id: 'help', label: 'Help center', icon: 'help' }, active) +
       '<div class="cf-usercard">' +
-        '<span class="cf-avatar">' + esc(initials(name)) + '</span>' +
+        '<span class="cf-avatar" data-user-avatar>' + avatarContent(user) + '</span>' +
         '<div class="cf-usercard__info"><div class="cf-usercard__name">' + esc(name) + '</div><div class="cf-usercard__email">' + esc(user.email) + '</div></div>' +
         '<button type="button" class="cf-usercard__logout" aria-label="Log out" title="Log out" data-logout><cf-icon name="log-out" size="20"></cf-icon></button>' +
       '</div>';
@@ -157,7 +171,7 @@
   // Account email appears in install instructions and copy
   ui.$$('[data-user-email]').forEach(function (el) { el.textContent = user.email; });
 
-  Cashful.app = { user: api.currentUser(), account: account, openBecomeDeveloper: openBecomeDeveloper };
+  Cashful.app = { user: api.currentUser(), account: account, openBecomeDeveloper: openBecomeDeveloper, refreshUser: refreshUser, initials: initials };
 
   // Deep link for demos: ?modal=become-developer
   if (ui.params.get('modal') === 'become-developer' && user.accounts.length === 1 && account === 'personal') openBecomeDeveloper();

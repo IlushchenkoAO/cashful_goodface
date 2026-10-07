@@ -350,6 +350,16 @@
     });
   };
 
+  /** Saves profile fields on the signed-in user (name, avatar as a data URL). `null` removes a field. */
+  api.updateProfile = function (patch) {
+    return withUser(function (user) {
+      Object.keys(patch).forEach(function (k) {
+        if (patch[k] == null) delete user[k]; else user[k] = patch[k];
+      });
+      return user;
+    });
+  };
+
   /* ---------- Developer verification ---------- */
 
   /** Saves a step's answers and moves on. Progress survives log out. */

@@ -9,6 +9,12 @@
 .set-sub { display: flex; align-items: center; gap: var(--space-8); font: 600 16px/24px var(--font-text); letter-spacing: -0.01em; }
 .set-divider { height: 1px; background: var(--border-subtle); }
 
+/* Profile photo */
+.set-avatar { display: flex; align-items: center; gap: var(--space-20); }
+.set-avatar__body { display: flex; flex-direction: column; gap: var(--space-8); min-width: 0; }
+.set-avatar__buttons { display: flex; gap: var(--space-8); flex-wrap: wrap; }
+.set-avatar__error { font: 500 12px/18px var(--font-text); color: var(--text-error); }
+
 /* Save row inside a card */
 .set-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-12); }
 .set-saved { display: inline-flex; align-items: center; gap: var(--space-6); font: 600 14px/20px var(--font-text); color: var(--text-success); }
