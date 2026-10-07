@@ -11,12 +11,25 @@
   // ?state= starts a scenario; without it the saved state continues (shared with Settings)
   var state = P.loadState(ui.params.get('state'));
 
-  var user = Cashful.app.user;
-  var locked = Cashful.app.account === 'developer' && !(user.dev && user.dev.status === 'approved');
+  // A developer with no Active app has earned nothing: show zeros (not saved, so it follows the apps)
+  var isDeveloper = Cashful.app.account === 'developer';
+  var noEarnings = isDeveloper && !ui.params.get('state') &&
+    !Cashful.apps.all().some(function (a) { return a.status === 'active'; });
+  if (noEarnings) state = P.createState('no-earnings');
+
+  // A Developer account can't request payouts until KYC is approved. The value comes from api.kyc and is
+  // re-read on every render, so approving KYC (the alert's X, the demo control) unlocks the page at once.
+  var locked = false;
+  function refreshLock() { locked = isDeveloper && !Cashful.api.kyc.featuresUnlocked(); }
 
   var filters = { status: 'All', period: 'All time' };
   var expanded = {};
-  var root = ui.$('#payouts');
+
+  // The KYC alert has its own slot above the page, so it can animate away while the page re-renders
+  var host = ui.$('#payouts');
+  host.innerHTML = '<div data-kyc-alert></div><div class="u-contents" id="payouts-body"></div>';
+  var root = ui.$('#payouts-body', host);
+  if (isDeveloper) Cashful.kyc.mountAlert(ui.$('[data-kyc-alert]', host));
 
   function later(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
   function icon(name, size) { return '<cf-icon name="' + name + '" size="' + (size || 20) + '"></cf-icon>'; }
@@ -45,7 +58,8 @@
   /* ---------- Page ---------- */
 
   function render() {
-    P.saveState(state);
+    refreshLock();
+    if (!noEarnings) P.saveState(state);
     root.innerHTML =
       '<header class="cf-pagehead"><div class="cf-pagehead__row"><div class="cf-pagehead__titles">' +
         '<h1 class="cf-pagehead__title">Payouts</h1>' +
@@ -64,7 +78,7 @@
     var notes = '';
     if (locked) {
       action = '';
-      notes = '<span class="pay-note">' + icon('shield', 16) + 'Payouts unlock after your KYC is approved.</span>';
+      notes = '<span class="pay-note">' + icon('shield', 16) + (Cashful.api.kyc.lockReason() === 'agreement' ? Cashful.developerSettingsConfig.agreementLockHint : 'Payouts unlock after your KYC is approved') + '.</span>';
     } else {
       action = '<button type="button" class="cf-btn cf-btn--primary" data-act="request" aria-describedby="pay-notes"' + (busy || below ? ' disabled' : '') + '>' +
         icon('banknote') + '<span>Request payout</span></button>';
@@ -92,9 +106,9 @@
   function lockedHtml() {
     return '<section class="cf-card" aria-labelledby="pay-locked-title"><div class="cf-empty">' +
       '<span class="cf-tile__chip">' + icon('shield', 24) + '</span>' +
-      '<h2 class="cf-empty__title" id="pay-locked-title" tabindex="-1">Complete KYC to request payouts</h2>' +
+      '<h2 class="cf-empty__title" id="pay-locked-title" tabindex="-1">' + (Cashful.api.kyc.lockReason() === 'agreement' ? Cashful.developerSettingsConfig.agreementLockHint + ' to request payouts' : 'Complete KYC to request payouts') + '</h2>' +
       '<p class="cf-empty__desc">Payout methods and payout requests unlock once your developer account is approved. Your balance and history stay visible.</p>' +
-      '<a href="#settings" class="cf-btn cf-btn--primary" data-soon="Settings">Go to Settings</a>' +
+      '<a href="settings.html#' + (Cashful.api.kyc.lockReason() === 'agreement' ? 'agreements' : 'verification') + '" class="cf-btn cf-btn--primary">Go to Settings</a>' +
     '</div></section>';
   }
 
@@ -164,7 +178,10 @@
     if (!state.payouts.length) {
       el.innerHTML = '<div class="cf-empty"><span class="cf-tile__chip">' + icon('clock', 24) + '</span>' +
         '<h3 class="cf-empty__title">No payouts yet</h3>' +
-        '<p class="cf-empty__desc">Your payouts show up here after you request your first one.</p></div>';
+        '<p class="cf-empty__desc">' + (noEarnings
+          ? 'You haven’t earned anything yet. Earnings start once an app is Active and people opt in.'
+          : 'Your payouts show up here after you request your first one.') + '</p>' +
+        (noEarnings ? '<a href="apps.html" class="cf-btn cf-btn--secondary">Go to Apps</a>' : '') + '</div>';
       return;
     }
     var rows = filteredPayouts();
@@ -476,4 +493,5 @@
   });
 
   render();
+  if (isDeveloper) Cashful.api.kyc.onChange(render);
 })();

@@ -174,17 +174,32 @@
 .stack-4 { display: flex; flex-direction: column; gap: 4px; }
 .cf-grid--loose { gap: 24px; }
 
-/* Developer Analytics */
+/* "Resubmit documents" under the KYC alert */
 .alert-action { display: flex; margin-top: -8px; }
-.filters { display: flex; gap: 12px; flex-wrap: wrap; }
-.filters .filter { width: 200px; }
-.apps-card { gap: 16px; }
-.apps-card__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.apps-card__head .cf-card__title { flex: none; }
-.apps-card__empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; padding: 32px 16px; }
-.apps-card__empty .empty-card__desc { max-width: 460px; }
-.apps-card__actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 .cf-switch__opt:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
 /* Overview: referral card */
 .ref-mini-card__earned { display: flex; flex-direction: column; gap: 2px; }
 .ref-mini-card__earned strong { font: 800 22px/28px var(--font-display); letter-spacing: -0.03em; }
+/* KYC alert (Developer pages): self-managed slot, exit transition, X with a tooltip */
+[data-kyc-alert], .u-contents { display: contents; }
+.kyc-alert { transition: opacity .2s ease, transform .2s ease; }
+.kyc-alert.is-leaving { opacity: 0; transform: translateY(-6px); pointer-events: none; }
+.cf-alert .cf-alert__close.cf-ibtn { margin: -6px -8px -6px 0; }
+[data-tooltip] { position: relative; }
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 5;
+  white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-inverse);
+  color: var(--text-inverse);
+  font: 600 12px/16px var(--font-text);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) { .kyc-alert { transition: none; } }

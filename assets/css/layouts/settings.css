@@ -48,6 +48,48 @@
 .set-danger { margin-top: var(--space-16); border-color: var(--border-error); }
 .set-danger .cf-card__title { color: var(--text-error); }
 
+/* Developer: anchor navigation beside the cards */
+.set-layout { display: flex; align-items: flex-start; gap: var(--space-32); }
+.set-layout .set-stack { flex: 1; min-width: 0; }
+.set-anchors { position: sticky; top: var(--space-24); flex: none; width: 200px; }
+.set-anchors ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.set-anchors a { display: block; padding: var(--space-8) var(--space-12); border-left: 2px solid var(--border-subtle); color: var(--text-secondary); font: 600 14px/20px var(--font-text); text-decoration: none; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.set-anchors a:hover { background: var(--bg-hover); color: var(--text-primary); }
+.set-anchors a[aria-current] { border-left-color: var(--border-brand, var(--icon-brand)); color: var(--text-brand); background: var(--bg-brand-muted); }
+.set-anchors a:focus-visible { outline: 2px solid var(--border-focus, var(--icon-brand)); outline-offset: 2px; }
+.set-card { scroll-margin-top: var(--space-24); }
+.set-card__head .cf-card__title:focus { outline: none; }
+.set-card__head .cf-card__title:focus-visible { outline: 2px solid var(--border-focus, var(--icon-brand)); outline-offset: 4px; border-radius: var(--radius-sm); }
+
+/* Verification stages: each one says its state in words */
+.set-stages { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-8); }
+.set-stage { display: flex; align-items: center; gap: var(--space-12); padding: var(--space-8) var(--space-12); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }
+.set-stage__mark { flex: none; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font: 700 12px/1 var(--font-text); background: var(--bg-hover); color: var(--text-secondary); }
+.set-stage__label { flex: 1; font: 600 14px/20px var(--font-text); }
+.set-stage__state { font: 600 12px/18px var(--font-text); color: var(--text-secondary); }
+.set-stage.is-done .set-stage__mark { background: var(--bg-success-subtle); color: var(--text-success); }
+.set-stage.is-current .set-stage__mark { background: var(--bg-warning-subtle); color: var(--text-warning); }
+.set-stage.is-attention { border-color: var(--border-error); }
+.set-stage.is-attention .set-stage__mark { background: var(--bg-error-subtle); color: var(--text-error); }
+.set-stage.is-attention .set-stage__state { color: var(--text-error); }
+.set-unlocks { display: flex; flex-direction: column; gap: var(--space-8); }
+.set-unlocks__list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-6); }
+.set-unlocks__list li { display: flex; align-items: center; gap: var(--space-8); font: 500 14px/20px var(--font-text); color: var(--text-secondary); }
+
+.set-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-16); }
+.set-agreements { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.set-agreement { display: flex; align-items: center; gap: var(--space-16); padding: var(--space-12) 0; border-bottom: 1px solid var(--border-subtle); }
+.set-agreement:first-child { padding-top: 0; }
+.set-agreement:last-child { border-bottom: 0; padding-bottom: 0; }
+.set-contract { margin: 0; max-height: 240px; overflow: auto; padding: var(--space-12); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-hover); font: 500 13px/20px var(--font-text); white-space: pre-wrap; }
+.set-contract:focus-visible { outline: 2px solid var(--border-focus, var(--icon-brand)); outline-offset: 2px; }
+
+@media (max-width: 1000px) {
+  .set-layout { flex-direction: column; gap: var(--space-16); }
+  .set-anchors { position: static; width: 100%; }
+  .set-anchors ul { flex-direction: row; flex-wrap: wrap; }
+  .set-anchors a { border-left: 0; border-radius: var(--radius-sm); }
+}
 @media (max-width: 700px) {
   .set-row { flex-wrap: wrap; }
 }

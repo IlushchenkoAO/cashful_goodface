@@ -1,7 +1,11 @@
-/* Settings — Personal accounts. Stacked cards that save on their own:
-   Profile · Security (password, two-factor) · Notifications · Account type · Legal · Delete account.
-   Business values come from settings.config.js. Passwords and 2FA codes are never logged or stored.
-   ?state=<preset> opens a state for review (see PRESETS in data/settings.js). */
+/* Settings — one route, content by account type. Stacked cards that save on their own.
+   Personal:  Profile · Security (password, two-factor) · Notifications · Account type · Legal · Delete account.
+   Developer: Verification · Business details · Agreements · Profile · Security · Notifications · Account type ·
+              Close account, with a sticky anchor navigation (#verification, #business, …).
+   Profile, Security and Notifications are the same components for both: name, photo, email change, 2FA and the
+   notification choices are kept on the login, so a change in one account type shows in the other.
+   Business values: settings.config.js (Personal) and developer-settings.config.js (Developer).
+   Passwords, 2FA codes and typed signature names are never logged. ?state=<preset> is for Personal (data/settings.js). */
 (function () {
   if (!Cashful.app) return;
   var ui = Cashful.ui;
@@ -9,13 +13,28 @@
   var fmt = Cashful.fmt;
   var S = Cashful.settings;
   var P = Cashful.payouts;
+  var track = Cashful.track;
   var esc = ui.esc;
 
   var user = Cashful.app.user;
-  var presetId = S.preset(ui.params.get('state'));
+  var account = Cashful.app.account;
+  var isDev = account === 'developer';
+  var DS = Cashful.developerSettingsConfig;
+  var presetId = isDev ? 'default' : S.preset(ui.params.get('state'));
   var c = S.settings(presetId);
-  var state = S.createState(presetId, user);
+  var state = S.createState(presetId, user, account);
   var root = ui.$('#settings');
+
+  // A preset opens a state; the parts that live on the login are written there so every page agrees
+  if (presetId === 'email-pending') api.updateProfile({ emailPending: state.emailPending });
+  if (presetId === '2fa-on') api.updateProfile({ tfaEnabled: true });
+  function persistNotifications() {
+    var all = Object.assign({}, user.notif || {});
+    all[account] = state.notifications;
+    user.notif = all;
+    api.updateProfile({ notif: all });
+  }
+  if (presetId === 'notifications-on' || presetId === 'notifications-off') persistNotifications();
 
   function later(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
   function icon(name, size) { return '<cf-icon name="' + name + '" size="' + (size || 20) + '"></cf-icon>'; }
@@ -33,8 +52,8 @@
   function firstInvalid(form) { return ui.$('.cf-input.is-error .cf-field__input', form); }
 
   function card(id, title, desc, extraClass) {
-    return '<section class="cf-card set-card' + (extraClass ? ' ' + extraClass : '') + '" id="set-' + id + '" aria-labelledby="set-' + id + '-title">' +
-      '<div class="set-card__head"><h2 class="cf-card__title" id="set-' + id + '-title">' + title + '</h2>' +
+    return '<section class="cf-card set-card' + (extraClass ? ' ' + extraClass : '') + '" id="' + id + '" aria-labelledby="set-' + id + '-title">' +
+      '<div class="set-card__head"><h2 class="cf-card__title" id="set-' + id + '-title" tabindex="-1">' + title + '</h2>' +
       (desc ? '<p class="t-muted">' + desc + '</p>' : '') + '</div>' +
       '<div data-body="' + id + '"></div></section>';
   }
@@ -90,7 +109,9 @@
     var p = state.profile;
     var pending = state.emailPending;
 
-    var country = c.countryEditable
+    // Developers have no Country here: their country is part of the business details
+    var hasCountry = !isDev;
+    var country = !hasCountry ? '' : c.countryEditable
       ? ui.selectHtml({ id: 'set-country', name: 'country', label: 'Country', options: S.COUNTRIES, value: p.country })
       : ui.fieldHtml({ id: 'set-country', name: 'country', label: 'Country', value: p.country, disabled: true,
           helperHtml: '<a href="mailto:' + esc(c.supportEmail) + '?subject=' + encodeURIComponent('Change my country') + '">Contact support to change</a>' });
@@ -114,14 +135,14 @@
 
     function dirty() {
       var v = readProfile();
-      return v.name !== p.name || (!pending && v.email !== p.email) || (c.countryEditable && v.country !== p.country) ||
+      return v.name !== p.name || (!pending && v.email !== p.email) || (hasCountry && c.countryEditable && v.country !== p.country) ||
         avatarDraft !== (p.avatar || null);
     }
     function readProfile() {
       return {
         name: form.elements.name.value.trim(),
         email: form.elements.email.value.trim(),
-        country: c.countryEditable ? form.elements.country.value : p.country
+        country: hasCountry && c.countryEditable ? form.elements.country.value : p.country
       };
     }
     function sync() { save.disabled = !dirty(); setSaved(form, ''); }
@@ -142,8 +163,8 @@
         p.country = v.country;
         p.avatar = avatarDraft;
         if (emailChanged) state.emailPending = v.email;
-        // Saved on the login, so the user card on every page shows the same name and photo
-        api.updateProfile({ name: p.name, avatar: p.avatar });
+        // Saved on the login, so the user card on every page (and the other account type) shows the same data
+        api.updateProfile({ name: p.name, avatar: p.avatar, emailPending: state.emailPending });
         Cashful.app.refreshUser();
         renderProfile(emailChanged ? 'Saved. Verify your new email to finish.' : 'Changes saved.');
       });
@@ -163,6 +184,7 @@
         ui.toast('Verification email sent again');
       } else if (b.dataset.act === 'cancel-email') {
         state.emailPending = null;
+        api.updateProfile({ emailPending: null });
         renderProfile();
         ui.$('#set-email', root).focus();
       }
@@ -263,6 +285,7 @@
     function verify() {
       if (!checkCode(otp)) return;
       state.tfa.enabled = true;
+      api.updateProfile({ tfaEnabled: true });
       renderTfa();
       m.update({
         title: 'Two-factor authentication enabled',
@@ -310,6 +333,7 @@
     function disable() {
       if (!checkCode(otp)) return;
       state.tfa.enabled = false;
+      api.updateProfile({ tfaEnabled: null });
       m.close();
       renderTfa();
       ui.toast('Two-factor authentication is off');
@@ -321,8 +345,10 @@
   /* ---------- Notifications ---------- */
 
   function renderNotifications(savedText) {
-    var rows = S.NOTIFICATIONS.map(function (n) {
-      var locked = c.notifications[n.key].locked;
+    var list = S.notificationList(account);
+    var conf = S.notificationConfig(account);
+    var rows = list.map(function (n) {
+      var locked = conf[n.key].locked;
       var id = 'n-' + n.key;
       var desc = locked ? n.lockedText : n.text;
       var control = locked
@@ -340,20 +366,21 @@
 
     function current() {
       var v = {};
-      S.NOTIFICATIONS.forEach(function (n) {
-        v[n.key] = c.notifications[n.key].locked ? true : form.elements[n.key].checked;
+      list.forEach(function (n) {
+        v[n.key] = conf[n.key].locked ? true : form.elements[n.key].checked;
       });
       return v;
     }
     form.addEventListener('change', function () {
       var v = current();
-      save.disabled = !S.NOTIFICATIONS.some(function (n) { return v[n.key] !== state.notifications[n.key]; });
+      save.disabled = !list.some(function (n) { return v[n.key] !== state.notifications[n.key]; });
       setSaved(form, '');
     });
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       ui.withLoading(save, function () { return later(400); }).then(function () {
         state.notifications = current();
+        persistNotifications();
         renderNotifications('Preferences saved.');
       });
     });
@@ -365,8 +392,9 @@
   function developerState() {
     var u = Cashful.app.user;
     var dev = u.accounts.indexOf('developer') > -1 ? u.dev : null;
-    if (!dev || dev.status === 'not_started') return 'none';
-    return dev.status === 'in_progress' ? 'draft' : 'submitted';
+    if (!dev) return 'none';
+    if (dev.kycStatus === 'not_started') return dev.started ? 'draft' : 'none';
+    return 'submitted';
   }
 
   var ACCOUNT_TYPE = {
@@ -376,6 +404,7 @@
   };
 
   function renderAccountType() {
+    if (isDev) { renderDevAccountType(); return; }
     var s = developerState();
     var t = ACCOUNT_TYPE[s];
     body('account-type').innerHTML = '<div class="set-row">' +
@@ -467,9 +496,328 @@
     });
   }
 
+  /* ---------- Developer: shared bits ---------- */
+
+  function devNow() { var u = api.currentUser(); return (u && u.dev) || {}; }
+  function mailto(subject) { return 'mailto:' + DS.supportEmail + '?subject=' + encodeURIComponent(subject); }
+  function badgeHtml(tone, text) { return '<span class="cf-badge cf-badge--' + tone + '"><span class="cf-badge__dot"></span>' + esc(text) + '</span>'; }
+  function dateOf(ms) { return fmt.date(typeof ms === 'string' ? new Date(ms + 'T12:00:00').getTime() : ms); }
+
+  var STATUS_META = {
+    not_started: { tone: 'neutral', label: 'Not started' },
+    in_review: { tone: 'warning', label: 'In review' },
+    changes_requested: { tone: 'error', label: 'Changes requested' },
+    approved: { tone: 'success', label: 'Approved' }
+  };
+  function statusBadge(status) { var m = STATUS_META[status]; return badgeHtml(m.tone, m.label); }
+
+  /** Which stage is where. Every stage says its state in words, not only by colour or icon. */
+  var STAGE_STATE = { done: 'Done', current: 'In progress', attention: 'Needs action', todo: 'To do' };
+  function stageListHtml(status) {
+    var L = DS.kyc.stageLabels;
+    var stages = [
+      { label: L.details, st: status === 'changes_requested' ? 'attention' : status === 'not_started' ? 'todo' : 'done' },
+      { label: L.agreements, st: api.kyc.signed('developer-agreement') ? 'done' : 'todo' },
+      { label: L.review, st: status === 'in_review' ? 'current' : status === 'approved' ? 'done' : 'todo' },
+      { label: L.approved, st: status === 'approved' ? 'done' : 'todo' }
+    ];
+    return '<ol class="set-stages" aria-label="Verification progress">' + stages.map(function (s, i) {
+      var mark = s.st === 'done' ? icon('check', 14) : (s.st === 'attention' ? '!' : String(i + 1));
+      return '<li class="set-stage is-' + s.st + '"><span class="set-stage__mark" aria-hidden="true">' + mark + '</span>' +
+        '<span class="set-stage__label">' + esc(s.label) + '</span><span class="set-stage__state">' + STAGE_STATE[s.st] + '</span></li>';
+    }).join('') + '</ol>';
+  }
+
+  /* ---------- Developer: verification ---------- */
+
+  function renderVerification() {
+    var status = api.kyc.status();
+    var d = devNow();
+    var text = {
+      not_started: 'Verify your business to start earning from your apps.',
+      in_review: 'We’re reviewing your details. This usually takes 1–2 business days, and we’ll email you.',
+      changes_requested: 'Update your information and send it again.',
+      approved: 'Verified' + (d.approvedAt ? ' on ' + dateOf(d.approvedAt) : '') + '. You’re all set.'
+    }[status];
+    var comment = status === 'changes_requested'
+      ? ui.alertHtml({ tone: 'error', title: 'A reviewer left a comment', text: d.reviewerComment || S.SAMPLE_FEEDBACK }) : '';
+    var action = status === 'not_started'
+      ? '<button type="button" class="cf-btn cf-btn--primary" data-act="kyc-start">Start verification</button>'
+      : status === 'changes_requested'
+        ? '<button type="button" class="cf-btn cf-btn--primary" data-act="kyc-update">Update information</button>' : '';
+
+    body('verification').innerHTML =
+      '<div class="set-row"><div class="set-row__text"><h3 class="set-sub">Status ' + statusBadge(status) + '</h3><p class="t-muted">' + esc(text) + '</p></div>' + action + '</div>' +
+      comment + stageListHtml(status) +
+      '<div class="set-unlocks"><h3 class="set-sub">What this unlocks:</h3><ul class="set-unlocks__list">' +
+        DS.kyc.unlocks.map(function (u) {
+          return '<li>' + icon(status === 'approved' ? 'check-circle' : 'lock', 16) + '<span>' + esc(u) + (status === 'approved' ? ' — unlocked' : '') + '</span></li>';
+        }).join('') + '</ul></div>';
+
+    var start = ui.$('[data-act="kyc-start"]', body('verification'));
+    if (start) start.addEventListener('click', function () { track('kyc_start_clicked'); ui.go('kyc.html'); });
+    var upd = ui.$('[data-act="kyc-update"]', body('verification'));
+    if (upd) upd.addEventListener('click', function () { track('kyc_update_info_clicked'); ui.go('kyc.html?mode=update'); });
+  }
+
+  /* ---------- Developer: business details ---------- */
+
+  function renderBusiness(savedText) {
+    var status = api.kyc.status();
+    var locked = DS.businessDetails.lockedStatuses.indexOf(status) > -1;
+    var b = S.businessOf(api.currentUser());
+    var indie = b.kind === 'indie';
+
+    body('business').innerHTML = '<form class="set-form" id="business-form" novalidate>' +
+      (locked ? ui.alertHtml({ tone: 'info', title: status === 'approved' ? 'Your business is verified' : 'Your details are being reviewed',
+        text: 'These details are read-only. To change them, contact support.' }) +
+        '<div><a href="' + esc(mailto('Change my business details')) + '">Contact support</a></div>' : '') +
+      ui.selectHtml({ id: 'biz-kind', name: 'kind', label: 'Account type', options: S.BUSINESS_KINDS, value: b.kind }) +
+      ui.fieldHtml({ id: 'biz-name', name: 'name', label: indie ? 'Legal name' : 'Company name', value: b.name, autocomplete: 'organization' }) +
+      ui.selectHtml({ id: 'biz-country', name: 'country', label: 'Country', options: S.COUNTRIES, value: b.country }) +
+      ui.fieldHtml({ id: 'biz-street', name: 'street', label: 'Street address', value: b.street, autocomplete: 'street-address' }) +
+      '<div class="set-grid">' +
+        ui.fieldHtml({ id: 'biz-city', name: 'city', label: 'City', value: b.city, autocomplete: 'address-level2' }) +
+        ui.fieldHtml({ id: 'biz-postal', name: 'postal', label: 'Postal code', value: b.postal, autocomplete: 'postal-code' }) +
+      '</div><div class="set-grid">' +
+        ui.fieldHtml({ id: 'biz-apps', name: 'apps', label: 'Number of apps', value: b.apps, inputmode: 'numeric', helper: 'A whole number, 0 or more.' }) +
+        ui.fieldHtml({ id: 'biz-installs', name: 'installs', label: 'Total installs', value: b.installs, inputmode: 'numeric', helper: 'A whole number, 0 or more.' }) +
+      '</div>' + (locked ? '' : actions('Save details')) + '</form>';
+
+    var form = ui.$('#business-form', root);
+    var keys = ['kind', 'name', 'country', 'street', 'city', 'postal', 'apps', 'installs'];
+    if (savedText) setSaved(form, savedText);
+    if (locked) {
+      keys.forEach(function (k) { ui.setDisabled(form.elements[k], true); });
+      return;
+    }
+    var save = ui.$('button[type="submit"]', form);
+    function read() {
+      var v = {};
+      keys.forEach(function (k) { v[k] = form.elements[k].value.trim(); });
+      return v;
+    }
+    form.addEventListener('input', sync);
+    form.addEventListener('change', sync);
+    function sync() {
+      var v = read();
+      ui.$('label[for="biz-name"]', form).textContent = v.kind === 'indie' ? 'Legal name' : 'Company name';
+      save.disabled = !keys.some(function (k) { return v[k] !== String(b[k]); });
+      setSaved(form, '');
+    }
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = read();
+      var errors = S.validateBusiness(v);
+      keys.forEach(function (k) { ui.setError(form.elements[k], errors[k] || ''); });
+      var bad = firstInvalid(form);
+      if (bad) { bad.focus(); return; }
+      ui.withLoading(save, function () { return later(500); }).then(function () {
+        api.updateDev({ business: v });
+        track('business_details_saved');
+        renderBusiness('Business details saved.');
+      });
+    });
+  }
+
+  /* ---------- Developer: agreements ---------- */
+
+  function renderAgreements() {
+    var rows = DS.agreements.map(function (a) {
+      var sig = a.kind === 'signable' ? api.kyc.signature(a.id) : null;
+      var meta, badge, act;
+      if (a.kind === 'signable') {
+        badge = sig ? badgeHtml('success', 'Signed') : badgeHtml('warning', 'Not signed');
+        meta = sig ? 'Version ' + a.version + ' · signed by ' + esc(sig.name) + ' on ' + dateOf(sig.at) : 'Version ' + a.version + ' · needs your signature';
+        act = '<button type="button" class="cf-btn ' + (sig ? 'cf-btn--secondary' : 'cf-btn--primary') + '" data-agreement="' + a.id + '">' + (sig ? 'View' : 'Review and sign') + '</button>';
+      } else {
+        badge = badgeHtml('success', 'Accepted');
+        meta = 'Version ' + a.version + ' · accepted on ' + dateOf(a.acceptedAt);
+        act = '<a class="cf-btn cf-btn--secondary" href="' + esc(a.url) + '" data-view="' + a.id + '" data-soon="' + esc(a.title) + '">View' + icon('external-link', 16) + '</a>';
+      }
+      return '<li class="set-agreement"><div class="set-row__text"><h3 class="set-sub">' + esc(a.title) + ' ' + badge + '</h3><p class="t-muted">' + meta + '</p></div>' + act + '</li>';
+    }).join('');
+    body('agreements').innerHTML = '<ul class="set-agreements">' + rows + '</ul>';
+
+    ui.$$('[data-agreement]', root).forEach(function (b) {
+      b.addEventListener('click', function () { openAgreement(b.dataset.agreement); });
+    });
+    ui.$$('[data-view]', root).forEach(function (a) {
+      a.addEventListener('click', function () { track('agreement_viewed', { id: a.dataset.view }); });
+    });
+  }
+
+  function openAgreement(id) {
+    var a = DS.agreements.filter(function (x) { return x.id === id; })[0];
+    var sig = api.kyc.signature(id);
+    track('agreement_viewed', { id: id });
+    var text = '<pre class="set-contract" tabindex="0" aria-label="' + esc(a.title) + ' text">' + esc(a.bodyText) + '</pre>';
+
+    if (sig) {
+      ui.modal({ title: a.title, width: 560, body: text + '<p class="t-muted">Signed by ' + esc(sig.name) + ' on ' + dateOf(sig.at) + '.</p>',
+        footer: '<button type="button" class="cf-btn cf-btn--primary" data-close>Close</button>' });
+      return;
+    }
+    var m = ui.modal({
+      title: a.title,
+      width: 560,
+      body: '<form class="set-form" id="sign-form" novalidate>' + text +
+        '<label class="cf-check"><input class="cf-check__input" type="checkbox" name="agree">' +
+          '<span class="cf-checkbox__box"><cf-icon name="check" size="14" stroke-width="2.75"></cf-icon></span>' +
+          '<span class="cf-check__label">I have read and agree to the ' + esc(a.title) + '</span></label>' +
+        ui.fieldHtml({ id: 'sign-name', name: 'name', label: 'Full name', autocomplete: 'name', helper: 'Type your full name to sign.' }) + '</form>',
+      footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button>' +
+        '<button type="submit" form="sign-form" class="cf-btn cf-btn--primary" id="sign-go" disabled>Sign agreement</button>'
+    });
+    var form = ui.$('#sign-form', m.el);
+    var go = ui.$('#sign-go', m.el);
+    function valid() { return form.elements.agree.checked && form.elements.name.value.trim().length >= 2; }
+    function sync() { go.disabled = !valid(); }
+    form.addEventListener('input', sync);
+    form.addEventListener('change', sync);
+    form.elements.name.addEventListener('blur', function () {
+      var v = form.elements.name.value.trim();
+      ui.setError(form.elements.name, v && v.length < 2 ? 'Enter your full name (at least 2 characters).' : '');
+    });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!valid()) return;
+      var name = form.elements.name.value.trim();
+      ui.withLoading(go, function () { return later(500); }).then(function () {
+        api.kyc.sign(id, name);   // the typed name is stored, never logged
+        track('agreement_signed', { id: id });
+        m.close();
+        renderAgreements();
+        renderVerification();
+        ui.toast('Agreement signed');
+      });
+    });
+  }
+
+  /* ---------- Developer: account type & closing ---------- */
+
+  function renderDevAccountType() {
+    var hasPersonal = user.accounts.indexOf('personal') > -1;
+    body('account-type').innerHTML = '<div class="set-row">' +
+      '<span class="set-row__icon">' + icon('user') + '</span>' +
+      '<div class="set-row__text"><h3 class="set-sub">Personal account</h3><p class="t-muted">' +
+        (hasPersonal ? 'Share your own bandwidth and earn from it. You keep one login and switch accounts in the sidebar.'
+          : 'Share your own bandwidth too. It uses the same login, and your developer account isn’t affected.') + '</p></div>' +
+      '<button type="button" class="cf-btn ' + (hasPersonal ? 'cf-btn--primary' : 'cf-btn--secondary') + '" data-act="account-type">' + (hasPersonal ? 'Switch to Personal' : 'Create personal account') + '</button></div>';
+    ui.$('[data-act]', body('account-type')).addEventListener('click', function (e) {
+      track('account_switch_clicked', { target: 'personal' });
+      if (hasPersonal) ui.go(api.switchAccount('personal'));
+      else ui.withLoading(e.currentTarget, function () { return api.addPersonalAccount(); }).then(function (res) { ui.go(res.redirect); });
+    });
+  }
+
+  function renderClose() {
+    body('close-account').innerHTML = '<p class="t-muted">' + esc(DS.closeAccount.text) + '</p>' +
+      '<div><a class="cf-btn cf-btn--secondary" data-act="close-support" href="' + esc(mailto(DS.closeAccount.mailSubject)) + '">Contact support</a></div>';
+    ui.$('[data-act="close-support"]', root).addEventListener('click', function () { track('close_account_support_clicked'); });
+  }
+
+  /* ---------- Developer: anchor navigation ---------- */
+
+  var DEV_SECTIONS = [
+    ['verification', 'Verification'], ['business', 'Business details'], ['agreements', 'Agreements'], ['profile', 'Profile'],
+    ['security', 'Security'], ['notifications', 'Notifications'], ['account-type', 'Account type'], ['close-account', 'Close account']
+  ];
+
+  function anchorNavHtml() {
+    return '<nav class="set-anchors" aria-label="Settings sections"><ul>' + DEV_SECTIONS.map(function (s) {
+      return '<li><a href="#' + s[0] + '" data-anchor="' + s[0] + '">' + s[1] + '</a></li>';
+    }).join('') + '</ul></nav>';
+  }
+
+  function setupAnchors() {
+    var links = ui.$$('[data-anchor]', root);
+    function mark(id) {
+      links.forEach(function (a) {
+        if (a.dataset.anchor === id) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+      });
+    }
+    function spy() {
+      var current = DEV_SECTIONS[0][0];
+      DEV_SECTIONS.forEach(function (s) {
+        if (document.getElementById(s[0]).getBoundingClientRect().top <= 140) current = s[0];
+      });
+      // At the very bottom the last section wins even if it is short
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) current = DEV_SECTIONS[DEV_SECTIONS.length - 1][0];
+      mark(current);
+    }
+    var ticking = false;
+    window.addEventListener('scroll', function () {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () { ticking = false; spy(); });
+    }, { passive: true });
+
+    function goTo(id, smooth) {
+      var sec = document.getElementById(id);
+      if (!sec) return;
+      sec.scrollIntoView({ behavior: smooth && !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'auto', block: 'start' });
+      var h = ui.$('.cf-card__title', sec);
+      if (h) h.focus({ preventScroll: true });
+      mark(id);
+    }
+    root.addEventListener('click', function (e) {
+      var a = e.target.closest('[data-anchor]');
+      if (!a) return;
+      e.preventDefault();
+      history.replaceState(null, '', '#' + a.dataset.anchor);
+      track('settings_anchor_clicked', { section: a.dataset.anchor });
+      goTo(a.dataset.anchor, true);
+    });
+    window.addEventListener('hashchange', function () { goTo(location.hash.slice(1), false); });
+    spy();
+    // After the browser's own hash handling, so the heading keeps the focus
+    if (location.hash && document.getElementById(location.hash.slice(1))) setTimeout(function () { goTo(location.hash.slice(1), false); }, 0);
+  }
+
   /* ---------- Page ---------- */
 
+  function renderDeveloper() {
+    root.innerHTML =
+      '<header class="cf-pagehead"><div class="cf-pagehead__row"><div class="cf-pagehead__titles">' +
+        '<h1 class="cf-pagehead__title">Settings</h1>' +
+        '<p class="cf-pagehead__desc">Verification, business details, agreements and your profile.</p></div></div></header>' +
+      '<div class="set-layout">' + anchorNavHtml() + '<div class="set-stack">' +
+        card('verification', 'Verification', 'Verify your business to unlock SDK download and payouts.') +
+        card('business', 'Business details', 'The business behind your apps.') +
+        card('agreements', 'Agreements', 'What you have accepted and signed.') +
+        card('profile', 'Profile', 'How you appear in Cashful.') +
+        card('security', 'Security', 'Keep your account and your earnings safe.') +
+        card('notifications', 'Notifications', 'Choose which emails you get.') +
+        card('account-type', 'Account type') +
+        card('close-account', 'Close account', '', 'set-danger') +
+      '</div></div>';
+    body('security').innerHTML = '<div data-part="password"></div><div class="set-divider" role="separator"></div><div data-part="tfa"></div>';
+    renderVerification();
+    renderBusiness();
+    renderAgreements();
+    renderProfile();
+    renderPassword();
+    renderTfa();
+    if (!c.twoFactorEnabled) ui.$('.set-divider', root).hidden = true;
+    renderNotifications();
+    renderAccountType();
+    renderClose();
+    setupAnchors();
+  }
+
+  // The demo control changes the KYC status or the signature: refresh the parts that depend on them
+  if (isDev) {
+    api.kyc.onChange(function () {
+      if (document.querySelector('.cf-overlay')) return;   // never rebuild under an open dialog
+      renderVerification();
+      renderBusiness();
+      renderAgreements();
+    });
+  }
+
   function render() {
+    if (isDev) { renderDeveloper(); return; }
     root.innerHTML =
       '<header class="cf-pagehead"><div class="cf-pagehead__row"><div class="cf-pagehead__titles">' +
         '<h1 class="cf-pagehead__title">Settings</h1>' +

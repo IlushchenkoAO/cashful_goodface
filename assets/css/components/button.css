@@ -72,3 +72,7 @@
 .cf-ibtn--ghost:hover { background: var(--bg-hover); }
 .cf-ibtn--secondary { background: var(--bg-surface); border-color: var(--border-default); }
 .cf-ibtn--primary { background: var(--bg-brand); color: var(--icon-inverse); }
+
+/* A button that is unavailable but stays focusable, so its reason can be read and a click can be handled */
+.cf-btn[aria-disabled="true"] { background: var(--bg-disabled); color: var(--text-disabled); border-color: transparent; cursor: not-allowed; }
+.cf-btn[aria-disabled="true"]:hover { background: var(--bg-disabled); color: var(--text-disabled); }

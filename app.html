@@ -3,41 +3,42 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Payouts · Cashful</title>
+  <title>App · Cashful</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
   <link rel="stylesheet" href="assets/css/cashful.css">
   <link rel="stylesheet" href="assets/css/layouts/app.css">
-  <link rel="stylesheet" href="assets/css/layouts/payouts.css">
+  <link rel="stylesheet" href="assets/css/layouts/settings.css">
+  <link rel="stylesheet" href="assets/css/layouts/apps.css">
   <script src="assets/js/ds/svg-data.js" defer></script>
   <script src="assets/js/ds/elements.js" defer></script>
   <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/ds/controls.js" defer></script>
   <script src="assets/js/core/config.js" defer></script>
   <script src="assets/js/core/store.js" defer></script>
   <script src="assets/js/core/api.js" defer></script>
   <script src="assets/js/core/format.js" defer></script>
-  <script src="assets/js/data/referrals.config.js" defer></script>
-  <script src="assets/js/data/referrals.js" defer></script>
-  <script src="assets/js/data/payouts.config.js" defer></script>
-  <script src="assets/js/data/payouts.js" defer></script>
+  <script src="assets/js/core/track.js" defer></script>
   <script src="assets/js/data/sdk.config.js" defer></script>
   <script src="assets/js/data/apps.js" defer></script>
   <script src="assets/js/data/apps.config.js" defer></script>
   <script src="assets/js/data/developer-settings.config.js" defer></script>
   <script src="assets/js/app/shell.js" defer></script>
   <script src="assets/js/app/kyc.js" defer></script>
-  <script src="assets/js/pages/payouts.js" defer></script>
-  <!-- Dev-only: remove this line to hide the state switcher -->
+  <script src="assets/js/pages/app.js" defer></script>
+  <!-- Dev-only: remove this line to hide the "Simulate review" block (Approve / Request changes) -->
+  <script src="assets/js/pages/app-review-sim.js" defer></script>
+  <!-- Dev-only: remove this line to hide the KYC switcher -->
   <script src="assets/js/pages/page-demo.js" defer></script>
 </head>
-<body data-page="payouts" data-account="auto">
-  <!-- Shared by Personal and Developer. Scenario: ?state=default|no-methods|below-minimum|in-progress|empty-history.
-       A Developer account is locked until its KYC is approved. -->
+<body data-page="app" data-account="auto">
+  <!-- Developer only: a Personal account is sent to its Overview. app.html?id=<UUID>. Nothing here depends on KYC.
+       Draft and Changes requested are editable; In review and Active are read-only; only a Draft can be deleted. -->
   <div class="cf-shell">
-    <aside class="cf-sidebar" data-sidebar data-active="payouts"></aside>
+    <aside class="cf-sidebar" data-sidebar data-active="apps"></aside>
     <main class="cf-shell__main">
-      <div class="cf-shell__content" id="payouts"></div>
+      <div class="cf-shell__content" id="app"></div>
     </main>
   </div>
 </body>

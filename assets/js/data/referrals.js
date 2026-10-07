@@ -24,6 +24,7 @@
     { id: 'qualified', label: 'Qualified, earning' },
     { id: 'reward-ended', label: 'Reward ended' },
     { id: 'not-counted', label: 'Not counted (every reason)' },
+    { id: 'no-devices', label: 'No devices, no referrals' },
     { id: 'milestones-off', label: 'Milestones off' },
     { id: 'disabled', label: 'Referrals off' }
   ];
@@ -49,10 +50,14 @@
     });
   }
 
-  // The Referrals page decides the scenario from ?state=, before the sidebar reads the settings
-  if (document.body && document.body.dataset.page === 'referrals') {
-    var fromUrl = new URLSearchParams(location.search).get('state');
-    if (fromUrl && SCENARIOS.some(function (s) { return s.id === fromUrl; })) setScenario(fromUrl);
+  // The Referrals page picks the scenario from ?state=; any other page can use ?referrals= (demo links).
+  // This runs before the sidebar reads the settings.
+  var urlParams = new URLSearchParams(location.search);
+  var fromUrl = document.body && document.body.dataset.page === 'referrals' ? urlParams.get('state') : urlParams.get('referrals');
+  if (fromUrl && SCENARIOS.some(function (s) { return s.id === fromUrl; })) {
+    setScenario(fromUrl);
+    // "No devices, no referrals" also puts the account in the no-devices stage of Overview
+    if (fromUrl === 'no-devices' && Cashful.api && Cashful.api.currentUser()) Cashful.api.setPeerStage('new');
   }
 
   /* ---------- Money and text helpers ---------- */
@@ -148,12 +153,13 @@
     'milestones-off': null,
     'disabled': null,
     'empty': [],
+    'no-devices': [],
     'early': ['r1', 'r2', 'r3', 'r4', 'r5'],
     'qualified': ['r7', 'r8', 'r10', 'r11', 'r12'],
     'reward-ended': ['r7', 'r8', 'r14'],
     'not-counted': ['r1', 'r6', 'r9', 'r13']
   };
-  var VISITS = { 'default': 120, 'milestones-off': 120, 'disabled': 120, 'empty': 18, 'early': 40, 'qualified': 85, 'reward-ended': 70, 'not-counted': 30 };
+  var VISITS = { 'default': 120, 'milestones-off': 120, 'disabled': 120, 'empty': 18, 'no-devices': 0, 'early': 40, 'qualified': 85, 'reward-ended': 70, 'not-counted': 30 };
 
   function isQualified(r) { return r.status === 'Qualified' || r.status === 'Reward ended'; }
 

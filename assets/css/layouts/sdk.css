@@ -1,0 +1,57 @@
+/* SDK page: platform picker, platform card, App ID, steps, consent preview. */
+
+/* Platform picker: a radio group drawn as cards. Coming-soon cards are disabled radios. */
+.sdk-plats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-12); margin: 0; padding: 0; border: 0; min-width: 0; }
+.sdk-plat { position: relative; display: block; cursor: pointer; }
+.sdk-plat__input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.sdk-plat__card { display: flex; align-items: center; gap: var(--space-12); padding: var(--space-12) var(--space-16); border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--bg-surface); transition: border-color .15s, background .15s; }
+.sdk-plat:hover .sdk-plat__card { border-color: var(--border-focus); }
+.sdk-plat__input:checked + .sdk-plat__card { border-color: var(--border-focus); background: var(--bg-brand-subtle); box-shadow: 0 0 0 1px var(--border-focus); }
+.sdk-plat__input:focus-visible + .sdk-plat__card { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+.sdk-plat__icon { flex: none; width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--bg-brand-muted); color: var(--icon-brand); display: inline-flex; align-items: center; justify-content: center; }
+.sdk-plat__icon.is-lg { width: 52px; height: 52px; }
+.sdk-plat__text { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); }
+.sdk-plat__name { font: 600 14px/20px var(--font-text); }
+.sdk-plat.is-soon { cursor: not-allowed; }
+.sdk-plat.is-soon .sdk-plat__input { cursor: not-allowed; }
+.sdk-plat.is-soon:hover .sdk-plat__card { border-color: var(--border-default); }
+.sdk-plat.is-soon .sdk-plat__card { background: var(--bg-surface-sunken); }
+.sdk-plat.is-soon .sdk-plat__icon { background: var(--bg-disabled); color: var(--icon-disabled); }
+.sdk-plat.is-soon .sdk-plat__name { color: var(--text-disabled); }
+
+/* Platform card */
+.sdk-platform { gap: var(--space-16); }
+.sdk-platform__top { display: flex; align-items: center; gap: var(--space-16); }
+.sdk-platform__top .cf-card__title { flex: none; }
+.sdk-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-16); margin: 0; }
+.sdk-meta dt { font: 600 12px/16px var(--font-text); letter-spacing: .04em; text-transform: uppercase; color: var(--text-secondary); }
+.sdk-meta dd { margin: var(--space-4) 0 0; font: 500 14px/20px var(--font-text); }
+.sdk-download { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-12) var(--space-16); }
+.sdk-lock { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--space-6); font: 500 14px/20px var(--font-text); color: var(--text-secondary); }
+
+/* App ID */
+.sdk-app { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-16) var(--space-24); }
+.sdk-app .cf-dd { width: 280px; }
+.sdk-app__id { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+.sdk-app__id .cf-copy { max-width: none; }
+.sdk-note { display: flex; align-items: center; gap: var(--space-8); color: var(--text-secondary); }
+
+/* Steps */
+.sdk-snippet-note { margin-top: calc(var(--space-12) * -1); }
+.sdk-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-24); }
+.sdk-step { display: flex; align-items: flex-start; gap: var(--space-12); }
+.sdk-step__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-8); }
+.sdk-step__links { display: flex; flex-wrap: wrap; gap: var(--space-8); }
+
+/* Consent */
+.sdk-consent { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-24); align-items: start; }
+.sdk-consent__preview { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-12); padding: var(--space-24); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); background: var(--bg-surface-sunken); }
+.sdk-consent__title { font: 800 22px/28px var(--font-display); letter-spacing: -.03em; }
+.sdk-consent__buttons { display: flex; flex-wrap: wrap; gap: var(--space-8); }
+.sdk-consent__side { display: flex; flex-direction: column; gap: var(--space-16); }
+.sdk-reqs { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-8); }
+.sdk-reqs li { display: flex; align-items: flex-start; gap: var(--space-8); }
+.sdk-reqs cf-icon { color: var(--icon-success); margin-top: 2px; }
+
+@media (max-width: 1000px) { .sdk-plats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .sdk-consent, .sdk-meta { grid-template-columns: 1fr; } }

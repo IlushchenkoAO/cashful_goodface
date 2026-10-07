@@ -134,7 +134,49 @@
           <tr><td class="map__key">DashboardDeveloper</td><td>Analytics — in review</td><td><a href="analytics.html?state=review" data-accounts="developer" data-dev-status="in_review">analytics.html?state=review</a></td></tr>
           <tr><td class="map__key">DevAnalyticsApproved</td><td>Analytics — approved (both accounts, switcher)</td><td><a href="analytics.html?state=approved" data-accounts="personal,developer" data-account="developer" data-dev-status="approved">analytics.html?state=approved</a></td></tr>
           <tr><td class="map__key">DevAnalyticsActionNeeded</td><td>Analytics — KYC action needed</td><td><a href="analytics.html?state=action" data-accounts="developer" data-dev-status="action_needed">analytics.html?state=action</a></td></tr>
+          <tr><td class="map__key">—</td><td>SDK — download locked (KYC in review); the X on the alert approves KYC</td><td><a href="sdk.html" data-accounts="developer" data-dev-status="in_review">sdk.html</a></td></tr>
+          <tr><td class="map__key">—</td><td>SDK — download enabled (KYC approved)</td><td><a href="sdk.html" data-accounts="developer" data-dev-status="approved">sdk.html (approved)</a></td></tr>
+          <tr><td class="map__key">—</td><td>SDK — iOS, a not-Active app selected (Draft)</td><td><a href="sdk.html?platform=ios&amp;app=3b1f6d2a-8c4e-4f1a-9d57-1a2b3c4d5e04" data-accounts="developer" data-dev-status="in_review">sdk.html?platform=ios&amp;app=…</a></td></tr>
+          <tr><td class="map__key">—</td><td>SDK — a coming-soon platform in the URL falls back to Android</td><td><a href="sdk.html?platform=unity" data-accounts="developer" data-dev-status="in_review">sdk.html?platform=unity</a></td></tr>
+          <tr><td class="map__key">—</td><td>SDK — no apps / apps but none Active / selected app not Active</td><td><a href="sdk.html?data=no-apps" data-accounts="developer" data-dev-status="in_review">no-apps</a> · <a href="sdk.html?data=none-active" data-accounts="developer" data-dev-status="in_review">none-active</a> · <a href="sdk.html?data=app-not-active" data-accounts="developer" data-dev-status="in_review">app-not-active</a></td></tr>
           <tr><td class="map__key">PersonalAdded</td><td>Overview — personal added by a developer</td><td><a href="dashboard.html?state=new" data-accounts="personal,developer" data-account="personal" data-dev-status="approved" data-peer-stage="new" data-flash="personalAdded">dashboard.html (after adding)</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Apps (Developer) <span class="cf-badge cf-badge--warning"><span class="cf-badge__dot"></span>Not in design</span></h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">—</td><td>List — mixed statuses (the attention banner shows)</td><td><a href="apps.html?data=default" data-accounts="developer" data-dev-status="in_review">apps.html</a></td></tr>
+          <tr><td class="map__key">—</td><td>List — a status filter, a search and a sort in the URL</td><td><a href="apps.html?status=active&amp;sort=name" data-accounts="developer" data-dev-status="in_review">apps.html?status=active&amp;sort=name</a> · <a href="apps.html?q=zzz" data-accounts="developer" data-dev-status="in_review">?q=zzz (no results)</a></td></tr>
+          <tr><td class="map__key">—</td><td>List — no apps / only Drafts / only Active</td><td><a href="apps.html?data=no-apps" data-accounts="developer" data-dev-status="in_review">no-apps</a> · <a href="apps.html?data=only-drafts" data-accounts="developer" data-dev-status="in_review">only-drafts</a> · <a href="apps.html?data=only-active" data-accounts="developer" data-dev-status="in_review">only-active</a></td></tr>
+          <tr><td class="map__key">—</td><td>Create app panel</td><td><a href="apps.html?create=1" data-accounts="developer" data-dev-status="in_review">apps.html?create=1</a></td></tr>
+          <tr><td class="map__key">—</td><td>Details — Draft, incomplete (submit disabled, checklist)</td><td><a href="app.html?id=3b1f6d2a-8c4e-4f1a-9d57-1a2b3c4d5e04" data-accounts="developer" data-dev-status="in_review">Voice Notes</a></td></tr>
+          <tr><td class="map__key">—</td><td>Details — In review (read-only, with the dev-only “Simulate review”)</td><td><a href="app.html?id=3b1f6d2a-8c4e-4f1a-9d57-1a2b3c4d5e05" data-accounts="developer" data-dev-status="in_review">Trip Planner</a></td></tr>
+          <tr><td class="map__key">—</td><td>Details — Changes requested (feedback, resubmit)</td><td><a href="app.html?id=3b1f6d2a-8c4e-4f1a-9d57-1a2b3c4d5e06" data-accounts="developer" data-dev-status="in_review">Photo Booth</a></td></tr>
+          <tr><td class="map__key">—</td><td>Details — Active (read-only, analytics and SDK links)</td><td><a href="app.html?id=3b1f6d2a-8c4e-4f1a-9d57-1a2b3c4d5e01" data-accounts="developer" data-dev-status="in_review">Pixel Quest</a></td></tr>
+          <tr><td class="map__key">—</td><td>Details — app not found</td><td><a href="app.html?id=nope" data-accounts="developer" data-dev-status="in_review">app.html?id=nope</a></td></tr>
+          <tr><td class="map__key">—</td><td>Same pages with KYC approved (must look the same)</td><td><a href="apps.html" data-accounts="developer" data-dev-status="approved">apps.html (approved)</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Analytics (Developer) <span class="cf-badge cf-badge--warning"><span class="cf-badge__dot"></span>Not in design</span></h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">—</td><td>Data — all apps, 30 days</td><td><a href="analytics.html" data-accounts="developer" data-dev-status="in_review">analytics.html</a></td></tr>
+          <tr><td class="map__key">—</td><td>One app, 90 days, earnings, grouped by platform (deep link)</td><td><a href="analytics.html?app=3b1f6d2a-8c4e-4f1a-9d57-1a2b3c4d5e03&amp;period=90d&amp;metric=earnings&amp;groupBy=platform" data-accounts="developer" data-dev-status="in_review">analytics.html?app=…&amp;period=90d&amp;metric=earnings&amp;groupBy=platform</a></td></tr>
+          <tr><td class="map__key">—</td><td>All apps split by app</td><td><a href="analytics.html?split=1&amp;metric=nodes" data-accounts="developer" data-dev-status="in_review">analytics.html?split=1</a></td></tr>
+          <tr><td class="map__key">—</td><td>A not-Active app opened from the URL</td><td><a href="analytics.html?app=3b1f6d2a-8c4e-4f1a-9d57-1a2b3c4d5e06" data-accounts="developer" data-dev-status="in_review">analytics.html?app=… (Changes requested)</a></td></tr>
+          <tr><td class="map__key">—</td><td>No apps</td><td><a href="analytics.html?data=no-apps" data-accounts="developer" data-dev-status="in_review">analytics.html?data=no-apps</a></td></tr>
+          <tr><td class="map__key">—</td><td>Apps, but none Active</td><td><a href="analytics.html?data=none-active" data-accounts="developer" data-dev-status="in_review">analytics.html?data=none-active</a></td></tr>
+          <tr><td class="map__key">—</td><td>Active app, no data yet</td><td><a href="analytics.html?data=no-data" data-accounts="developer" data-dev-status="in_review">analytics.html?data=no-data</a></td></tr>
+          <tr><td class="map__key">—</td><td>Empty period</td><td><a href="analytics.html?data=empty-period" data-accounts="developer" data-dev-status="in_review">analytics.html?data=empty-period</a></td></tr>
+          <tr><td class="map__key">—</td><td>Loading / Error (Retry recovers)</td><td><a href="analytics.html?data=loading" data-accounts="developer" data-dev-status="in_review">loading</a> · <a href="analytics.html?data=error" data-accounts="developer" data-dev-status="in_review">error</a></td></tr>
+          <tr><td class="map__key">—</td><td>Same page with KYC approved (must look the same)</td><td><a href="analytics.html" data-accounts="developer" data-dev-status="approved">analytics.html (approved)</a></td></tr>
+          <tr><td class="map__key">—</td><td>A Personal account opens the route → Overview</td><td><a href="analytics.html" data-accounts="personal">analytics.html (personal)</a></td></tr>
         </tbody>
       </table>
     </section>
@@ -166,18 +208,35 @@
     </section>
 
     <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Settings (Developer) <span class="cf-badge cf-badge--warning"><span class="cf-badge__dot"></span>Not in design</span></h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">—</td><td>KYC not started (Business details editable)</td><td><a href="settings.html#verification" data-accounts="personal,developer" data-account="developer" data-dev-status="not_started">settings.html#verification</a></td></tr>
+          <tr><td class="map__key">—</td><td>KYC in review (Business details read-only)</td><td><a href="settings.html#verification" data-accounts="personal,developer" data-account="developer" data-dev-status="in_review">settings.html#verification</a></td></tr>
+          <tr><td class="map__key">—</td><td>KYC changes requested (reviewer comment)</td><td><a href="settings.html#verification" data-accounts="personal,developer" data-account="developer" data-dev-status="action_needed">settings.html#verification</a></td></tr>
+          <tr><td class="map__key">—</td><td>KYC approved</td><td><a href="settings.html#verification" data-accounts="personal,developer" data-account="developer" data-dev-status="approved">settings.html#verification</a></td></tr>
+          <tr><td class="map__key">—</td><td>Developer Agreement (sign it here; the demo control resets it)</td><td><a href="settings.html#agreements" data-accounts="personal,developer" data-account="developer" data-dev-status="not_started">settings.html#agreements</a></td></tr>
+          <tr><td class="map__key">—</td><td>Account type: no Personal account (“Create personal account”)</td><td><a href="settings.html#account-type" data-accounts="developer" data-account="developer" data-dev-status="not_started">settings.html#account-type</a></td></tr>
+          <tr><td class="map__key">—</td><td>KYC placeholder page</td><td><a href="kyc.html" data-accounts="developer" data-account="developer" data-dev-status="not_started">kyc.html</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
       <div class="cf-card__head"><h3 class="cf-card__title">Referrals <span class="cf-badge cf-badge--warning"><span class="cf-badge__dot"></span>Not in design</span></h3></div>
       <table class="cf-table">
         <tbody>
           <tr><td class="map__key">—</td><td>Default — every status, milestones, funnel</td><td><a href="referrals.html?state=default" data-accounts="personal">referrals.html?state=default</a></td></tr>
           <tr><td class="map__key">—</td><td>No referrals yet</td><td><a href="referrals.html?state=empty" data-accounts="personal">referrals.html?state=empty</a></td></tr>
+          <tr><td class="map__key">—</td><td>No devices, no referrals — Overview with the referral card at $0.00</td><td><a href="dashboard.html?state=new&amp;referrals=no-devices" data-accounts="personal" data-peer-stage="new">dashboard.html?state=new&amp;referrals=no-devices</a></td></tr>
+          <tr><td class="map__key">—</td><td>No devices, no referrals — the Referrals page</td><td><a href="referrals.html?state=no-devices" data-accounts="personal" data-peer-stage="new">referrals.html?state=no-devices</a></td></tr>
           <tr><td class="map__key">—</td><td>Only Signed up and Connected (nothing earned)</td><td><a href="referrals.html?state=early" data-accounts="personal">referrals.html?state=early</a></td></tr>
           <tr><td class="map__key">—</td><td>Qualified friends earning</td><td><a href="referrals.html?state=qualified" data-accounts="personal">referrals.html?state=qualified</a></td></tr>
           <tr><td class="map__key">—</td><td>Reward ended</td><td><a href="referrals.html?state=reward-ended" data-accounts="personal">referrals.html?state=reward-ended</a></td></tr>
           <tr><td class="map__key">—</td><td>Not counted — same IP, same payout method, same account</td><td><a href="referrals.html?state=not-counted" data-accounts="personal">referrals.html?state=not-counted</a></td></tr>
           <tr><td class="map__key">—</td><td>Milestones off</td><td><a href="referrals.html?state=milestones-off" data-accounts="personal">referrals.html?state=milestones-off</a></td></tr>
           <tr><td class="map__key">—</td><td>Referrals off (no nav item, no Overview card, “not available” state)</td><td><a href="referrals.html?state=disabled" data-accounts="personal">referrals.html?state=disabled</a></td></tr>
-          <tr><td class="map__key">—</td><td>Developer opens the route → sent to its home</td><td><a href="referrals.html?state=default" data-accounts="personal,developer" data-account="developer" data-dev-status="approved">referrals.html (developer)</a></td></tr>
+          <tr><td class="map__key">—</td><td>Developer opens the route → sent to Analytics</td><td><a href="referrals.html?state=default" data-accounts="personal,developer" data-account="developer" data-dev-status="approved">referrals.html (developer)</a></td></tr>
           <tr><td class="map__key">—</td><td>Sign-up with a referral link (code stored for the attribution window)</td><td><a href="signup.html?ref=JORDAN24">signup.html?ref=JORDAN24</a></td></tr>
         </tbody>
       </table>

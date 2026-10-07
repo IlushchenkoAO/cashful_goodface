@@ -3,13 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Payouts · Cashful</title>
+  <title>Verification · Cashful</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
   <link rel="stylesheet" href="assets/css/cashful.css">
   <link rel="stylesheet" href="assets/css/layouts/app.css">
-  <link rel="stylesheet" href="assets/css/layouts/payouts.css">
   <script src="assets/js/ds/svg-data.js" defer></script>
   <script src="assets/js/ds/elements.js" defer></script>
   <script src="assets/js/ds/ui.js" defer></script>
@@ -17,27 +16,24 @@
   <script src="assets/js/core/store.js" defer></script>
   <script src="assets/js/core/api.js" defer></script>
   <script src="assets/js/core/format.js" defer></script>
-  <script src="assets/js/data/referrals.config.js" defer></script>
-  <script src="assets/js/data/referrals.js" defer></script>
-  <script src="assets/js/data/payouts.config.js" defer></script>
-  <script src="assets/js/data/payouts.js" defer></script>
-  <script src="assets/js/data/sdk.config.js" defer></script>
-  <script src="assets/js/data/apps.js" defer></script>
-  <script src="assets/js/data/apps.config.js" defer></script>
   <script src="assets/js/data/developer-settings.config.js" defer></script>
   <script src="assets/js/app/shell.js" defer></script>
-  <script src="assets/js/app/kyc.js" defer></script>
-  <script src="assets/js/pages/payouts.js" defer></script>
-  <!-- Dev-only: remove this line to hide the state switcher -->
-  <script src="assets/js/pages/page-demo.js" defer></script>
 </head>
-<body data-page="payouts" data-account="auto">
-  <!-- Shared by Personal and Developer. Scenario: ?state=default|no-methods|below-minimum|in-progress|empty-history.
-       A Developer account is locked until its KYC is approved. -->
+<body data-page="kyc" data-account="developer">
+  <!-- Placeholder: this is where the verification provider would open. The real KYC flow is out of scope. -->
   <div class="cf-shell">
-    <aside class="cf-sidebar" data-sidebar data-active="payouts"></aside>
+    <aside class="cf-sidebar" data-sidebar data-active="settings"></aside>
     <main class="cf-shell__main">
-      <div class="cf-shell__content" id="payouts"></div>
+      <div class="cf-shell__content">
+        <header class="cf-pagehead"><div class="cf-pagehead__row"><div class="cf-pagehead__titles">
+          <h1 class="cf-pagehead__title">Verification</h1>
+          <p class="cf-pagehead__desc">The identity and business check opens here. This is a placeholder page in the prototype.</p>
+        </div></div></header>
+        <div class="cf-card" style="max-width:760px">
+          <p class="t-muted">Use the demo control to move the KYC status, then go back to Settings.</p>
+          <div><a class="cf-btn cf-btn--primary" href="settings.html#verification">Back to Settings</a></div>
+        </div>
+      </div>
     </main>
   </div>
 </body>

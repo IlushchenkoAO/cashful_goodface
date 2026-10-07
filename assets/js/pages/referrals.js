@@ -26,29 +26,7 @@
 
   /* ---------- Copy ---------- */
 
-  function copyText(text) {
-    return new Promise(function (resolve) {
-      var settled = false;
-      function finish(ok) { if (!settled) { settled = true; resolve(ok); } }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(function () { finish(true); }, function () { finish(fallbackCopy(text)); });
-        // Some embedded browsers never answer the clipboard permission — don't leave the button without feedback
-        setTimeout(function () { finish(fallbackCopy(text)); }, 1500);
-      } else finish(fallbackCopy(text));
-    });
-  }
-  function fallbackCopy(text) {
-    var area = document.createElement('textarea');
-    area.value = text;
-    area.setAttribute('readonly', '');
-    area.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
-    document.body.appendChild(area);
-    area.select();
-    var ok = false;
-    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
-    area.remove();
-    return ok;
-  }
+  var copyText = ui.copyText;
 
   function announce(text) {
     var live = ui.$('#ref-live', root);
@@ -71,18 +49,10 @@
     var kind = btn.dataset.copyKind;
     var text = kind === 'link' ? R.LINK : kind === 'code' ? R.CODE : ui.$('#ref-message', root).value;
     copyText(text).then(function (ok) {
-      var label = ui.$('span', btn);
-      if (!btn.dataset.label) btn.dataset.label = label.textContent;
       if (!ok) { announce('Couldn’t copy. Select the text and copy it yourself.'); return; }
       track(COPY[kind].event, { source: btn.dataset.source });
       announce(COPY[kind].done);
-      label.textContent = 'Copied';
-      ui.$('cf-icon', btn).setAttribute('name', 'check');
-      clearTimeout(btn._reset);
-      btn._reset = setTimeout(function () {
-        label.textContent = btn.dataset.label;
-        ui.$('cf-icon', btn).setAttribute('name', 'copy');
-      }, 1600);
+      ui.flashCopied(btn);
     });
   }
 

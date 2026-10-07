@@ -43,21 +43,62 @@
     return Object.assign({}, cfg, { twoFactorEnabled: cfg.twoFactorEnabled && presetId !== '2fa-hidden' });
   }
 
-  function createState(presetId, user) {
+  // The Developer set: its values are in developer-settings.config.js, the words are here
+  var DEV_NOTIFICATIONS = [
+    { key: 'payoutUpdates', title: 'Payout updates', text: 'Emails when a payout is requested, sent or needs attention.', lockedText: 'Required so you never miss a payout update.' },
+    { key: 'appReviewUpdates', title: 'App review updates', text: 'Emails when an app is approved or needs changes.', lockedText: 'Required so you know where each app stands.' },
+    { key: 'verificationUpdates', title: 'Verification updates', text: 'Emails about your identity and business verification.', lockedText: 'Required so you never miss a verification step.' },
+    { key: 'earningsSummary', title: 'Monthly earnings summary', text: 'A short email once a month with what your apps earned.' },
+    { key: 'productNews', title: 'Product news and offers', text: 'New SDK features, tips and offers.', helper: 'We’ll only send these if you opt in.' }
+  ];
+  function notificationList(account) { return account === 'developer' ? DEV_NOTIFICATIONS : NOTIFICATIONS; }
+  function notificationConfig(account) { return account === 'developer' ? Cashful.developerSettingsConfig.notifications : cfg.notifications; }
+
+  /**
+   * The page's state. Name and photo live on the login; the pending email, 2FA and the notification choices are
+   * also kept on the login, so a change made in one account type shows in the other. The preset only opens a state.
+   */
+  function createState(presetId, user, account) {
+    account = account || 'personal';
+    var list = notificationList(account), conf = notificationConfig(account);
     var n = {};
-    NOTIFICATIONS.forEach(function (item) { n[item.key] = cfg.notifications[item.key].default; });
+    list.forEach(function (item) { n[item.key] = conf[item.key].default; });
+    if (user.notif && user.notif[account]) Object.assign(n, user.notif[account]);
     if (presetId === 'notifications-on') { n.earningsSummary = true; n.productNews = true; }
     if (presetId === 'notifications-off') { n.earningsSummary = false; n.productNews = false; }
     // A locked notification is always on, whatever the preset says
-    NOTIFICATIONS.forEach(function (item) { if (cfg.notifications[item.key].locked) n[item.key] = true; });
+    list.forEach(function (item) { if (conf[item.key].locked) n[item.key] = true; });
 
     return {
       profile: { name: user.name || user.email.split('@')[0], email: user.email, country: 'Germany', avatar: user.avatar || null },
-      emailPending: presetId === 'email-pending' ? 'alex.morgan@example.com' : null,
-      tfa: { enabled: presetId === '2fa-on' },
+      emailPending: presetId === 'email-pending' ? 'alex.morgan@example.com' : (user.emailPending || null),
+      tfa: { enabled: presetId === '2fa-on' ? true : !!user.tfaEnabled },
       notifications: n
     };
   }
+
+  /* ---------- Developer: business details ---------- */
+
+  var BUSINESS_KINDS = [{ value: 'llc', label: 'LLC' }, { value: 'indie', label: 'Independent developer' }];
+  var BUSINESS_DEFAULT = { kind: 'llc', name: 'Studio Apps LLC', country: 'United States', street: '500 Market Street', city: 'San Francisco', postal: '94105', apps: '6', installs: '480000' };
+
+  function businessOf(user) { return Object.assign({}, BUSINESS_DEFAULT, user.dev && user.dev.business); }
+
+  /** @returns {field: message}; empty when every required field is filled and valid. */
+  function validateBusiness(v) {
+    var e = {};
+    if (!v.kind) e.kind = 'Choose an account type.';
+    if (!v.name.trim()) e.name = v.kind === 'indie' ? 'Enter your legal name.' : 'Enter the legal company name.';
+    if (!v.country) e.country = 'Choose a country.';
+    if (!v.street.trim()) e.street = 'Enter the street address.';
+    if (!v.city.trim()) e.city = 'Enter the city.';
+    if (!v.postal.trim()) e.postal = 'Enter the postal code.';
+    if (!/^\d+$/.test(String(v.apps).trim())) e.apps = 'Enter a whole number, 0 or more.';
+    if (!/^\d+$/.test(String(v.installs).trim())) e.installs = 'Enter a whole number, 0 or more.';
+    return e;
+  }
+
+  var SAMPLE_FEEDBACK = 'We couldn’t match the company name with your registration documents. Please check the legal name and the address, then update them here.';
 
   /* ---------- Passwords ---------- */
 
@@ -170,7 +211,8 @@
   }
 
   Cashful.settings = {
-    config: cfg, NOTIFICATIONS: NOTIFICATIONS, COUNTRIES: COUNTRIES, PRESETS: PRESETS, SETUP_KEY: 'JBSW Y3DP EHPK 3PXP',
+    config: cfg, NOTIFICATIONS: NOTIFICATIONS, DEV_NOTIFICATIONS: DEV_NOTIFICATIONS, notificationList: notificationList, notificationConfig: notificationConfig,
+    BUSINESS_KINDS: BUSINESS_KINDS, businessOf: businessOf, validateBusiness: validateBusiness, SAMPLE_FEEDBACK: SAMPLE_FEEDBACK, COUNTRIES: COUNTRIES, PRESETS: PRESETS, SETUP_KEY: 'JBSW Y3DP EHPK 3PXP',
     preset: preset, settings: settings, createState: createState,
     passwordStrength: passwordStrength, validatePassword: validatePassword, qrPlaceholder: qrPlaceholder,
     avatarHint: avatarHint, checkAvatarFile: checkAvatarFile, cropToSquare: cropToSquare, sampleFile: sampleFile, badFile: badFile

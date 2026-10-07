@@ -1,7 +1,7 @@
 /* Developer verification — six steps, progress saved after each one.
    type → details (company | independent) → apps → agreements → kyc → review
    #step opens a step directly; ?resume=1 shows "Welcome back" (DevOnbResume).
-   An account with status 'action_needed' lands on the identity step to resubmit documents. */
+   An account with kycStatus 'changes_requested' lands on the identity step to resubmit documents. */
 (function () {
   var ui = Cashful.ui;
   var api = Cashful.api;
@@ -99,7 +99,7 @@
   function renderStepper(step) {
     var cur = STEPS.indexOf(step);
     // After submitting for review every step is done
-    if (dev.status === 'in_review' || dev.status === 'approved') cur = STEPS.length - 1;
+    if (dev.kycStatus === 'in_review' || dev.kycStatus === 'approved') cur = STEPS.length - 1;
     ui.$('#stepper').innerHTML = cfg.onboardingSteps.map(function (s, i) {
       var st = i < cur ? 'done' : i === cur ? 'current' : 'upcoming';
       return '<li class="cf-step is-' + st + '"' + (st === 'current' ? ' aria-current="step"' : '') + '>' +
@@ -191,8 +191,8 @@
 
   var start = location.hash.slice(1);
   if (!start) {
-    if (dev.status === 'in_review' || dev.status === 'approved') start = 'review';
-    else if (dev.status === 'action_needed') start = 'kyc';
+    if (dev.kycStatus === 'in_review' || dev.kycStatus === 'approved') start = 'review';
+    else if (dev.kycStatus === 'changes_requested') start = 'kyc';
     else start = dev.step || 'type';
   }
 
@@ -203,10 +203,10 @@
     ui.alert(slot, a);
   }
 
-  if (ui.params.get('resume') && dev.status === 'in_progress') {
+  if (ui.params.get('resume') && dev.kycStatus === 'not_started' && dev.started) {
     insertAlert(viewFor(start), { tone: 'info', title: 'Welcome back', text: 'Your progress is saved. Pick up where you left off.' });
   }
-  if (dev.status === 'action_needed') {
+  if (dev.kycStatus === 'changes_requested') {
     insertAlert('kyc', { tone: 'error', title: 'We need a clearer photo of your ID', text: 'The photo was too blurry to confirm your identity. Upload it again, it takes about 2 minutes.' });
   }
 

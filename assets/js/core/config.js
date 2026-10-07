@@ -21,13 +21,19 @@ Cashful.config = {
   demo: {
     emailCode: '246810',
     totpCode: '135790',
-    backupCode: 'CASH-2026'
+    backupCode: 'CASH-2026',
+    // The KYC alert's X. true: closing it marks KYC as approved (prototype only). false: no X, the alert goes
+    // away only when the status changes through the demo control.
+    kycAlertCloseApproves: true,
+    kycAlertCloseTooltip: 'Prototype: closing this marks KYC as approved'
   },
 
   /* One login can hold two accounts: 'personal' (earn from devices) and 'developer' (SDK).
      peerStage — what Overview shows: 'new' | 'day1' | 'active' | 'payout'
-     dev.status — 'not_started' | 'in_progress' | 'in_review' | 'action_needed' | 'approved'
-     dev.step   — onboarding step: 'type' | 'details' | 'apps' | 'agreements' | 'kyc' | 'review' */
+     dev.kycStatus — the one KYC value everything reads (api.kyc):
+                     'not_started' | 'in_review' | 'changes_requested' | 'approved'
+     dev.started   — the onboarding has been begun but not submitted (only meaningful while not_started)
+     dev.step      — onboarding step: 'type' | 'details' | 'apps' | 'agreements' | 'kyc' | 'review' */
   seedUsers: [
     {
       email: 'artem@goodface.agency',
@@ -46,7 +52,7 @@ Cashful.config = {
       verified: true,
       twoFactor: false,
       // Stopped at step 3 → "Welcome back" resume after log in (DevOnbResume)
-      dev: { status: 'in_progress', step: 'apps', kind: 'company', details: { company: 'Studio Apps LLC' } }
+      dev: { kycStatus: 'not_started', started: true, step: 'apps', kind: 'company', details: { company: 'Studio Apps LLC' } }
     }
   ],
 

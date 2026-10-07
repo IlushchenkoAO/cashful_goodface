@@ -16,9 +16,9 @@
   // Pages both accounts share (Payouts) use data-account="auto": they follow the active account
   var shared = account === 'auto';
   if (shared) { account = api.activeAccount(); document.body.dataset.account = account; }
-  if (user.accounts.indexOf(account) < 0) { location.replace(api.homeFor(user, api.activeAccount())); return; }
-  // Opening a page of the other account makes it the active one
-  if (api.activeAccount() !== account) api.switchAccount(account);
+  // A page of the other account type sends the person to the home of the account they are in:
+  // Overview for Personal, Apps for Developer. The sidebar is not drawn, so nothing flashes.
+  if (user.accounts.indexOf(account) < 0 || api.activeAccount() !== account) { location.replace(api.homeFor(user, api.activeAccount())); return; }
 
   // Referrals is a Personal-only page and can be switched off in referrals.config.js
   var referralsOn = !Cashful.referral || Cashful.referral.settings().enabled;
@@ -31,11 +31,13 @@
       { id: 'payouts', label: 'Payouts', icon: 'wallet', href: 'payouts.html' },
       { id: 'settings', label: 'Settings', icon: 'settings', href: 'settings.html' }
     ].filter(Boolean),
+    // Overview exists only for Personal accounts; a Developer starts on Analytics
     developer: [
       { id: 'analytics', label: 'Analytics', icon: 'chart', href: 'analytics.html' },
-      { id: 'sdk', label: 'SDK', icon: 'package' },
+      { id: 'apps', label: 'Apps', icon: 'apps', href: 'apps.html' },
+      { id: 'sdk', label: 'SDK', icon: 'package', href: 'sdk.html' },
       { id: 'payouts', label: 'Payouts', icon: 'wallet', href: 'payouts.html' },
-      { id: 'settings', label: 'Settings', icon: 'settings' }
+      { id: 'settings', label: 'Settings', icon: 'settings', href: 'settings.html' }
     ]
   };
 
@@ -94,7 +96,7 @@
   function renderSidebar(el) {
     var active = el.dataset.active;
     var name = user.name || user.email.split('@')[0];
-    var home = MENUS[account][0].href;
+    var home = api.homeFor(user, account);
     el.innerHTML =
       '<div class="cf-sidebar__logo"><a href="' + home + '" aria-label="Cashful — home"><cf-logo height="26"></cf-logo></a></div>' +
       (user.accounts.length > 1 ? switcher() : prompt()) +

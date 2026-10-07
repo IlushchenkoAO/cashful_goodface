@@ -208,7 +208,8 @@
     { id: 'no-methods', label: 'No payout methods' },
     { id: 'below-minimum', label: 'Balance below the minimum' },
     { id: 'in-progress', label: 'Payout in progress' },
-    { id: 'empty-history', label: 'Empty history' }
+    { id: 'empty-history', label: 'Empty history' },
+    { id: 'no-earnings', label: 'No earnings yet (zero balance)' }
   ];
 
   function createState(name) {
@@ -218,6 +219,7 @@
 
     if (name === 'no-methods') { state.methods = []; state.payouts = []; }
     if (name === 'empty-history') state.payouts = [];
+    if (name === 'no-earnings') { state.methods = []; state.payouts = []; state.balance.available = 0; state.balance.pending = 0; }
     if (name === 'below-minimum') state.balance.available = toCents(12.35);
     if (name === 'in-progress') {
       var amount = toCents(50);

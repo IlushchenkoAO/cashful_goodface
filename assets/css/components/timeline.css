@@ -1,0 +1,23 @@
+/* Timeline (ui.timeline) and FileDropzone (Cashful.controls.fileDropzone) */
+.cf-timeline { position: relative; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-20); }
+.cf-timeline__item { position: relative; display: flex; gap: var(--space-12); }
+.cf-timeline__item:not(:last-child)::before { content: ""; position: absolute; left: 5px; top: 18px; bottom: calc(var(--space-20) * -1 + 4px); width: 2px; background: var(--border-default); }
+.cf-timeline__dot { flex: none; width: 12px; height: 12px; margin-top: 5px; border-radius: 999px; background: var(--bg-surface); border: 2px solid var(--border-strong); z-index: 1; }
+.cf-timeline__item.is-success .cf-timeline__dot { border-color: var(--border-success); background: var(--bg-success-subtle); }
+.cf-timeline__item.is-warning .cf-timeline__dot { border-color: var(--border-warning); background: var(--bg-warning-subtle); }
+.cf-timeline__item.is-error .cf-timeline__dot { border-color: var(--border-error); background: var(--bg-error-subtle); }
+.cf-timeline__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cf-timeline__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-12); flex-wrap: wrap; }
+.cf-timeline__title { font: 600 14px/20px var(--font-text); }
+.cf-timeline__date { font: 500 12px/18px var(--font-text); color: var(--text-secondary); }
+.cf-timeline__meta { font: 500 12px/18px var(--font-text); color: var(--text-secondary); }
+.cf-timeline__text { padding: var(--space-8) var(--space-12); margin-top: var(--space-4); border-radius: var(--radius-sm); background: var(--bg-surface-sunken); color: var(--text-primary); font: 500 14px/20px var(--font-text); }
+
+.cf-drop { display: flex; flex-direction: column; gap: var(--space-8); min-width: 0; }
+.cf-drop__area { display: flex; flex-direction: column; align-items: center; gap: var(--space-8); padding: var(--space-24); border: 1px dashed var(--border-strong); border-radius: var(--radius-md); background: var(--bg-surface-sunken); text-align: center; color: var(--text-secondary); font: 500 14px/20px var(--font-text); }
+.cf-drop__area.is-over { border-color: var(--border-focus); background: var(--bg-brand-subtle); }
+.cf-drop__area.is-error, .cf-drop__preview.is-error { border-color: var(--border-error); }
+.cf-drop__preview { max-width: 420px; border: 1px solid var(--border-default); border-radius: var(--radius-md); overflow: hidden; background: var(--bg-surface-sunken); }
+.cf-drop__preview img { display: block; width: 100%; height: auto; }
+.cf-drop__actions { display: flex; gap: var(--space-8); }
+.cf-drop__error { font: 500 12px/18px var(--font-text); color: var(--text-error); }

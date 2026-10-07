@@ -42,6 +42,16 @@
 
   /* ---------- Stage: new ---------- */
 
+  function emptyCard() {
+    return '<section class="cf-card empty-card">' +
+      '<cf-mascot character="main" size="104"></cf-mascot>' +
+      '<div class="empty-card__text"><h2 class="empty-card__title">Connect your first device</h2>' +
+        '<p class="empty-card__desc">Install Cashful on a phone, computer or router. It runs in the background and earns while you’re online. Only one device per IP address earns at a time.</p></div>' +
+      '<div class="empty-card__actions"><button type="button" class="cf-btn cf-btn--primary" data-add-device><cf-icon name="plus" size="20"></cf-icon><span>Add a device</span></button>' +
+        '<span class="t-caption t-secondary">Android, iOS, Windows, macOS, Linux, Raspberry Pi and routers</span></div>' +
+    '</section>';
+  }
+
   function renderNew() {
     var name = user.name || user.email.split('@')[0];
     root.innerHTML =
@@ -54,13 +64,10 @@
         stat({ label: 'Devices online', value: '0', icon: 'wifi' }) +
         stat({ label: 'Traffic shared', value: '0.0 GB', icon: 'chart' }) +
       '</div>' +
-      '<section class="cf-card empty-card">' +
-        '<cf-mascot character="main" size="104"></cf-mascot>' +
-        '<div class="empty-card__text"><h2 class="empty-card__title">Add your first device</h2>' +
-          '<p class="empty-card__desc">Install Cashful on a phone, computer or router. It runs in the background and earns while you’re online. Only one device per IP address earns at a time.</p></div>' +
-        '<div class="empty-card__actions"><button type="button" class="cf-btn cf-btn--primary" data-add-device><cf-icon name="plus" size="20"></cf-icon><span>Add a device</span></button>' +
-          '<span class="t-caption t-secondary">Android, iOS, Windows, macOS, Linux, Raspberry Pi and routers</span></div>' +
-      '</section>';
+      // Only the device-dependent blocks (chart, devices list) are replaced by this empty state.
+      // The referral card doesn't depend on devices: it keeps its column on the right, as in the other stages.
+      (referralCardOn() ? '<div class="cf-grid cf-grid--2-1">' + emptyCard() + referralCard() + '</div>' : emptyCard());
+    bindReferralCard();
   }
 
   /* ---------- Stages with devices ---------- */

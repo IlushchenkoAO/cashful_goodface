@@ -11,6 +11,8 @@
 @import url("components/feature.css");
 @import url("components/select.css");
 @import url("components/disclosure.css");
+@import url("components/dataviz.css");
+@import url("components/timeline.css");
 
 /* Dashboard components (used from the next iteration on) */
 @import url("components/navigation.css");

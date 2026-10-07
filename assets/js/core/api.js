@@ -17,7 +17,7 @@
   function normEmail(e) { return String(e || '').trim().toLowerCase(); }
   function token() { return Math.random().toString(36).slice(2, 10); }
 
-  function newDev() { return { status: 'not_started', step: 'type', kind: 'company', details: {}, apps: {} }; }
+  function newDev() { return { kycStatus: 'not_started', started: false, step: 'type', kind: 'company', details: {}, apps: {} }; }
 
   /** A login with one account of `type` ('personal' | 'developer'). */
   function newUser(email, type, extra) {
@@ -33,16 +33,10 @@
     return u;
   }
 
-  /** Where a signed-in user lands for an account (default: their first one). */
-  function homeFor(user, account, opts) {
+  /** Where a signed-in user lands for an account (default: their first one): Overview for Personal, Apps for Developer. */
+  function homeFor(user, account) {
     account = account || user.accounts[0];
-    if (account === 'personal') return 'dashboard.html';
-    var dev = user.dev || newDev();
-    if (dev.status === 'not_started' || dev.status === 'in_progress') {
-      // Coming back to an unfinished onboarding after log in → "Welcome back" (DevOnbResume)
-      return 'developer-verification.html' + (opts && opts.resume && dev.status === 'in_progress' ? '?resume=1' : '');
-    }
-    return 'analytics.html';
+    return account === 'personal' ? 'dashboard.html' : 'analytics.html';
   }
 
   function startSession(db, email, remember) {
@@ -350,6 +344,14 @@
     });
   };
 
+  /** Merges fields into the developer account (business details, signatures…). */
+  api.updateDev = function (patch) {
+    return withUser(function (user) {
+      user.dev = Object.assign(user.dev || newDev(), patch);
+      return user.dev;
+    });
+  };
+
   /** Saves profile fields on the signed-in user (name, avatar as a data URL). `null` removes a field. */
   api.updateProfile = function (patch) {
     return withUser(function (user) {
@@ -371,7 +373,7 @@
           dev[k] = (typeof patch[k] === 'object' && patch[k] && !Array.isArray(patch[k]))
             ? Object.assign({}, dev[k], patch[k]) : patch[k];
         });
-        if (dev.status === 'not_started') dev.status = 'in_progress';
+        dev.started = true;
         if (nextStep) dev.step = nextStep;
         return dev;
       });
@@ -382,24 +384,89 @@
   api.submitKyc = function () {
     return delay(null, 1600).then(function () {
       return withUser(function (user) {
-        user.dev.status = 'in_review';
+        user.dev.kycStatus = 'in_review';
         user.dev.step = 'review';
         return user.dev;
       });
     });
   };
 
-  api.setDevStatus = function (status) {
-    withUser(function (user) {
-      user.dev = user.dev || newDev();
-      user.dev.status = status;
-      if (status !== 'not_started' && status !== 'in_progress') user.dev.step = 'review';
-    });
+  /* ---------- KYC: the one place its state is read and written ----------
+     Every locked element, the alert and the demo control use this. The value lives on the developer
+     account in the store (dev.kycStatus); a change is announced with the "cashful:kyc" event so open
+     pages update without a reload. */
+  api.kyc = {
+    STATUSES: ['not_started', 'in_review', 'changes_requested', 'approved'],
+    status: function () {
+      var u = api.currentUser();
+      return (u && u.dev && u.dev.kycStatus) || 'not_started';
+    },
+    approved: function () { return api.kyc.status() === 'approved'; },
+    set: function (status) {
+      withUser(function (user) {
+        user.dev = user.dev || newDev();
+        user.dev.kycStatus = status;
+        if (status !== 'not_started') user.dev.step = 'review';
+        // The date shown as "Verified on …"
+        if (status === 'approved') user.dev.approvedAt = user.dev.approvedAt || Date.now(); else delete user.dev.approvedAt;
+      });
+      api.kyc.notify();
+    },
+    notify: function () { window.dispatchEvent(new CustomEvent('cashful:kyc', { detail: { status: api.kyc.status() } })); },
+
+    /* The Developer Agreement: signing is stored with the typed name and the time. */
+    signature: function (id) {
+      var u = api.currentUser();
+      return (u && u.dev && u.dev.signatures && u.dev.signatures[id || 'developer-agreement']) || null;
+    },
+    signed: function (id) { return !!api.kyc.signature(id); },
+    sign: function (id, name) {
+      withUser(function (user) {
+        user.dev = user.dev || newDev();
+        user.dev.signatures = user.dev.signatures || {};
+        user.dev.signatures[id] = { name: name, at: Date.now() };
+      });
+      api.kyc.notify();
+    },
+    unsign: function (id) {
+      withUser(function (user) { if (user.dev && user.dev.signatures) delete user.dev.signatures[id]; });
+      api.kyc.notify();
+    },
+    /** What the locks read: KYC approved, and (when the config asks for it) the Developer Agreement signed. */
+    featuresUnlocked: function () {
+      var c = Cashful.developerSettingsConfig;
+      var block = !!(c && c.agreementsBlockFeatures);
+      return api.kyc.approved() && (!block || api.kyc.signed('developer-agreement'));
+    },
+    /** Why the locks are on: null (unlocked), 'agreement' (config asks for the signature) or 'kyc'. */
+    lockReason: function () {
+      if (api.kyc.featuresUnlocked()) return null;
+      var c = Cashful.developerSettingsConfig;
+      return c && c.agreementsBlockFeatures && !api.kyc.signed('developer-agreement') ? 'agreement' : 'kyc';
+    },
+    /** Calls fn(status) on every change, here or in another tab. Returns a function that stops listening. */
+    onChange: function (fn) {
+      function onEvent() { fn(api.kyc.status()); }
+      window.addEventListener('cashful:kyc', onEvent);
+      window.addEventListener('storage', onEvent);
+      return function () {
+        window.removeEventListener('cashful:kyc', onEvent);
+        window.removeEventListener('storage', onEvent);
+      };
+    }
   };
 
   /* ---------- Demo helpers (Prototype panel, screen map) ---------- */
 
   api.demo = {
+    /** The demo login has (or hasn't) a Personal account next to its Developer account. */
+    setPersonalAccount: function (exists) {
+      withUser(function (user) {
+        var has = user.accounts.indexOf('personal') > -1;
+        if (exists && !has) { user.accounts.unshift('personal'); user.peerStage = user.peerStage || 'new'; }
+        if (!exists && has) { user.accounts = user.accounts.filter(function (a) { return a !== 'personal'; }); delete user.peerStage; }
+      });
+    },
     /** Signs in as a login with exactly these accounts, for screen-map links. */
     signInWith: function (accounts, opts) {
       opts = opts || {};

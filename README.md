@@ -148,6 +148,77 @@ The `[X]` placeholders and the questions from `docs/flows.md` in the design prot
 payout minimum, referral %, review time, app versions and sizes, install commands, whether servers and
 routers are supported, whether 2FA is required, and what happens when KYC is rejected.
 
+### Apps (Developer)
+
+`apps.html` is the list and `app.html?id=<UUID>` the details (there is no router: these are the `/apps` and
+`/apps/:id` routes). Nothing on them depends on KYC. A Personal account is sent to its Overview.
+
+- **Shared store:** `assets/js/data/apps.js` keeps the apps in the prototype store. Analytics, SDK and the Apps
+  pages all read apps and statuses from it (status ids: `draft`, `in_review`, `changes_requested`, `active`) and
+  follow the `cashful:apps` event. Business values and texts: `assets/js/data/apps.config.js`.
+- **Rules:** Draft and Changes requested are editable; In review and Active are read-only; only a Draft can be
+  deleted. Draft → In review (submit), In review → Active or Changes requested (review), Changes requested → In review.
+- **List URL:** `?status=&q=&sort=updated|name|status&page=&create=1`.
+- **Review simulation (dev only):** on an In review app, `pages/app-review-sim.js` adds "Approve" and "Request
+  changes". A newly approved app has no analytics: Analytics shows its "Active app, no data yet" state.
+- **Demo control:** "Apps data" (Default, No apps, Only Drafts, Only Active; `?data=`) next to "KYC status".
+- **Components:** new `ui.timeline`, `Cashful.controls.fileDropzone`, `Cashful.apps.badge` (status badge); reused:
+  segmented control, dropdown, modal, cards, table, `ui.copyText`, `ui.alertHtml`, `track()`.
+
+### Analytics (Developer)
+
+`analytics.html` is read-only and nothing on it depends on KYC. A Personal account that opens the route is sent
+to its Overview. Developer navigation: Analytics, Apps, SDK, Payouts, Settings (no Overview: that exists only for Personal).
+
+- **Business values and texts:** `assets/js/data/analytics.config.js` (default period, max custom range, page
+  size, CSV and "Live" switches, metric definitions, the "not Active" hint, the empty-state copy).
+- **Mock data:** `assets/js/data/apps.js` (3 Active apps on Android, iOS, and Windows plus macOS; one app each in
+  Draft, In review and Changes requested; DeskSync became Active 21 days ago) and `assets/js/data/analytics.js`
+  (deterministic traffic: a function of the app, platform and calendar day; 120+ days of history; today is partial).
+- **URL state:** `?app=<id|all>&period=7d|30d|90d|custom&from=&to=&metric=nodes|ips|earnings&groupBy=day|app|platform&split=1`.
+  Reload, Back and Forward restore the exact view; unknown or invalid values fall back to defaults.
+- **Components:** `ui.statCard` (extended: info tooltip, "Live" badge, neutral delta; the Peer Overview uses it
+  unchanged), `Cashful.charts.timeSeries` (`ds/charts.js`, a dependency-free SVG line chart),
+  `Cashful.controls.segmented` and `.dropdown` (`ds/controls.js`), plus `.cf-skel` skeletons.
+- **Demo control:** "Analytics data": Data, No apps, Apps but none Active, Active app no data yet, Empty period,
+  Loading, Error (`?data=`). Error fails once and Retry recovers. "KYC status" next to it still works and the page
+  looks the same in both.
+
+### KYC (Developer)
+
+The KYC state is one value on the developer account in the store, `dev.kycStatus`: `not_started`,
+`in_review`, `changes_requested` or `approved`. Read and write it only through `api.kyc` (`status()`,
+`approved()`, `set()`, `onChange()`); a change fires the `cashful:kyc` event, so open pages update without a reload.
+
+- **Who reads it:** the alert (`app/kyc.js`), Analytics (wording of the Apps card), Payouts (the "Complete KYC"
+  lock), the SDK page (download lock), the developer onboarding, and the demo control.
+- **Alert:** while `in_review` it shows at the top of the Developer pages (Analytics, SDK, Payouts) with an X.
+  In the prototype the X means "KYC passed": the alert leaves with a short transition, a toast says what is
+  unlocked, and the SDK download and payouts unlock at once. `demo.kycAlertCloseApproves` and
+  `demo.kycAlertCloseTooltip` are in `core/config.js`; with `kycAlertCloseApproves: false` there is no X.
+- **Demo control:** "KYC status" (In review / Approved) on Analytics, SDK and Payouts. It works in both
+  directions and is also how to reset the prototype for the next demo.
+- **SDK page:** see the next section. Only its download buttons are locked.
+
+### SDK (Developer)
+
+`sdk.html` is open to every Developer, whatever the KYC status; a Personal account is sent to its Overview.
+Only the "Download SDK" button is locked (and "Download template" when `consentTemplateRequiresKyc` is on). The lock
+is `aria-disabled` (focusable, with its reason in `aria-describedby`) and reads `api.kyc.approved()` on every
+render and on `api.kyc.onChange`, so the KYC alert's X and the demo control unlock it without a reload.
+
+- **Business values and texts:** `assets/js/data/sdk.config.js`: platforms with version, release date,
+  requirements and docs link, the steps, the per-platform snippets (placeholder pseudo-code with `{APP_UUID}`),
+  the consent requirements and the page texts. Logic: `assets/js/data/sdk.js`.
+- **URL state:** `?platform=android&app=<id>`; unknown or coming-soon platforms and unknown apps fall back to the
+  defaults. Back and Forward restore the selection.
+- **Components:** new `ui.codeBlock` (labelled, scrollable, Copy button), `ui.copyText`, `ui.downloadFile` and
+  `.cf-btn[aria-disabled]`; reused: the segmented/dropdown controls, badges, cards, the shared mock apps and `track()`.
+- **Demo control:** "SDK state" (Default, No apps, Apps but none Active, Selected app not Active; `?data=`) next
+  to "KYC status", which updates the page at once.
+- **Analytics events:** `sdk_platform_selected`, `sdk_download_clicked`, `sdk_download_blocked_clicked`,
+  `sdk_snippet_copied`, `sdk_app_id_copied`, `sdk_consent_template_downloaded` (logged to the console by `track()`).
+
 ### Payouts
 
 `payouts.html` is shared by both accounts (`data-account="auto"` follows the active account; switching in the
@@ -167,7 +238,7 @@ sidebar stays on the page). It is not in the design file, so it is built from th
 ### Referrals
 
 `referrals.html` is for Personal accounts. Sidebar order: Overview, Download app, Referrals, Payouts, Settings.
-A Developer account has no Referrals item; opening the route sends it to its own home page. It is not in the
+A Developer account has no Referrals item; opening the route sends it to Analytics (the Developer landing page). It is not in the
 design file, so it is built from the existing components.
 
 - **Business values:** `assets/js/data/referrals.config.js` is the only file the client edits (reward percent and
@@ -176,11 +247,14 @@ design file, so it is built from the existing components.
   generated from it.
 - **Mock data and copy:** `assets/js/data/referrals.js`. The funnel is derived from the seeded rows, so the
   numbers in the table and the funnel always match.
-- **States:** `?state=default|empty|early|qualified|reward-ended|not-counted|milestones-off|disabled`. The chosen
+- **States:** `?state=default|empty|no-devices|early|qualified|reward-ended|not-counted|milestones-off|disabled`
+  (`no-devices` is "No devices, no referrals" and also puts Overview in its no-devices stage). The chosen
   state is kept in the prototype store, so the navigation, the Overview card and the sign-up screen follow it
   (for example "disabled" hides the Referrals item, the Overview card and the referral field).
 - **Overview:** the "Invite friends" card shows the code, a Copy button, the total earned from referrals and a link
-  to the page. It is hidden when referrals are off.
+  to the page. It never depends on devices: with no devices it sits right below the "Connect your first device"
+  block and shows $0.00. Only `referral.enabled: false` hides it. Nothing else in the dashboard (or the Referrals
+  route) checks whether a device is connected.
 - **Sign-up:** `?ref=CODE` pre-fills the code and shows the applied state. The code is remembered for
   `attributionWindowDays` (Personal sign-up only).
 - **Analytics:** `Cashful.track(name, props)` (`core/track.js`) only logs to the console. Events:
@@ -191,8 +265,8 @@ design file, so it is built from the existing components.
 
 ### Settings (Personal)
 
-`settings.html` is for Personal accounts. The Developer account's Settings item is still a "coming later" toast.
-It is not in the design file, so it is built from the existing components. Six stacked cards, and the ones
+`settings.html` serves both account types (`data-account="auto"`): Personal sees the stack below, Developer sees
+the Developer Settings described in the next section. It is not in the design file, so it is built from the existing components. Six stacked cards, and the ones
 with a form save on their own: Profile, Security (password and two-factor), Notifications, Account type, Legal,
 Delete account.
 
@@ -215,7 +289,36 @@ Delete account.
   a Developer account." Submitted: "Switch to Developer". The demo control switches between them.
 - **Presets:** `?state=default|profile-dirty|avatar-none|avatar-set|avatar-preview|avatar-invalid|avatar-too-large|email-pending|password-error|password-success|2fa-setup|2fa-wrong-code|2fa-on|2fa-hidden|notifications-on|notifications-off|delete-blocked|delete-balance|delete-zero`.
 
+### Settings (Developer)
+
+Same route, `settings.html`. Eight cards in this order, each with an anchor (`#verification`, `#business`,
+`#agreements`, `#profile`, `#security`, `#notifications`, `#account-type`, `#close-account`), a sticky
+"Settings sections" navigation with scroll-spy, and a URL hash that scrolls to the section and focuses its heading.
+Each form saves on its own (Save stays disabled until something changes, then an inline "saved" message).
+
+- **Verification:** status badge (with text), four stages each marked in words, "What this unlocks:", and the
+  action for the status (Start verification, Update information with the reviewer's comment, nothing when in
+  review or approved). `/kyc` is `kyc.html`, a placeholder for the provider.
+- **Business details:** editable only in Not started and Changes requested; read-only (contact support) in
+  In review and Approved. The apps and installs numbers must be whole numbers, 0 or more.
+- **Agreements:** the Developer Agreement is signed in a dialog (checkbox + full name of 2+ characters; the
+  name is stored, never logged). Terms, Privacy and AUP show their accepted date and a link.
+- **Profile, Security, Notifications:** the Personal components. Name, photo, pending email and 2FA are stored
+  on the login and shared with Personal. Notifications use the Developer set (stored per account type);
+  there is no Country field.
+- **Account type:** "Switch to Personal", or "Create personal account" when the login has none.
+- **Close account:** support email only.
+- **Config:** `assets/js/data/developer-settings.config.js` (support email, what KYC unlocks, locked business
+  statuses, agreements, notifications, alert texts, `agreementsBlockFeatures`).
+- **`featuresUnlocked`:** `api.kyc.featuresUnlocked()` = KYC approved and (flag off, or Developer Agreement
+  signed). The SDK download and the Payout requests read it; `api.kyc.lockReason()` picks the hint, which links
+  to `#agreements` or `#verification`.
+- **Demo control (Settings, Developer):** KYC status (Not started, In review, Changes requested, Approved),
+  Developer Agreement (Unsigned, Signed), Personal account (Exists, None; reloads the page).
+- **Events:** `settings_anchor_clicked`, `kyc_start_clicked`, `kyc_update_info_clicked`, `business_details_saved`,
+  `agreement_viewed`, `agreement_signed`, `account_switch_clicked`, `close_account_support_clicked`.
+
 ## Not in the design yet
 
-These show a "coming later" toast: Developer settings, SDK, Create app, SDK guide,
-the agreement documents, and installer downloads.
+These show a "coming later" toast: Create app (design pending), the legal documents' pages,
+and installer downloads.

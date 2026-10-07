@@ -194,26 +194,47 @@
   };
 
   /** Alert markup as a string — for pages that render whole sections. */
+  /** `a.close` = { label, tooltip } adds an X button at the right edge (data-alert-close). */
   ui.alertHtml = function (a) {
     var tone = a.tone || 'info';
+    var close = a.close
+      ? '<button type="button" class="cf-alert__close cf-ibtn cf-ibtn--ghost cf-ibtn--sm" data-alert-close aria-label="' + esc(a.close.label || 'Close') + '"' +
+        (a.close.tooltip ? ' data-tooltip="' + esc(a.close.tooltip) + '" aria-describedby="alert-close-tip"' : '') + '>' +
+        '<cf-icon name="close" size="20"></cf-icon>' +
+        (a.close.tooltip ? '<span class="sr-only" id="alert-close-tip">' + esc(a.close.tooltip) + '</span>' : '') + '</button>'
+      : '';
     return '<div class="cf-alert cf-alert--' + tone + '" role="' + (tone === 'error' ? 'alert' : 'status') + '">' +
       '<cf-icon class="cf-alert__icon" name="' + ALERT_ICONS[tone] + '" size="20"></cf-icon>' +
       '<div class="cf-alert__text"><div class="cf-alert__title">' + esc(a.title) + '</div>' +
-      (a.text ? '<div class="cf-alert__desc">' + esc(a.text) + '</div>' : '') + '</div></div>';
+      (a.text ? '<div class="cf-alert__desc">' + esc(a.text) + '</div>' : '') + '</div>' + close + '</div>';
   };
 
   /* ---------- StatCard ----------
-     ui.statCard({ label, value, icon, caption, delta, trend: 'up'|'down', brand }) */
+     ui.statCard({ label, value, icon, caption, delta, trend: 'up'|'down'|'flat', brand,
+                   info, badgeHtml, footHtml })
+     info      — adds an info button with a tooltip (reachable by keyboard)
+     badgeHtml — next to the label (e.g. a "Live" indicator); footHtml — extra line at the bottom (escaped by the caller)
+     'flat' shows the delta with a neutral arrow. Without the optional fields the markup is the original one. */
+  var statUid = 0;
   ui.statCard = function (s) {
-    var up = s.trend !== 'down';
-    var foot = (s.delta || s.caption)
+    var trend = s.trend || 'up';
+    var arrow = { up: 'arrow-up-right', down: 'arrow-down-right', flat: 'arrow-right' }[trend];
+    var foot = (s.delta || s.caption || s.footHtml)
       ? '<div class="cf-stat__foot">' +
-          (s.delta ? '<span class="cf-stat__delta ' + (up ? 'is-up' : 'is-down') + '"><cf-icon name="' + (up ? 'arrow-up-right' : 'arrow-down-right') + '" size="16"></cf-icon>' + esc(s.delta) + '</span>' : '') +
+          (s.delta ? '<span class="cf-stat__delta is-' + trend + '"><cf-icon name="' + arrow + '" size="16"></cf-icon>' + esc(s.delta) + '</span>' : '') +
           (s.caption ? '<span class="cf-stat__caption">' + esc(s.caption) + '</span>' : '') +
+          (s.footHtml || '') +
         '</div>'
       : '';
+    var info = '';
+    if (s.info) {
+      var tipId = 'stat-tip-' + (++statUid);
+      info = '<button type="button" class="cf-stat__info" data-tooltip="' + esc(s.info) + '" aria-label="About ' + esc(s.label) + '" aria-describedby="' + tipId + '">' +
+        '<cf-icon name="info" size="16"></cf-icon><span class="sr-only" id="' + tipId + '">' + esc(s.info) + '</span></button>';
+    }
     return '<div class="cf-stat' + (s.brand ? ' cf-stat--brand' : '') + '">' +
-      '<div class="cf-stat__top"><span class="cf-stat__label">' + esc(s.label) + '</span><span class="cf-stat__chip"><cf-icon name="' + s.icon + '" size="20"></cf-icon></span></div>' +
+      '<div class="cf-stat__top"><span class="cf-stat__label">' + esc(s.label) + info + '</span>' + (s.badgeHtml || '') +
+        '<span class="cf-stat__chip"><cf-icon name="' + s.icon + '" size="20"></cf-icon></span></div>' +
       '<div class="cf-stat__value">' + esc(s.value) + '</div>' + foot + '</div>';
   };
 
@@ -346,6 +367,80 @@
       onChange(value);
     };
     render();
+  };
+
+  /* ---------- Clipboard ----------
+     ui.copyText(text) → Promise<boolean>. Falls back to execCommand, and doesn't hang when an embedded
+     browser never answers the clipboard permission. */
+  function fallbackCopy(text) {
+    var area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(area);
+    area.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    area.remove();
+    return ok;
+  }
+  ui.copyText = function (text) {
+    return new Promise(function (resolve) {
+      var settled = false;
+      function finish(ok) { if (!settled) { settled = true; resolve(ok); } }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { finish(true); }, function () { finish(fallbackCopy(text)); });
+        setTimeout(function () { finish(fallbackCopy(text)); }, 1500);
+      } else finish(fallbackCopy(text));
+    });
+  };
+
+  /** Saves text as a file generated in the browser (CSV export, placeholder downloads). */
+  ui.downloadFile = function (name, text, mime) {
+    var url = URL.createObjectURL(new Blob([text], { type: mime || 'text/plain;charset=utf-8' }));
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  };
+
+  /* ---------- Timeline ----------
+     ui.timeline([{ title, date, text, tone }]) → a vertical list, oldest first. `text` is escaped and may be empty.
+     `tone` ('success'|'warning'|'error') tints the dot; the title says what happened, so colour never carries it alone. */
+  ui.timeline = function (items) {
+    return '<ol class="cf-timeline">' + items.map(function (it) {
+      return '<li class="cf-timeline__item' + (it.tone ? ' is-' + it.tone : '') + '"><span class="cf-timeline__dot" aria-hidden="true"></span>' +
+        '<div class="cf-timeline__body"><div class="cf-timeline__head"><span class="cf-timeline__title">' + esc(it.title) + '</span>' +
+        '<time class="cf-timeline__date">' + esc(it.date) + '</time></div>' +
+        (it.meta ? '<div class="cf-timeline__meta">' + esc(it.meta) + '</div>' : '') +
+        (it.text ? '<p class="cf-timeline__text">' + esc(it.text) + '</p>' : '') + '</div></li>';
+    }).join('') + '</ol>';
+  };
+
+  /* ---------- CodeBlock ----------
+     ui.codeBlock({ code, label, id }) → markup of a labelled, scrollable block with a Copy button.
+     The Copy button carries data-code-copy; the page decides what copying does (announce, track). */
+  ui.codeBlock = function (o) {
+    return '<div class="cf-code-block" role="group" aria-label="' + esc(o.label) + '"' + (o.id ? ' data-code="' + esc(o.id) + '"' : '') + '>' +
+      '<div class="cf-code-block__bar"><span class="cf-code-block__label">' + esc(o.label) + '</span>' +
+      '<button type="button" class="cf-btn cf-btn--secondary cf-btn--sm" data-code-copy><cf-icon name="copy" size="16"></cf-icon><span>Copy</span></button></div>' +
+      '<pre class="cf-code-block__pre" tabindex="0"><code>' + esc(o.code) + '</code></pre></div>';
+  };
+
+  /** Shows "Copied" on a copy button for a moment. */
+  ui.flashCopied = function (btn) {
+    var label = ui.$('span', btn);
+    if (!btn.dataset.label) btn.dataset.label = label.textContent;
+    label.textContent = 'Copied';
+    ui.$('cf-icon', btn).setAttribute('name', 'check');
+    clearTimeout(btn._reset);
+    btn._reset = setTimeout(function () {
+      label.textContent = btn.dataset.label;
+      ui.$('cf-icon', btn).setAttribute('name', 'copy');
+    }, 1600);
   };
 
   /* ---------- Copy field ----------

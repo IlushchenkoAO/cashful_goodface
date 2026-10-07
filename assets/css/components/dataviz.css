@@ -1,0 +1,83 @@
+/* Data visualisation components: StatCard extras, segmented control, dropdown, skeleton, TimeSeriesChart. */
+
+/* StatCard: info tooltip, "Live" indicator, neutral delta */
+.cf-stat { position: relative; }
+.cf-stat__label { display: inline-flex; align-items: center; gap: var(--space-4); }
+.cf-stat__info { display: inline-flex; padding: 2px; border: 0; border-radius: var(--radius-full); background: none; color: var(--icon-secondary); cursor: help; }
+.cf-stat__info:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 1px; }
+.cf-stat .cf-stat__info[data-tooltip] { position: static; }
+.cf-stat .cf-stat__info[data-tooltip]:hover::after,
+.cf-stat .cf-stat__info[data-tooltip]:focus-visible::after { left: var(--space-12); right: var(--space-12); top: 52px; white-space: normal; }
+.cf-stat__delta.is-flat { color: var(--text-secondary); }
+.cf-live { display: inline-flex; align-items: center; gap: var(--space-6); height: 22px; padding: 0 var(--space-8); border-radius: var(--radius-full); background: var(--bg-success-subtle); color: var(--text-success); font: 600 12px/16px var(--font-text); }
+.cf-live__dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; animation: cf-pulse 1.8s ease-in-out infinite; }
+@keyframes cf-pulse { 50% { opacity: .35; } }
+
+/* Segmented control (radio group) */
+.cf-seg { display: inline-flex; gap: var(--space-4); margin: 0; padding: var(--space-4); border: 0; border-radius: var(--radius-sm); background: var(--bg-surface-sunken); min-width: 0; }
+.cf-seg__opt { position: relative; display: inline-flex; cursor: pointer; }
+.cf-seg__input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.cf-seg__label { display: inline-flex; align-items: center; height: 32px; padding: 0 var(--space-12); border-radius: 6px; color: var(--text-secondary); font: 600 14px/20px var(--font-text); white-space: nowrap; }
+.cf-seg__input:checked + .cf-seg__label { background: var(--bg-surface); color: var(--text-primary); box-shadow: var(--shadow-sm); }
+.cf-seg__input:focus-visible + .cf-seg__label { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+
+/* Dropdown (listbox) */
+.cf-dd { position: relative; display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+.cf-dd__trigger { display: flex; align-items: center; justify-content: space-between; gap: var(--space-8); height: var(--control-md); padding: 0 var(--space-12); border: 1px solid var(--border-default); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-primary); font: 500 14px/20px var(--font-text); cursor: pointer; text-align: left; }
+.cf-dd__trigger:hover { background: var(--bg-hover); }
+.cf-dd__trigger:focus-visible { outline: none; border-color: var(--border-focus); box-shadow: var(--focus-ring); }
+.cf-dd__trigger cf-icon { color: var(--icon-secondary); }
+.cf-dd__value, .cf-dd__opt { display: flex; align-items: center; gap: var(--space-8); min-width: 0; }
+.cf-dd__list { position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: 360px; margin: 0; padding: 6px; list-style: none; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); box-shadow: var(--shadow-md); outline: none; }
+.cf-dd__opt { position: relative; justify-content: space-between; min-height: 36px; padding: 6px 10px; border-radius: 6px; cursor: pointer; font: 500 14px/20px var(--font-text); }
+.cf-dd__opt.is-active { background: var(--bg-hover); }
+.cf-dd__opt[aria-selected="true"] { font-weight: 600; }
+.cf-dd__opt.is-disabled { color: var(--text-disabled); cursor: not-allowed; }
+.cf-dd__opt[data-tooltip].is-active::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 10px;
+  top: calc(100% + 2px);
+  z-index: 5;
+  width: max-content;
+  max-width: 280px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-inverse);
+  color: var(--text-inverse);
+  font: 600 12px/16px var(--font-text);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+}
+.cf-dd__list:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+
+/* Skeleton */
+.cf-skel { display: block; border-radius: var(--radius-sm); background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-pressed) 50%, var(--bg-hover) 75%); background-size: 200% 100%; animation: cf-shimmer 1.4s linear infinite; }
+@keyframes cf-shimmer { to { background-position: -200% 0; } }
+
+/* TimeSeriesChart */
+.cf-ts { display: flex; flex-direction: column; gap: var(--space-12); }
+.cf-ts__stage { position: relative; border-radius: var(--radius-sm); touch-action: pan-y; }
+.cf-ts__stage:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+.cf-ts__svg { display: block; width: 100%; height: auto; }
+.cf-ts__grid { stroke: var(--chart-grid); stroke-width: 1; }
+.cf-ts__tick { fill: var(--text-tertiary); font: 500 12px var(--font-text); }
+.cf-ts__line { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.cf-ts__line.is-partial { stroke-dasharray: 5 5; }
+.cf-ts__area { opacity: .09; stroke: none; }
+.cf-ts__partial-dot { fill: var(--bg-surface); stroke-width: 2.5; }
+.cf-ts__cursor line { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 3 3; }
+.cf-ts__dot { fill: var(--bg-surface); stroke-width: 2.5; }
+.cf-ts__tip { position: absolute; top: 8px; z-index: 3; min-width: 168px; padding: var(--space-12); border-radius: var(--radius-md); background: var(--bg-inverse); color: var(--text-inverse); box-shadow: var(--shadow-lg); font: 500 12px/16px var(--font-text); pointer-events: none; display: flex; flex-direction: column; gap: 6px; }
+.cf-ts__tip-date { font-weight: 600; color: var(--neutral-200); }
+.cf-ts__tip-partial { margin-left: 4px; padding: 1px 6px; border-radius: var(--radius-full); background: rgb(255 255 255 / .16); color: var(--text-inverse); }
+.cf-ts__tip-row { display: flex; align-items: center; gap: var(--space-8); }
+.cf-ts__tip-row strong { margin-left: auto; padding-left: var(--space-16); color: inherit; font-variant-numeric: tabular-nums; }
+.cf-ts__swatch { flex: none; width: 10px; height: 10px; border-radius: 3px; }
+.cf-ts__legend { display: flex; flex-wrap: wrap; gap: var(--space-8) var(--space-16); margin: 0; padding: 0; list-style: none; font: 500 12px/16px var(--font-text); color: var(--text-secondary); }
+.cf-ts__legend li { display: inline-flex; align-items: center; gap: var(--space-6); }
+.cf-ts__dash { width: 18px; border-top: 2px dashed var(--text-secondary); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-live__dot, .cf-skel { animation: none; }
+}

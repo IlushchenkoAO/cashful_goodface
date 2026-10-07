@@ -2,7 +2,7 @@
    Lives in localStorage so it survives page navigation; falls back to memory
    when storage is blocked (private mode, some file:// setups). */
 (function () {
-  var KEY = 'cashful.prototype.v3';
+  var KEY = 'cashful.prototype.v4';
   var memory = null;
 
   function seed() {

@@ -9,19 +9,30 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
   <link rel="stylesheet" href="assets/css/cashful.css">
   <link rel="stylesheet" href="assets/css/layouts/app.css">
+  <link rel="stylesheet" href="assets/css/layouts/analytics.css">
   <script src="assets/js/ds/svg-data.js" defer></script>
   <script src="assets/js/ds/elements.js" defer></script>
   <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/ds/controls.js" defer></script>
+  <script src="assets/js/ds/charts.js" defer></script>
   <script src="assets/js/core/config.js" defer></script>
   <script src="assets/js/core/store.js" defer></script>
   <script src="assets/js/core/api.js" defer></script>
-  <script src="assets/js/core/demo.js" defer></script>
+  <script src="assets/js/core/format.js" defer></script>
+  <script src="assets/js/data/apps.js" defer></script>
+  <script src="assets/js/data/analytics.config.js" defer></script>
+  <script src="assets/js/data/analytics.js" defer></script>
+  <script src="assets/js/data/developer-settings.config.js" defer></script>
   <script src="assets/js/app/shell.js" defer></script>
+  <script src="assets/js/app/kyc.js" defer></script>
   <script src="assets/js/pages/analytics.js" defer></script>
+  <!-- Dev-only: remove this line to hide the data and KYC switchers -->
+  <script src="assets/js/pages/page-demo.js" defer></script>
 </head>
-<body data-page="analytics" data-account="developer">
-  <!-- Screens: DashboardDeveloper (in review), DevAnalyticsApproved, DevAnalyticsActionNeeded.
-       The state comes from the developer verification status; ?state=review|approved|action switches it for demos. -->
+<body data-page="analytics" data-account="auto">
+  <!-- Developer Analytics (read-only). A Personal account is sent to its Overview.
+       Filters live in the URL: ?app=<id|all>&period=7d|30d|90d|custom&from=&to=&metric=nodes|ips|earnings&groupBy=day|app|platform&split=1
+       Demo data: &data=data|no-apps|none-active|no-data|empty-period|loading|error. Nothing here depends on KYC. -->
   <div class="cf-shell">
     <aside class="cf-sidebar" data-sidebar data-active="analytics"></aside>
     <main class="cf-shell__main">

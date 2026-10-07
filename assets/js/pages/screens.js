@@ -7,6 +7,15 @@
   var ui = Cashful.ui;
   var api = Cashful.api;
 
+  // data-dev-status is a shorthand in the links; it sets the real fields (kycStatus, started)
+  var KYC_SHORTHAND = {
+    not_started: { kycStatus: 'not_started', started: false },
+    in_progress: { kycStatus: 'not_started', started: true },
+    in_review: { kycStatus: 'in_review' },
+    action_needed: { kycStatus: 'changes_requested' },
+    approved: { kycStatus: 'approved' }
+  };
+
   ui.$$('[data-fresh]').forEach(function (a) {
     a.addEventListener('click', function () { api.cancelPending(); });
   });
@@ -15,7 +24,7 @@
     a.addEventListener('click', function () {
       var d = a.dataset;
       var dev = {};
-      if (d.devStatus) dev.status = d.devStatus;
+      if (d.devStatus) Object.assign(dev, KYC_SHORTHAND[d.devStatus]);
       if (d.devStep) dev.step = d.devStep;
       if (d.devKind) dev.kind = d.devKind;
       api.demo.signInWith(d.accounts.split(','), { account: d.account, dev: dev, peerStage: d.peerStage });

@@ -23,14 +23,18 @@
   <script src="assets/js/data/payouts.js" defer></script>
   <script src="assets/js/data/settings.config.js" defer></script>
   <script src="assets/js/data/settings.js" defer></script>
+  <script src="assets/js/data/developer-settings.config.js" defer></script>
+  <script src="assets/js/core/track.js" defer></script>
   <script src="assets/js/app/shell.js" defer></script>
+  <script src="assets/js/app/kyc.js" defer></script>
   <script src="assets/js/pages/settings.js" defer></script>
   <!-- Dev-only: remove this line to hide the state switcher -->
   <script src="assets/js/pages/page-demo.js" defer></script>
 </head>
-<body data-page="settings" data-account="personal">
-  <!-- Personal accounts. Developer settings are a separate page, not built yet.
-       Preset: ?state=default|profile-dirty|email-pending|password-error|password-success|2fa-setup|2fa-wrong-code|2fa-on|2fa-hidden|notifications-on|notifications-off|delete-blocked|delete-balance|delete-zero -->
+<body data-page="settings" data-account="auto">
+  <!-- One route, content by account type. Developer: Verification, Business details, Agreements, Profile, Security,
+       Notifications, Account type, Close account (anchors #verification … #close-account). Personal: the original stack.
+       Personal preset: ?state=default|profile-dirty|email-pending|password-error|password-success|2fa-setup|2fa-wrong-code|2fa-on|2fa-hidden|notifications-on|notifications-off|delete-blocked|delete-balance|delete-zero -->
   <div class="cf-shell">
     <aside class="cf-sidebar" data-sidebar data-active="settings"></aside>
     <main class="cf-shell__main">

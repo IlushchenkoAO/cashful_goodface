@@ -21,6 +21,7 @@
     'overview': [
       'Overview stage: ' + stage('new', 'New') + ' · ' + stage('day1', 'Day 1') + ' · ' + stage('active', '2 months') + ' · ' + stage('payout', 'Payout ready'),
       'On <b>New</b>: Add a device → Close, and the first device connects.',
+      '<a href="dashboard.html?state=new&amp;referrals=no-devices">No devices, no referrals</a> · <a href="dashboard.html?state=new&amp;referrals=default">No devices, with referrals</a>',
       '“Become a developer” in the sidebar adds the second account.'
     ],
     'download': ['Hover a tile to see “How to install”.', 'Hero for another OS: <a href="download.html?os=windows">Windows</a> · <a href="download.html?os=macos">macOS</a>'],
