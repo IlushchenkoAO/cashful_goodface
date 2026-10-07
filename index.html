@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign up · Cashful</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="assets/css/cashful.css">
+  <link rel="stylesheet" href="assets/css/layouts/auth.css">
+  <script src="assets/js/ds/svg-data.js" defer></script>
+  <script src="assets/js/ds/elements.js" defer></script>
+  <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/core/config.js" defer></script>
+  <script src="assets/js/core/store.js" defer></script>
+  <script src="assets/js/core/api.js" defer></script>
+  <script src="assets/js/core/demo.js" defer></script>
+</head>
+<body data-page="choose-type">
+  <!-- Screen: Main — choose account type.
+       In production the type comes from the link (/signup?type=personal), so most people skip this screen. -->
+  <div class="auth">
+    <aside class="auth__aside auth__aside--purple">
+      <cf-logo version="white" height="28"></cf-logo>
+      <div class="auth__shape"><cf-brand-shape shape="pair" size="220" color="var(--yellow-500)"></cf-brand-shape></div>
+      <div class="auth__pitch">
+        <cf-mascot character="c" size="104"></cf-mascot>
+        <h2 class="auth__pitch-title">Turn your unused internet into cash</h2>
+        <p class="auth__pitch-text">Share bandwidth you don’t use, or earn from your app’s users. Only vetted Byteful customers can use the network.</p>
+      </div>
+      <div class="auth__trust"><cf-icon name="shield" size="20"></cf-icon><span>Built by the team behind Byteful</span></div>
+    </aside>
+
+    <main class="auth__main">
+      <div class="auth__topbar"><span>Already have an account?</span><a href="login.html">Log in</a></div>
+
+      <div class="auth__center">
+        <div class="auth__form auth__form--wide">
+          <div class="auth__head">
+            <h1 class="auth__title">How do you want to earn?</h1>
+            <p class="auth__lead">Pick one to start. You can add the other account later from the account switcher.</p>
+          </div>
+
+          <div class="auth__stack">
+            <a class="cf-choice" href="signup.html">
+              <span class="cf-choice__icon"><cf-icon name="smartphone" size="24"></cf-icon></span>
+              <span class="cf-choice__body">
+                <span class="cf-choice__eyebrow">Personal</span>
+                <span class="cf-choice__title">Earn from my devices</span>
+                <span class="cf-choice__text">Install the Cashful app on your phone, computer or router and get paid for bandwidth you don’t use.</span>
+              </span>
+              <span class="cf-choice__chevron"><cf-icon name="chevron-right" size="20"></cf-icon></span>
+            </a>
+            <a class="cf-choice" href="signup-developer.html">
+              <span class="cf-choice__icon"><cf-icon name="code" size="24"></cf-icon></span>
+              <span class="cf-choice__body">
+                <span class="cf-choice__eyebrow">Developer</span>
+                <span class="cf-choice__title">Monetize my app</span>
+                <span class="cf-choice__text">Add the Cashful SDK to your app and earn from users who opt in. Requires business and identity verification.</span>
+              </span>
+              <span class="cf-choice__chevron"><cf-icon name="chevron-right" size="20"></cf-icon></span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <footer class="auth__footer"><span>© 2026 Cashful</span><a href="#">Terms</a><a href="#">Privacy</a></footer>
+    </main>
+  </div>
+</body>
+</html>

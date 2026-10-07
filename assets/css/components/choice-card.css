@@ -1,0 +1,32 @@
+/* Choice card — large selectable link (account type picker) */
+.cf-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-16);
+  padding: var(--space-20);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color .15s, background .15s;
+}
+.cf-choice:hover { border-color: var(--border-focus); background: var(--bg-brand-subtle); color: var(--text-primary); }
+.cf-choice:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+.cf-choice__icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--bg-brand-muted);
+  color: var(--icon-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cf-choice__body { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.cf-choice__eyebrow { font: 600 12px/16px var(--font-text); color: var(--text-brand); text-transform: uppercase; letter-spacing: .04em; }
+.cf-choice__title { font: 600 18px/26px var(--font-text); letter-spacing: -.01em; }
+.cf-choice__text { font: 500 14px/20px var(--font-text); color: var(--text-secondary); }
+.cf-choice__chevron { flex: none; align-self: center; color: var(--icon-secondary); }

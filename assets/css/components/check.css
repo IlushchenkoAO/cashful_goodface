@@ -1,0 +1,39 @@
+/* Checkbox, Radio, Toggle — native inputs, styled boxes */
+.cf-check { position: relative; display: inline-flex; align-items: flex-start; gap: var(--space-8); cursor: pointer; }
+.cf-check__input { position: absolute; opacity: 0; width: 20px; height: 20px; margin: 0; cursor: inherit; }
+.cf-check__label { padding-top: 0; }
+.cf-check.is-disabled { cursor: not-allowed; color: var(--text-disabled); }
+
+.cf-checkbox__box,
+.cf-radio__box {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--icon-inverse);
+}
+.cf-radio__box { border-radius: 999px; }
+.cf-checkbox__box cf-icon { visibility: hidden; }
+
+.cf-check__input:checked + .cf-checkbox__box,
+.cf-check__input:checked + .cf-radio__box { background: var(--bg-brand); border-color: var(--bg-brand); }
+.cf-check__input:checked + .cf-checkbox__box cf-icon { visibility: visible; }
+.cf-check__input:checked + .cf-radio__box::after { content: ""; width: 8px; height: 8px; border-radius: 999px; background: var(--icon-inverse); }
+.cf-check__input:focus-visible + .cf-checkbox__box,
+.cf-check__input:focus-visible + .cf-radio__box { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+.cf-check__input:disabled + .cf-checkbox__box { background: var(--bg-disabled); border-color: var(--border-subtle); }
+
+.cf-check-group { display: flex; flex-direction: column; gap: var(--space-6); }
+.cf-check-group.is-error .cf-checkbox__box { border-color: var(--border-error); }
+.cf-check-group__error { font: 500 12px/18px var(--font-text); color: var(--text-error); padding-left: 28px; }
+.cf-check-group__error:empty { display: none; }
+
+.cf-toggle__box { width: 36px; height: 20px; padding: 2px; border-radius: 999px; background: var(--bg-pressed); display: inline-flex; transition: background .15s; }
+.cf-toggle__knob { width: 16px; height: 16px; border-radius: 999px; background: var(--bg-surface); transition: transform .15s; }
+.cf-check__input:checked + .cf-toggle__box { background: var(--bg-brand); }
+.cf-check__input:checked + .cf-toggle__box .cf-toggle__knob { transform: translateX(16px); }

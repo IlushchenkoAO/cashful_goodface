@@ -1,0 +1,18 @@
+/* Feature row — icon chip + title + description.
+   Used for document lists (agreements), "what you'll need" (KYC) and the Become a developer modal. */
+.feature { display: flex; gap: 12px; align-items: flex-start; }
+.feature__icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--bg-brand-muted);
+  color: var(--icon-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.feature__text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.feature__title { font: 600 14px/20px var(--font-text); }
+.feature__desc { font: 500 14px/20px var(--font-text); color: var(--text-secondary); }
+.feature__action { flex: none; align-self: center; font: 600 14px/20px var(--font-text); }

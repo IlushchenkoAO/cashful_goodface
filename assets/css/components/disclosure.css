@@ -1,0 +1,20 @@
+/* Disclosure — a native <details> as a card section.
+   <details class="cf-disclosure"><summary class="cf-disclosure__summary">Title</summary><div class="cf-disclosure__body">…</div></details> */
+.cf-disclosure { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); }
+.cf-disclosure__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-20) var(--space-24);
+  font: 600 18px/26px var(--font-text);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--radius-lg);
+}
+.cf-disclosure__summary::-webkit-details-marker { display: none; }
+.cf-disclosure__summary > :first-child { flex: 1; }
+.cf-disclosure__summary cf-icon { color: var(--icon-secondary); transition: transform .15s; }
+.cf-disclosure[open] .cf-disclosure__summary cf-icon { transform: rotate(180deg); }
+.cf-disclosure__summary:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+.cf-disclosure__body { display: flex; flex-direction: column; gap: var(--space-16); padding: 0 var(--space-24) var(--space-24); }

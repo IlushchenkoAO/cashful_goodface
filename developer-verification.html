@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Developer verification · Cashful</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="assets/css/cashful.css">
+  <link rel="stylesheet" href="assets/css/layouts/auth.css">
+  <script src="assets/js/ds/svg-data.js" defer></script>
+  <script src="assets/js/ds/elements.js" defer></script>
+  <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/core/config.js" defer></script>
+  <script src="assets/js/core/store.js" defer></script>
+  <script src="assets/js/core/api.js" defer></script>
+  <script src="assets/js/core/demo.js" defer></script>
+  <script src="assets/js/pages/developer-verification.js" defer></script>
+</head>
+<body data-page="developer-verification">
+  <!-- Screens: DevOnbType, DevOnbBusiness, DevOnbBusinessIndie, DevOnbApps, DevOnbAgreements, DevOnbKyc, DevOnbReview,
+       DevOnbResume (?resume=1). Progress is saved after each step; #step opens a step directly. -->
+  <div class="auth">
+    <aside class="auth__aside auth__aside--purple">
+      <cf-logo version="white" height="28"></cf-logo>
+      <div class="auth__shape"><cf-brand-shape shape="pair" size="220" color="var(--yellow-500)"></cf-brand-shape></div>
+      <div class="auth__pitch">
+        <cf-mascot character="form" size="104"></cf-mascot>
+        <h2 class="auth__pitch-title">Let’s get you verified</h2>
+        <p class="auth__pitch-text">We check every developer so only trusted apps join the network. Your progress is saved after each step.</p>
+      </div>
+      <div class="auth__trust"><cf-icon name="shield" size="20"></cf-icon><span>Built by the team behind Byteful</span></div>
+    </aside>
+
+    <main class="auth__main auth__main--wide">
+      <div class="auth__topbar auth__topbar--split">
+        <span>Developer verification · Step <span id="step-num">1</span> of 6</span>
+        <span><span data-user-email></span> · <a href="login.html?state=logged-out" data-logout>Log out</a></span>
+      </div>
+
+      <div class="onb">
+        <div class="onb__steps"><ol class="cf-stepper" id="stepper"></ol></div>
+
+        <!-- 1. Account type -->
+        <form class="onb__form" data-view="type" novalidate hidden>
+          <div class="auth__head">
+            <h1 class="auth__title">Who is the developer?</h1>
+            <p class="auth__lead">This decides which details and documents we ask for.</p>
+          </div>
+          <div class="auth__stack" role="radiogroup" aria-label="Developer type">
+            <label class="cf-radio-card">
+              <span class="cf-check"><input class="cf-check__input" type="radio" name="kind" value="indie"><span class="cf-radio__box"></span></span>
+              <span class="cf-radio-card__text"><span class="cf-radio-card__title">Independent developer</span><span class="cf-radio-card__desc">You publish apps under your own name.</span></span>
+            </label>
+            <label class="cf-radio-card">
+              <span class="cf-check"><input class="cf-check__input" type="radio" name="kind" value="company" checked><span class="cf-radio__box"></span></span>
+              <span class="cf-radio-card__text"><span class="cf-radio-card__title">Company</span><span class="cf-radio-card__desc">LLC, Ltd, GmbH or another registered business.</span></span>
+            </label>
+          </div>
+          <div class="onb__nav"><span></span><button type="submit" class="cf-btn cf-btn--primary"><span>Continue</span><cf-icon name="arrow-right" size="20"></cf-icon></button></div>
+        </form>
+
+        <!-- 2a. Business details — company -->
+        <form class="onb__form" data-view="details-company" novalidate hidden>
+          <div class="auth__head">
+            <h1 class="auth__title">Business details</h1>
+            <p class="auth__lead">Use the details from your company registration documents.</p>
+          </div>
+          <div class="auth__fields">
+            <div class="cf-input"><label class="cf-input__label" for="company">Legal company name</label><div class="cf-field"><input class="cf-field__input" id="company" name="company" placeholder="Studio Apps LLC" autocomplete="organization"></div><div class="cf-input__helper"></div></div>
+            <div class="cf-input"><label class="cf-input__label" for="regno">Registration number</label><div class="cf-field"><input class="cf-field__input" id="regno" name="regno" placeholder="e.g. 12-3456789"></div><div class="cf-input__helper"></div></div>
+            <div class="cf-input"><label class="cf-input__label" for="country-c">Country of registration</label><div class="cf-field cf-field--select"><select class="cf-field__input" id="country-c" name="country" data-options="countries"></select><cf-icon name="chevron-down" size="20"></cf-icon></div><div class="cf-input__helper"></div></div>
+            <div class="cf-input"><label class="cf-input__label" for="street-c">Street address</label><div class="cf-field"><input class="cf-field__input" id="street-c" name="street" placeholder="Street and building" autocomplete="street-address"></div><div class="cf-input__helper"></div></div>
+            <div class="cf-field-row">
+              <div class="cf-input"><label class="cf-input__label" for="city-c">City</label><div class="cf-field"><input class="cf-field__input" id="city-c" name="city" placeholder="City" autocomplete="address-level2"></div><div class="cf-input__helper"></div></div>
+              <div class="cf-input"><label class="cf-input__label" for="state-c">State or region</label><div class="cf-field"><input class="cf-field__input" id="state-c" name="region" placeholder="State" autocomplete="address-level1"></div><div class="cf-input__helper"></div></div>
+            </div>
+            <div class="cf-field-row">
+              <div class="cf-input"><label class="cf-input__label" for="zip-c">ZIP or postal code</label><div class="cf-field"><input class="cf-field__input" id="zip-c" name="zip" placeholder="ZIP code" autocomplete="postal-code"></div><div class="cf-input__helper"></div></div>
+              <div class="cf-input"><label class="cf-input__label" for="web-c">Website</label><div class="cf-field"><input class="cf-field__input" id="web-c" name="website" placeholder="studio.dev" autocomplete="url"></div><div class="cf-input__helper">Optional</div></div>
+            </div>
+          </div>
+          <div class="onb__nav"><button type="button" class="cf-btn cf-btn--ghost" data-back><cf-icon name="chevron-left" size="20"></cf-icon><span>Back</span></button><button type="submit" class="cf-btn cf-btn--primary"><span>Continue</span><cf-icon name="arrow-right" size="20"></cf-icon></button></div>
+        </form>
+
+        <!-- 2b. Your details — independent developer -->
+        <form class="onb__form" data-view="details-indie" novalidate hidden>
+          <div class="auth__head">
+            <h1 class="auth__title">Your details</h1>
+            <p class="auth__lead">Use your legal name and address exactly as they appear on your ID.</p>
+          </div>
+          <div class="auth__fields">
+            <div class="cf-field-row">
+              <div class="cf-input"><label class="cf-input__label" for="first">First name</label><div class="cf-field"><input class="cf-field__input" id="first" name="firstName" placeholder="First name" autocomplete="given-name"></div><div class="cf-input__helper"></div></div>
+              <div class="cf-input"><label class="cf-input__label" for="last">Last name</label><div class="cf-field"><input class="cf-field__input" id="last" name="lastName" placeholder="Last name" autocomplete="family-name"></div><div class="cf-input__helper"></div></div>
+            </div>
+            <div class="cf-input"><label class="cf-input__label" for="country-i">Country of residence</label><div class="cf-field cf-field--select"><select class="cf-field__input" id="country-i" name="country" data-options="countries"></select><cf-icon name="chevron-down" size="20"></cf-icon></div><div class="cf-input__helper"></div></div>
+            <div class="cf-input"><label class="cf-input__label" for="street-i">Street address</label><div class="cf-field"><input class="cf-field__input" id="street-i" name="street" placeholder="Street and building" autocomplete="street-address"></div><div class="cf-input__helper"></div></div>
+            <div class="cf-field-row">
+              <div class="cf-input"><label class="cf-input__label" for="city-i">City</label><div class="cf-field"><input class="cf-field__input" id="city-i" name="city" placeholder="City" autocomplete="address-level2"></div><div class="cf-input__helper"></div></div>
+              <div class="cf-input"><label class="cf-input__label" for="state-i">State or region</label><div class="cf-field"><input class="cf-field__input" id="state-i" name="region" placeholder="State" autocomplete="address-level1"></div><div class="cf-input__helper"></div></div>
+            </div>
+            <div class="cf-field-row">
+              <div class="cf-input"><label class="cf-input__label" for="zip-i">ZIP or postal code</label><div class="cf-field"><input class="cf-field__input" id="zip-i" name="zip" placeholder="ZIP code" autocomplete="postal-code"></div><div class="cf-input__helper"></div></div>
+              <div class="cf-input"><label class="cf-input__label" for="web-i">Website</label><div class="cf-field"><input class="cf-field__input" id="web-i" name="website" placeholder="Your app or portfolio" autocomplete="url"></div><div class="cf-input__helper">Optional</div></div>
+            </div>
+          </div>
+          <div class="onb__nav"><button type="button" class="cf-btn cf-btn--ghost" data-back><cf-icon name="chevron-left" size="20"></cf-icon><span>Back</span></button><button type="submit" class="cf-btn cf-btn--primary"><span>Continue</span><cf-icon name="arrow-right" size="20"></cf-icon></button></div>
+        </form>
+
+        <!-- 3. Your apps (DevOnbApps, DevOnbResume) -->
+        <form class="onb__form" data-view="apps" novalidate hidden>
+          <div class="resume-slot" hidden></div>
+          <div class="auth__head">
+            <h1 class="auth__title">Your apps</h1>
+            <p class="auth__lead">A rough idea is enough. You’ll add each app and send it for review later.</p>
+          </div>
+          <div class="auth__fields">
+            <div class="cf-input"><label class="cf-input__label" for="app-count">How many apps will you integrate?</label><div class="cf-field cf-field--select"><select class="cf-field__input" id="app-count" name="count" data-options="appCounts"></select><cf-icon name="chevron-down" size="20"></cf-icon></div><div class="cf-input__helper"></div></div>
+            <div class="cf-input"><label class="cf-input__label" for="installs">Total installs across your apps</label><div class="cf-field cf-field--select"><select class="cf-field__input" id="installs" name="installs" data-options="installs"></select><cf-icon name="chevron-down" size="20"></cf-icon></div><div class="cf-input__helper"></div></div>
+            <div class="cf-input"><label class="cf-input__label" for="regions">Where are most of your users?</label><div class="cf-field cf-field--select"><select class="cf-field__input" id="regions" name="regions" data-options="regions"></select><cf-icon name="chevron-down" size="20"></cf-icon></div><div class="cf-input__helper"></div></div>
+            <div class="cf-check-grid" role="group" aria-labelledby="platforms-label">
+              <span class="cf-check-grid__label" id="platforms-label">Platforms</span>
+              <div class="cf-check-grid__items" id="platforms"></div>
+            </div>
+          </div>
+          <div class="onb__nav"><button type="button" class="cf-btn cf-btn--ghost" data-back><cf-icon name="chevron-left" size="20"></cf-icon><span>Back</span></button><button type="submit" class="cf-btn cf-btn--primary"><span>Continue</span><cf-icon name="arrow-right" size="20"></cf-icon></button></div>
+        </form>
+
+        <!-- 4. Agreements -->
+        <form class="onb__form" data-view="agreements" novalidate hidden>
+          <div class="auth__head">
+            <h1 class="auth__title">Review and sign the agreements</h1>
+            <p class="auth__lead"><span id="signing-as">You’re signing on behalf of Studio Apps LLC.</span> We’ll email you a copy of each document.</p>
+          </div>
+          <div class="cf-card">
+            <div class="feature"><span class="feature__icon"><cf-icon name="file" size="20"></cf-icon></span><span class="feature__text"><span class="feature__title">Developer Agreement</span><span class="feature__desc">Revenue share, payouts and your obligations as a partner.</span></span><a href="#" class="feature__action" data-doc="Developer Agreement">Read</a></div>
+            <div class="feature"><span class="feature__icon"><cf-icon name="file" size="20"></cf-icon></span><span class="feature__text"><span class="feature__title">Acceptable Use Policy</span><span class="feature__desc">What the network can and can’t be used for.</span></span><a href="#" class="feature__action" data-doc="Acceptable Use Policy">Read</a></div>
+            <div class="feature"><span class="feature__icon"><cf-icon name="file" size="20"></cf-icon></span><span class="feature__text"><span class="feature__title">End-user consent requirements</span><span class="feature__desc">How your app must ask users before it shares bandwidth.</span></span><a href="#" class="feature__action" data-doc="End-user consent requirements">Read</a></div>
+          </div>
+          <div class="cf-check-group">
+            <label class="cf-check">
+              <input class="cf-check__input" type="checkbox" name="agree">
+              <span class="cf-checkbox__box"><cf-icon name="check" size="14" stroke-width="2.75"></cf-icon></span>
+              <span class="cf-check__label">I’ve read and agree to all three documents</span>
+            </label>
+            <div class="cf-check-group__error"></div>
+          </div>
+          <div class="cf-input"><label class="cf-input__label" for="signature">Full legal name</label><div class="cf-field"><input class="cf-field__input" id="signature" name="signature" placeholder="Type your name to sign" autocomplete="name"></div><div class="cf-input__helper">This works as your electronic signature.</div></div>
+          <div class="onb__nav"><button type="button" class="cf-btn cf-btn--ghost" data-back><cf-icon name="chevron-left" size="20"></cf-icon><span>Back</span></button><button type="submit" class="cf-btn cf-btn--primary"><span>Sign and continue</span><cf-icon name="arrow-right" size="20"></cf-icon></button></div>
+        </form>
+
+        <!-- 5. Verify identity -->
+        <form class="onb__form" data-view="kyc" novalidate hidden>
+          <div class="kyc-slot" hidden></div>
+          <div class="auth__head">
+            <h1 class="auth__title">Verify your identity</h1>
+            <p class="auth__lead">Our verification partner checks your ID. It takes about 2 minutes on your phone or webcam.</p>
+          </div>
+          <div class="cf-card">
+            <span class="onb__card-title">What you’ll need</span>
+            <div class="feature"><span class="feature__icon"><cf-icon name="file" size="20"></cf-icon></span><span class="feature__text"><span class="feature__title">A government-issued photo ID</span><span class="feature__desc">Passport, national ID card or driving license.</span></span></div>
+            <div class="feature"><span class="feature__icon"><cf-icon name="user" size="20"></cf-icon></span><span class="feature__text"><span class="feature__title">A quick selfie</span><span class="feature__desc">To match your face with the photo on your ID.</span></span></div>
+            <div class="feature" data-company-only><span class="feature__icon"><cf-icon name="shield" size="20"></cf-icon></span><span class="feature__text"><span class="feature__title">Authority to act for <span data-company-name>Studio Apps LLC</span></span><span class="feature__desc">You must be an owner, director or authorized representative.</span></span></div>
+          </div>
+          <div class="cf-alert cf-alert--info" role="status"><cf-icon class="cf-alert__icon" name="info" size="20"></cf-icon><div class="cf-alert__text"><div class="cf-alert__title">Your documents stay with our partner</div><div class="cf-alert__desc">Cashful only receives the result of the check, not copies of your documents.</div></div></div>
+          <div class="onb__nav"><button type="button" class="cf-btn cf-btn--ghost" data-back><cf-icon name="chevron-left" size="20"></cf-icon><span>Back</span></button><button type="submit" class="cf-btn cf-btn--primary"><span>Start verification</span><cf-icon name="arrow-right" size="20"></cf-icon></button></div>
+        </form>
+
+        <!-- 6. Review -->
+        <div class="onb__form" data-view="review" hidden>
+          <div><span class="cf-badge cf-badge--warning"><span class="cf-badge__dot"></span>In review</span></div>
+          <div class="auth__head">
+            <h1 class="auth__title">We’re reviewing your account</h1>
+            <p class="auth__lead">We usually reply within [X] business days. We’ll email <span data-user-email></span> when you’re approved or if we need anything else.</p>
+          </div>
+          <p class="t-body t-secondary">Meanwhile you can explore the SDK and add your apps as drafts. Sending apps for review and payouts unlock after approval.</p>
+          <div><a href="analytics.html" class="cf-btn cf-btn--primary"><span>Go to dashboard</span><cf-icon name="arrow-right" size="20"></cf-icon></a></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

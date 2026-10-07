@@ -1,0 +1,41 @@
+/* Select — a native <select> inside .cf-field, styled like Input type="select".
+   <div class="cf-field cf-field--select"><select class="cf-field__input">…</select><cf-icon name="chevron-down"></cf-icon></div> */
+.cf-field--select { position: relative; cursor: pointer; }
+.cf-field--select .cf-field__input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 28px;
+  margin-right: -28px;
+  cursor: pointer;
+}
+.cf-field--select cf-icon { color: var(--icon-secondary); pointer-events: none; }
+.cf-input.is-disabled .cf-field--select { cursor: not-allowed; }
+
+/* Two inputs side by side (City + State) */
+.cf-field-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+
+/* Checkbox group in a grid (Platforms) */
+.cf-check-grid { display: flex; flex-direction: column; gap: 10px; }
+.cf-check-grid__label { font: 600 14px/20px var(--font-text); letter-spacing: -0.01em; }
+.cf-check-grid__items { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+
+/* Radio card (account type) */
+.cf-radio-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px 20px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  cursor: pointer;
+}
+.cf-radio-card:has(.cf-check__input:checked) { border-color: var(--border-focus); }
+.cf-radio-card__text { display: flex; flex-direction: column; gap: 2px; }
+.cf-radio-card__title { font: 600 16px/24px var(--font-text); letter-spacing: -0.01em; }
+.cf-radio-card__desc { font: 500 14px/20px var(--font-text); color: var(--text-secondary); }
+
+@media (max-width: 480px) {
+  .cf-field-row { grid-template-columns: 1fr; }
+  .cf-check-grid__items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

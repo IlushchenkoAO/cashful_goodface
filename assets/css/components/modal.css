@@ -1,0 +1,20 @@
+/* Modal, menu - ported 1:1 from the design prototype, used by the dashboard screens */
+.cf-modal{width:480px;max-width:100%;background:var(--bg-surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);overflow:hidden}
+.cf-modal__head{display:flex;align-items:center;gap:var(--space-12);padding:var(--space-24) var(--space-24) var(--space-8)}
+.cf-modal__title{flex:1;margin:0;font:800 22px/28px var(--font-display);letter-spacing:-.03em}
+.cf-modal__body{display:flex;flex-direction:column;gap:var(--space-16);padding:var(--space-8) var(--space-24) var(--space-24)}
+.cf-modal__desc{margin:0;color:var(--text-secondary)}
+.cf-modal__foot{display:flex;justify-content:flex-end;gap:var(--space-12);padding:var(--space-16) var(--space-24);background:var(--bg-canvas)}
+.cf-menu{display:inline-flex;flex-direction:column;gap:2px;min-width:200px;padding:6px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-md);box-shadow:var(--shadow-md)}
+.cf-menu__item{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border:0;border-radius:6px;background:none;color:var(--text-primary);font:500 14px/20px var(--font-text);cursor:pointer;text-align:left}
+.cf-menu__item .cf-icon{color:var(--icon-secondary)}
+.cf-menu__item:hover{background:var(--bg-hover)}
+.cf-menu__item.is-danger{color:var(--text-error)}
+.cf-menu__item.is-danger .cf-icon{color:var(--icon-error)}
+
+/* Overlay for modals rendered by Cashful.ui.modal */
+.cf-overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgb(18 16 24 / 0.48); animation: cf-fade .15s ease-out; }
+.cf-overlay .cf-modal { max-height: calc(100vh - 48px); display: flex; flex-direction: column; }
+.cf-overlay .cf-modal__body { overflow-y: auto; }
+body.has-modal { overflow: hidden; }
+@keyframes cf-fade { from { opacity: 0; } }

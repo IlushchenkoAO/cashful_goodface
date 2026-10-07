@@ -1,0 +1,20 @@
+/* Card, stat - ported 1:1 from the design prototype, used by the dashboard screens */
+.cf-card{display:flex;flex-direction:column;gap:var(--space-20);padding:var(--space-24);background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg)}
+.cf-card--flush{padding:0;gap:0;overflow:hidden}
+.cf-card--flush .cf-card__head{padding:var(--space-20) var(--space-24)}
+.cf-card__head{display:flex;align-items:center;gap:var(--space-12)}
+.cf-card__title{flex:1;margin:0;font:600 18px/26px var(--font-text);letter-spacing:-.01em}
+.cf-stat{display:flex;flex-direction:column;gap:var(--space-12);padding:var(--space-20);background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg)}
+.cf-stat--brand{background:var(--bg-brand);border-color:var(--bg-brand);color:var(--text-on-brand)}
+.cf-stat__top{display:flex;align-items:center;gap:var(--space-8)}
+.cf-stat__label{flex:1;color:var(--text-secondary)}
+.cf-stat--brand .cf-stat__label{color:var(--text-on-brand)}
+.cf-stat__chip{display:inline-flex;padding:6px;border-radius:8px;background:var(--bg-canvas);color:var(--icon-secondary)}
+.cf-stat--brand .cf-stat__chip{background:var(--bg-accent);color:var(--icon-primary)}
+.cf-stat__value{font:800 28px/32px var(--font-display);letter-spacing:-.03em}
+.cf-stat__foot{display:flex;align-items:center;gap:var(--space-8);font-size:12px;line-height:18px}
+.cf-stat__delta{display:inline-flex;align-items:center;gap:2px;font-weight:600}
+.cf-stat__delta.is-up{color:var(--text-success)}
+.cf-stat__delta.is-down{color:var(--text-error)}
+.cf-stat__caption{color:var(--text-tertiary)}
+.cf-stat--brand .cf-stat__delta,.cf-stat--brand .cf-stat__caption{color:var(--text-on-brand)}

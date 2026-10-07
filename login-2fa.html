@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Two-step verification · Cashful</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="assets/css/cashful.css">
+  <link rel="stylesheet" href="assets/css/layouts/auth.css">
+  <script src="assets/js/ds/svg-data.js" defer></script>
+  <script src="assets/js/ds/elements.js" defer></script>
+  <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/core/config.js" defer></script>
+  <script src="assets/js/core/store.js" defer></script>
+  <script src="assets/js/core/api.js" defer></script>
+  <script src="assets/js/core/demo.js" defer></script>
+  <script src="assets/js/pages/login-2fa.js" defer></script>
+</head>
+<body data-page="login-2fa">
+  <!-- Screen: Login2FA.
+       NOTE: the form side is missing in the design source (only the brand panel exists).
+       It follows the VerifyEmail pattern until the designer provides the real screen. -->
+  <div class="auth">
+    <aside class="auth__aside auth__aside--purple">
+      <cf-logo version="white" height="28"></cf-logo>
+      <div class="auth__shape"><cf-brand-shape shape="pair" size="220" color="var(--yellow-500)"></cf-brand-shape></div>
+      <div class="auth__pitch">
+        <cf-mascot character="form" size="104"></cf-mascot>
+        <h2 class="auth__pitch-title">Your account is protected</h2>
+        <p class="auth__pitch-text">Two-step verification keeps your earnings safe, even if someone learns your password.</p>
+      </div>
+      <div class="auth__trust"><cf-icon name="shield" size="20"></cf-icon><span>Built by the team behind Byteful</span></div>
+    </aside>
+
+    <main class="auth__main">
+      <div class="auth__topbar"><a href="login.html">Back to log in</a></div>
+
+      <div class="auth__center">
+        <!-- Authenticator app code -->
+        <form class="auth__form" data-view="totp" id="totp-form" novalidate>
+          <div class="auth__head">
+            <h1 class="auth__title">Two-step verification</h1>
+            <p class="auth__lead">Enter the 6-digit code from your authenticator app.</p>
+          </div>
+
+          <div class="cf-otp" id="otp"></div>
+
+          <label class="cf-check">
+            <input class="cf-check__input" type="checkbox" name="trust">
+            <span class="cf-checkbox__box"><cf-icon name="check" size="14" stroke-width="2.75"></cf-icon></span>
+            <span class="cf-check__label">Don’t ask again on this browser for 30 days</span>
+          </label>
+
+          <button type="submit" class="cf-btn cf-btn--primary cf-btn--block">Verify</button>
+
+          <p class="auth__note">Can’t use your app? <button type="button" class="cf-link" data-switch="backup">Use a backup code</button></p>
+        </form>
+
+        <!-- Backup code -->
+        <form class="auth__form" data-view="backup" id="backup-form" novalidate hidden>
+          <div class="auth__head">
+            <h1 class="auth__title">Use a backup code</h1>
+            <p class="auth__lead">Enter one of the backup codes you saved when you turned on two-step verification. Each code works once.</p>
+          </div>
+
+          <div class="cf-input">
+            <label class="cf-input__label" for="backup">Backup code</label>
+            <div class="cf-field"><input class="cf-field__input cf-mono" id="backup" name="backup" placeholder="XXXX-XXXX" autocomplete="one-time-code"></div>
+            <div class="cf-input__helper"></div>
+          </div>
+
+          <label class="cf-check">
+            <input class="cf-check__input" type="checkbox" name="trust">
+            <span class="cf-checkbox__box"><cf-icon name="check" size="14" stroke-width="2.75"></cf-icon></span>
+            <span class="cf-check__label">Don’t ask again on this browser for 30 days</span>
+          </label>
+
+          <button type="submit" class="cf-btn cf-btn--primary cf-btn--block">Verify</button>
+
+          <p class="auth__note"><button type="button" class="cf-link" data-switch="totp">Use the authenticator app instead</button></p>
+        </form>
+      </div>
+
+      <footer class="auth__footer"><span>© 2026 Cashful</span><a href="#">Terms</a><a href="#">Privacy</a></footer>
+    </main>
+  </div>
+</body>
+</html>

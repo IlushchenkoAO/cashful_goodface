@@ -1,0 +1,27 @@
+/* Cashful design system — single entry point. Pages link this file plus one layout. */
+@import url("tokens.css");
+@import url("base.css");
+
+@import url("components/button.css");
+@import url("components/input.css");
+@import url("components/check.css");
+@import url("components/badge.css");
+@import url("components/feedback.css");
+@import url("components/choice-card.css");
+@import url("components/feature.css");
+@import url("components/select.css");
+@import url("components/disclosure.css");
+
+/* Dashboard components (used from the next iteration on) */
+@import url("components/navigation.css");
+@import url("components/shell.css");
+@import url("components/page-header.css");
+@import url("components/card.css");
+@import url("components/table.css");
+@import url("components/chart.css");
+@import url("components/code.css");
+@import url("components/platform-tile.css");
+@import url("components/stepper.css");
+@import url("components/modal.css");
+
+@import url("demo.css");

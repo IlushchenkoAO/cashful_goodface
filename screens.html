@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Screen map · Cashful prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="assets/css/cashful.css">
+  <link rel="stylesheet" href="assets/css/layouts/screens.css">
+  <script src="assets/js/ds/svg-data.js" defer></script>
+  <script src="assets/js/ds/elements.js" defer></script>
+  <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/core/config.js" defer></script>
+  <script src="assets/js/core/store.js" defer></script>
+  <script src="assets/js/core/api.js" defer></script>
+  <script src="assets/js/pages/screens.js" defer></script>
+</head>
+<body data-page="screens">
+  <div class="map">
+    <header class="map__head">
+      <cf-logo version="color" height="28"></cf-logo>
+      <div class="cf-pagehead">
+        <h1 class="cf-pagehead__title">Screen map</h1>
+        <p class="cf-pagehead__desc">Every screen from the design and the state it opens in. Left column: screen name in the design file.</p>
+      </div>
+      <div class="map__actions">
+        <a class="cf-btn cf-btn--primary" href="index.html">Start from the beginning</a>
+        <button type="button" class="cf-btn cf-btn--secondary" id="reset"><cf-icon name="refresh" size="20"></cf-icon><span>Reset demo data</span></button>
+      </div>
+    </header>
+
+    <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Sign up and email verification</h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">Main</td><td>Choose account type</td><td><a href="index.html">index.html</a></td></tr>
+          <tr><td class="map__key">SignupPersonal</td><td>Sign up — Personal</td><td><a href="signup.html">signup.html</a></td></tr>
+          <tr><td class="map__key">SignupPersonalEmailTaken</td><td>Email already registered</td><td><a href="signup.html?demo=taken">signup.html?demo=taken</a></td></tr>
+          <tr><td class="map__key">SignupInvited</td><td>From a referral link</td><td><a href="signup.html?ref=JORDAN24">signup.html?ref=JORDAN24</a></td></tr>
+          <tr><td class="map__key">SignupReferralError</td><td>Referral code not found</td><td><a href="signup.html?ref=JORDN24&amp;demo=ref-error">signup.html?ref=JORDN24&amp;demo=ref-error</a></td></tr>
+          <tr><td class="map__key">VerifyEmail</td><td>Verify email — Personal</td><td><a href="verify-email.html" data-fresh>verify-email.html</a></td></tr>
+          <tr><td class="map__key">VerifyEmailError</td><td>Wrong code</td><td><a href="verify-email.html?demo=error" data-fresh>verify-email.html?demo=error</a></td></tr>
+          <tr><td class="map__key">VerifyEmailResent</td><td>Code resent</td><td><a href="verify-email.html?demo=resent" data-fresh>verify-email.html?demo=resent</a></td></tr>
+          <tr><td class="map__key">SignupDeveloper</td><td>Sign up — Developer</td><td><a href="signup-developer.html">signup-developer.html</a></td></tr>
+          <tr><td class="map__key">VerifyEmailDev</td><td>Verify email — Developer</td><td><a href="verify-email.html?type=developer" data-fresh>verify-email.html?type=developer</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Log in</h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">Login</td><td>Log in</td><td><a href="login.html">login.html</a></td></tr>
+          <tr><td class="map__key">LoginError</td><td>Wrong password</td><td><a href="login.html?demo=error">login.html?demo=error</a></td></tr>
+          <tr><td class="map__key">LoginLocked</td><td>Locked after 5 attempts</td><td><a href="login.html?demo=locked">login.html?demo=locked</a></td></tr>
+          <tr><td class="map__key">Login2FA</td><td>Two-step verification <span class="cf-badge cf-badge--warning"><span class="cf-badge__dot"></span>Form not in design</span></td><td><a href="login-2fa.html">login-2fa.html</a></td></tr>
+          <tr><td class="map__key">LoggedOut</td><td>Logged out</td><td><a href="login.html?state=logged-out">login.html?state=logged-out</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Password reset</h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">ForgotPassword</td><td>Forgot password</td><td><a href="forgot-password.html">forgot-password.html</a></td></tr>
+          <tr><td class="map__key">ForgotSent</td><td>Reset link sent</td><td><a href="forgot-password.html?demo=sent">forgot-password.html?demo=sent</a></td></tr>
+          <tr><td class="map__key">ResetPassword</td><td>Create a new password</td><td><a href="reset-password.html?token=demo">reset-password.html?token=demo</a></td></tr>
+          <tr><td class="map__key">ResetDone</td><td>Password updated</td><td><a href="reset-password.html?token=demo&amp;demo=done">reset-password.html?token=demo&amp;demo=done</a></td></tr>
+          <tr><td class="map__key">ResetLinkExpired</td><td>Reset link expired</td><td><a href="reset-password.html?token=expired">reset-password.html?token=expired</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">From the earn app</h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">EarnHandoff</td><td>Opening from the earn app</td><td><a href="earn-handoff.html?token=demo">earn-handoff.html?token=demo</a></td></tr>
+          <tr><td class="map__key">EarnHandoffExpired</td><td>Earn app link expired</td><td><a href="earn-handoff.html?token=expired">earn-handoff.html?token=expired</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Peer — Overview</h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">DashboardPersonal</td><td>Overview — new user, no devices</td><td><a href="dashboard.html?state=new" data-accounts="personal">dashboard.html?state=new</a></td></tr>
+          <tr><td class="map__key">PeerAddDevice</td><td>Add a device (modal)</td><td><a href="dashboard.html?state=new&amp;modal=add-device" data-accounts="personal">dashboard.html?state=new&amp;modal=add-device</a></td></tr>
+          <tr><td class="map__key">PeerConnected</td><td>Device connected — close the modal on a new account</td><td><a href="dashboard.html?state=new&amp;modal=add-device" data-accounts="personal">same link → Close</a></td></tr>
+          <tr><td class="map__key">PeerDay1</td><td>Overview — day 1</td><td><a href="dashboard.html?state=day1" data-accounts="personal">dashboard.html?state=day1</a></td></tr>
+          <tr><td class="map__key">PeerActive</td><td>Overview — 2 months in (tabs, chart tooltip)</td><td><a href="dashboard.html?state=active" data-accounts="personal">dashboard.html?state=active</a></td></tr>
+          <tr><td class="map__key">PeerPayoutReady</td><td>Overview — ready for payout</td><td><a href="dashboard.html?state=payout" data-accounts="personal">dashboard.html?state=payout</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Peer — Download</h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">PeerDownload</td><td>Download app</td><td><a href="download.html" data-accounts="personal">download.html</a></td></tr>
+          <tr><td class="map__key">—</td><td>How to install (hover a tile)</td><td><a href="download.html?help=android" data-accounts="personal">download.html?help=android</a></td></tr>
+          <tr><td class="map__key">—</td><td>How to install — “Soon” platform</td><td><a href="download.html?help=router" data-accounts="personal">download.html?help=router</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Developer verification</h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">DevOnbType</td><td>Account type</td><td><a href="developer-verification.html#type" data-accounts="developer" data-dev-status="not_started" data-dev-step="type">developer-verification.html#type</a></td></tr>
+          <tr><td class="map__key">DevOnbBusiness</td><td>Business details — company</td><td><a href="developer-verification.html#details" data-accounts="developer" data-dev-status="in_progress" data-dev-kind="company">#details (company)</a></td></tr>
+          <tr><td class="map__key">DevOnbBusinessIndie</td><td>Your details — independent</td><td><a href="developer-verification.html#details" data-accounts="developer" data-dev-status="in_progress" data-dev-kind="indie">#details (independent)</a></td></tr>
+          <tr><td class="map__key">DevOnbApps</td><td>Your apps</td><td><a href="developer-verification.html#apps" data-accounts="developer" data-dev-status="in_progress">#apps</a></td></tr>
+          <tr><td class="map__key">DevOnbAgreements</td><td>Agreements</td><td><a href="developer-verification.html#agreements" data-accounts="developer" data-dev-status="in_progress">#agreements</a></td></tr>
+          <tr><td class="map__key">DevOnbKyc</td><td>Verify identity</td><td><a href="developer-verification.html#kyc" data-accounts="developer" data-dev-status="in_progress">#kyc</a></td></tr>
+          <tr><td class="map__key">DevOnbReview</td><td>In review</td><td><a href="developer-verification.html#review" data-accounts="developer" data-dev-status="in_review">#review</a></td></tr>
+          <tr><td class="map__key">DevOnbResume</td><td>Resumed after log in</td><td><a href="developer-verification.html?resume=1" data-accounts="developer" data-dev-status="in_progress" data-dev-step="apps">developer-verification.html?resume=1</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Dashboard and account switching</h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">BecomeDeveloper</td><td>Become a developer — confirmation</td><td><a href="dashboard.html?state=new&amp;modal=become-developer" data-accounts="personal">dashboard.html?modal=become-developer</a></td></tr>
+          <tr><td class="map__key">DashboardDeveloper</td><td>Analytics — in review</td><td><a href="analytics.html?state=review" data-accounts="developer" data-dev-status="in_review">analytics.html?state=review</a></td></tr>
+          <tr><td class="map__key">DevAnalyticsApproved</td><td>Analytics — approved (both accounts, switcher)</td><td><a href="analytics.html?state=approved" data-accounts="personal,developer" data-account="developer" data-dev-status="approved">analytics.html?state=approved</a></td></tr>
+          <tr><td class="map__key">DevAnalyticsActionNeeded</td><td>Analytics — KYC action needed</td><td><a href="analytics.html?state=action" data-accounts="developer" data-dev-status="action_needed">analytics.html?state=action</a></td></tr>
+          <tr><td class="map__key">PersonalAdded</td><td>Overview — personal added by a developer</td><td><a href="dashboard.html?state=new" data-accounts="personal,developer" data-account="personal" data-dev-status="approved" data-peer-stage="new" data-flash="personalAdded">dashboard.html (after adding)</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Referrals <span class="cf-badge cf-badge--warning"><span class="cf-badge__dot"></span>Not in design</span></h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">—</td><td>Default — every status, milestones, funnel</td><td><a href="referrals.html?state=default" data-accounts="personal">referrals.html?state=default</a></td></tr>
+          <tr><td class="map__key">—</td><td>No referrals yet</td><td><a href="referrals.html?state=empty" data-accounts="personal">referrals.html?state=empty</a></td></tr>
+          <tr><td class="map__key">—</td><td>Only Signed up and Connected (nothing earned)</td><td><a href="referrals.html?state=early" data-accounts="personal">referrals.html?state=early</a></td></tr>
+          <tr><td class="map__key">—</td><td>Qualified friends earning</td><td><a href="referrals.html?state=qualified" data-accounts="personal">referrals.html?state=qualified</a></td></tr>
+          <tr><td class="map__key">—</td><td>Reward ended</td><td><a href="referrals.html?state=reward-ended" data-accounts="personal">referrals.html?state=reward-ended</a></td></tr>
+          <tr><td class="map__key">—</td><td>Not counted — same IP, same payout method, same account</td><td><a href="referrals.html?state=not-counted" data-accounts="personal">referrals.html?state=not-counted</a></td></tr>
+          <tr><td class="map__key">—</td><td>Milestones off</td><td><a href="referrals.html?state=milestones-off" data-accounts="personal">referrals.html?state=milestones-off</a></td></tr>
+          <tr><td class="map__key">—</td><td>Referrals off (no nav item, no Overview card, “not available” state)</td><td><a href="referrals.html?state=disabled" data-accounts="personal">referrals.html?state=disabled</a></td></tr>
+          <tr><td class="map__key">—</td><td>Developer opens the route → sent to its home</td><td><a href="referrals.html?state=default" data-accounts="personal,developer" data-account="developer" data-dev-status="approved">referrals.html (developer)</a></td></tr>
+          <tr><td class="map__key">—</td><td>Sign-up with a referral link (code stored for the attribution window)</td><td><a href="signup.html?ref=JORDAN24">signup.html?ref=JORDAN24</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Payouts <span class="cf-badge cf-badge--warning"><span class="cf-badge__dot"></span>Not in design</span></h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">—</td><td>Personal — default (methods, history with Failed and Rejected)</td><td><a href="payouts.html?state=default" data-accounts="personal,developer" data-account="personal" data-dev-status="approved">payouts.html?state=default</a></td></tr>
+          <tr><td class="map__key">—</td><td>No payout methods</td><td><a href="payouts.html?state=no-methods" data-accounts="personal,developer" data-account="personal" data-dev-status="approved">payouts.html?state=no-methods</a></td></tr>
+          <tr><td class="map__key">—</td><td>Balance below the minimum</td><td><a href="payouts.html?state=below-minimum" data-accounts="personal,developer" data-account="personal" data-dev-status="approved">payouts.html?state=below-minimum</a></td></tr>
+          <tr><td class="map__key">—</td><td>Payout in progress</td><td><a href="payouts.html?state=in-progress" data-accounts="personal,developer" data-account="personal" data-dev-status="approved">payouts.html?state=in-progress</a></td></tr>
+          <tr><td class="map__key">—</td><td>Empty history</td><td><a href="payouts.html?state=empty-history" data-accounts="personal,developer" data-account="personal" data-dev-status="approved">payouts.html?state=empty-history</a></td></tr>
+          <tr><td class="map__key">—</td><td>Developer — KYC required (locked)</td><td><a href="payouts.html?state=default" data-accounts="personal,developer" data-account="developer" data-dev-status="in_review">payouts.html (developer, KYC pending)</a></td></tr>
+          <tr><td class="map__key">—</td><td>Developer — KYC approved</td><td><a href="payouts.html?state=default" data-accounts="personal,developer" data-account="developer" data-dev-status="approved">payouts.html (developer, approved)</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

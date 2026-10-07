@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signing you in · Cashful</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="assets/css/cashful.css">
+  <link rel="stylesheet" href="assets/css/layouts/auth.css">
+  <script src="assets/js/ds/svg-data.js" defer></script>
+  <script src="assets/js/ds/elements.js" defer></script>
+  <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/core/config.js" defer></script>
+  <script src="assets/js/core/store.js" defer></script>
+  <script src="assets/js/core/api.js" defer></script>
+  <script src="assets/js/core/demo.js" defer></script>
+  <script src="assets/js/pages/earn-handoff.js" defer></script>
+</head>
+<body data-page="earn-handoff">
+  <!-- Screens: EarnHandoff (?token=…), EarnHandoffExpired (?token=expired).
+       The earn app opens /handoff?token=<one-time token> when someone taps Payouts. -->
+  <div class="solo">
+    <cf-logo version="color" height="28"></cf-logo>
+    <div class="solo__center">
+      <div class="solo__card" data-view="loading">
+        <cf-mascot character="c" size="104"></cf-mascot>
+        <h1 class="auth__title">Signing you in</h1>
+        <p class="auth__lead">You opened Payouts from the Cashful app on <strong id="device">Pixel 8</strong>. This takes a second.</p>
+        <div class="cf-progress" role="progressbar" aria-label="Signing in" aria-valuemin="0" aria-valuemax="100"><div class="cf-progress__bar" id="bar"></div></div>
+        <p class="auth__note">Not you? <a href="login.html">Log in with another account</a></p>
+        <a href="dashboard.html#payouts" class="cf-btn cf-btn--secondary" id="continue" hidden>Continue</a>
+      </div>
+
+      <div class="solo__card" data-view="expired" hidden>
+        <cf-mascot character="main" size="104"></cf-mascot>
+        <h1 class="auth__title">This link has expired</h1>
+        <p class="auth__lead">Links from the Cashful app work for 5 minutes. Log in and we’ll take you straight to Payouts.</p>
+        <a href="login.html" class="cf-btn cf-btn--primary">Log in</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

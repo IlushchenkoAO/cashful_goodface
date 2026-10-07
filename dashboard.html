@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Overview · Cashful</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="assets/css/cashful.css">
+  <link rel="stylesheet" href="assets/css/layouts/app.css">
+  <script src="assets/js/ds/svg-data.js" defer></script>
+  <script src="assets/js/ds/elements.js" defer></script>
+  <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/core/config.js" defer></script>
+  <script src="assets/js/core/store.js" defer></script>
+  <script src="assets/js/core/api.js" defer></script>
+  <script src="assets/js/core/demo.js" defer></script>
+  <script src="assets/js/data/peer.js" defer></script>
+  <script src="assets/js/data/earnings.js" defer></script>
+  <script src="assets/js/core/format.js" defer></script>
+  <script src="assets/js/core/track.js" defer></script>
+  <script src="assets/js/data/referrals.config.js" defer></script>
+  <script src="assets/js/data/referrals.js" defer></script>
+  <script src="assets/js/app/shell.js" defer></script>
+  <script src="assets/js/app/install.js" defer></script>
+  <script src="assets/js/pages/overview.js" defer></script>
+</head>
+<body data-page="overview" data-account="personal">
+  <!-- Screens: DashboardPersonal (new), PeerDay1, PeerActive, PeerPayoutReady, PeerAddDevice (modal), PeerConnected (notice).
+       The stage comes from the signed-in account; ?state=new|day1|active|payout switches it for demos. -->
+  <div class="cf-shell">
+    <aside class="cf-sidebar" data-sidebar data-active="overview"></aside>
+    <main class="cf-shell__main">
+      <div class="cf-shell__content" id="overview"></div>
+    </main>
+  </div>
+</body>
+</html>

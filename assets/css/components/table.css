@@ -1,0 +1,19 @@
+/* Table - ported 1:1 from the design prototype, used by the dashboard screens */
+.cf-table-wrap{overflow-x:auto}
+.cf-table{width:100%;border-collapse:collapse}
+.cf-table th{height:40px;padding:0 var(--space-16);background:var(--bg-surface-sunken);color:var(--text-secondary);font:600 11px/16px var(--font-text);letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--border-subtle);white-space:nowrap}
+.cf-table td{height:60px;padding:0 var(--space-16);border-bottom:1px solid var(--border-subtle);background:var(--bg-surface)}
+.cf-table tr:hover td{background:var(--bg-surface-sunken)}
+.cf-table__primary{font-weight:600}
+.cf-table__sub{font-size:12px;line-height:18px;color:var(--text-secondary)}
+.cf-table__amount{font-weight:600;font-variant-numeric:tabular-nums}
+.cf-pagination{display:flex;align-items:center;padding:var(--space-12) var(--space-16);background:var(--bg-surface)}
+.cf-pagination__info{flex:1;font-size:12px;color:var(--text-secondary)}
+.cf-pagination__pages{display:flex;gap:var(--space-4)}
+.cf-pg{width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:var(--text-secondary);font:600 12px/16px var(--font-text);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.cf-pg:hover{background:var(--bg-hover)}
+.cf-pg.is-on{background:var(--bg-brand-muted);color:var(--text-brand)}
+
+/* Default alignment (the React DS set it inline per column) */
+.cf-table th { text-align: left; }
+.cf-table th.is-right, .cf-table td.is-right { text-align: right; }

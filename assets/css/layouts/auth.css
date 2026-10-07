@@ -1,0 +1,110 @@
+/* Auth layout: brand panel on the left, form on the right.
+   Wraps to a single column below ~1000px. */
+.auth {
+  min-height: 100vh;
+  display: flex;
+  flex-wrap: wrap;
+  background: var(--bg-surface);
+}
+
+/* Brand panel */
+.auth__aside {
+  position: relative;
+  flex: 1 1 420px;
+  max-width: 560px;
+  min-height: 380px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  overflow: hidden;
+}
+.auth__aside--purple { background: var(--purple-500); color: var(--neutral-50); }
+.auth__aside--yellow { background: var(--yellow-500); color: var(--neutral-900); }
+.auth__shape { position: absolute; right: -48px; top: 120px; pointer-events: none; }
+.auth__pitch { position: relative; display: flex; flex-direction: column; gap: 16px; max-width: 420px; }
+.auth__pitch-title { font: 800 36px/40px var(--font-display); letter-spacing: -0.03em; }
+.auth__pitch-text { font: 500 16px/24px var(--font-text); }
+.auth__trust { position: relative; display: flex; align-items: center; gap: 8px; font: 600 14px/20px var(--font-text); }
+
+/* Form side */
+.auth__main {
+  flex: 999 1 560px;
+  min-width: 0;
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.auth__topbar {
+  min-height: 20px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font: 500 14px/20px var(--font-text);
+  color: var(--text-secondary);
+}
+.auth__center { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px 0; }
+.auth__form { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 24px; }
+.auth__form--wide { max-width: 560px; }
+.auth__head { display: flex; flex-direction: column; gap: 8px; }
+.auth__title { font: 800 36px/40px var(--font-display); letter-spacing: -0.03em; }
+.auth__lead { font: 500 16px/24px var(--font-text); color: var(--text-secondary); }
+.auth__fields { display: flex; flex-direction: column; gap: 16px; }
+.auth__social { display: flex; flex-direction: column; gap: 12px; }
+.auth__stack { display: flex; flex-direction: column; gap: 12px; }
+.auth__row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.auth__note { font: 500 14px/20px var(--font-text); color: var(--text-secondary); text-align: center; }
+
+.auth__divider { display: flex; align-items: center; gap: 12px; font: 500 12px/16px var(--font-text); color: var(--text-secondary); }
+.auth__divider::before,
+.auth__divider::after { content: ""; flex: 1; height: 1px; background: var(--border-default); }
+
+.auth__invite { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: var(--radius-lg); background: var(--bg-brand-muted); }
+.auth__invite-text { display: flex; flex-direction: column; gap: 2px; }
+
+.auth__footer {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font: 500 12px/18px var(--font-text);
+  color: var(--text-secondary);
+}
+.auth__footer a { color: var(--text-secondary); font-weight: 500; }
+
+/* Developer verification: brand panel + stepper + form */
+.auth__main--wide { flex-basis: 640px; }
+.auth__topbar--split { justify-content: space-between; }
+.onb { flex: 1; display: flex; flex-wrap: wrap; gap: 48px 64px; padding: 32px 0; align-items: flex-start; }
+.onb__steps { flex: 0 1 240px; }
+.onb__form { flex: 1 1 360px; max-width: 480px; display: flex; flex-direction: column; gap: 24px; }
+.onb__nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; }
+.onb .cf-card { gap: 16px; }
+.onb__card-title { font: 600 16px/24px var(--font-text); letter-spacing: -0.01em; }
+
+/* Single-column centred layout (app handoff, placeholders) */
+.solo {
+  min-height: 100vh;
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-canvas);
+}
+.solo__center { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px 0; }
+.solo__card { width: 100%; max-width: 440px; display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; }
+
+/* Wrapped to one column: the brand panel becomes a full-width header */
+@media (max-width: 1000px) {
+  .auth__aside { max-width: none; min-height: 0; }
+}
+
+@media (max-width: 640px) {
+  .auth__aside { padding: 24px 16px; min-height: 0; }
+  .auth__shape { display: none; }
+  .auth__main, .solo { padding: 24px 16px; }
+  .auth__title, .auth__pitch-title { font-size: 28px; line-height: 32px; }
+}

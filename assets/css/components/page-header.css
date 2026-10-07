@@ -1,0 +1,8 @@
+/* Page header - ported 1:1 from the design prototype, used by the dashboard screens */
+.cf-pagehead{display:flex;flex-direction:column;gap:var(--space-12)}
+.cf-pagehead__back{display:inline-flex;align-items:center;gap:var(--space-4);color:var(--text-secondary);text-decoration:none;font:600 12px/16px var(--font-text)}
+.cf-pagehead__row{display:flex;align-items:flex-end;gap:var(--space-24)}
+.cf-pagehead__titles{flex:1;min-width:0}
+.cf-pagehead__title{margin:0;font:800 28px/32px var(--font-display);letter-spacing:-.03em}
+.cf-pagehead__desc{margin:6px 0 0;color:var(--text-secondary)}
+.cf-pagehead__actions{display:flex;gap:var(--space-12)}

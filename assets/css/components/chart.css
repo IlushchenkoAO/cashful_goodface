@@ -1,0 +1,8 @@
+/* Chart - ported 1:1 from the design prototype, used by the dashboard screens */
+.cf-chart{display:flex;gap:var(--space-12);font-size:12px;color:var(--text-tertiary)}
+.cf-chart__y{display:flex;flex-direction:column;justify-content:space-between;padding-bottom:26px;text-align:right}
+.cf-chart__plot{flex:1;display:flex;flex-direction:column;gap:var(--space-8)}
+.cf-chart__bars{flex:1;display:flex;align-items:flex-end;justify-content:space-between;gap:6px;border-bottom:1px solid var(--chart-grid);background:repeating-linear-gradient(to top,transparent 0,transparent calc(25% - 1px),var(--chart-grid) calc(25% - 1px),var(--chart-grid) 25%)}
+.cf-chart__bar{flex:1;max-width:22px;background:var(--chart-1);border-radius:4px 4px 0 0}
+.cf-chart__bar.is-hl{background:var(--chart-2)}
+.cf-chart__x{display:flex;justify-content:space-between}

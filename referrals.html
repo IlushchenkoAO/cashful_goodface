@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Referrals · Cashful</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="assets/css/cashful.css">
+  <link rel="stylesheet" href="assets/css/layouts/app.css">
+  <link rel="stylesheet" href="assets/css/layouts/referrals.css">
+  <script src="assets/js/ds/svg-data.js" defer></script>
+  <script src="assets/js/ds/elements.js" defer></script>
+  <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/core/config.js" defer></script>
+  <script src="assets/js/core/store.js" defer></script>
+  <script src="assets/js/core/api.js" defer></script>
+  <script src="assets/js/core/format.js" defer></script>
+  <script src="assets/js/core/track.js" defer></script>
+  <script src="assets/js/data/referrals.config.js" defer></script>
+  <script src="assets/js/data/referrals.js" defer></script>
+  <script src="assets/js/app/shell.js" defer></script>
+  <script src="assets/js/pages/referrals.js" defer></script>
+  <!-- Dev-only: remove this line to hide the state switcher -->
+  <script src="assets/js/pages/page-demo.js" defer></script>
+</head>
+<body data-page="referrals" data-account="auto">
+  <!-- Personal accounts only (a Developer account is sent to its home page).
+       Scenario: ?state=default|empty|early|qualified|reward-ended|not-counted|milestones-off|disabled -->
+  <div class="cf-shell">
+    <aside class="cf-sidebar" data-sidebar data-active="referrals"></aside>
+    <main class="cf-shell__main">
+      <div class="cf-shell__content" id="referrals"></div>
+    </main>
+  </div>
+</body>
+</html>

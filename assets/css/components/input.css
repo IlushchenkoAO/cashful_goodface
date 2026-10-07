@@ -1,0 +1,60 @@
+/* Input, OTP code input */
+.cf-input { display: flex; flex-direction: column; gap: var(--space-6); width: 100%; }
+.cf-input__label { font: 600 14px/20px var(--font-text); letter-spacing: -.01em; }
+.cf-input__helper { font-size: 12px; line-height: 18px; color: var(--text-secondary); }
+.cf-input__helper:empty { display: none; }
+.cf-input.is-error .cf-input__helper { color: var(--text-error); }
+
+.cf-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  height: var(--control-md);
+  padding: 0 var(--space-12);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  cursor: text;
+}
+.cf-field:focus-within { border-color: var(--border-focus); box-shadow: var(--focus-ring); }
+.cf-input.is-error .cf-field { border-color: var(--border-error); }
+.cf-input.is-disabled .cf-field { background: var(--bg-disabled); border-color: var(--border-subtle); color: var(--text-disabled); cursor: not-allowed; }
+.cf-field__icon { color: var(--icon-secondary); }
+.cf-field__input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: 500 14px/20px var(--font-text);
+  color: var(--text-primary);
+}
+.cf-field__input:disabled { color: var(--text-disabled); cursor: not-allowed; }
+.cf-field__input::placeholder { color: var(--text-tertiary); }
+.cf-field__suffix { color: var(--text-secondary); }
+
+/* OTP: 6 single-digit cells */
+.cf-otp { display: flex; flex-direction: column; gap: var(--space-8); }
+.cf-otp__cells { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-8); }
+.cf-otp__cell {
+  width: 100%;
+  height: 56px;
+  padding: 0;
+  text-align: center;
+  font: 800 24px/32px var(--font-display);
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  outline: 0;
+}
+.cf-otp__cell::placeholder { color: var(--text-tertiary); }
+.cf-otp__cell:focus { border-color: var(--border-focus); box-shadow: var(--focus-ring); }
+.cf-otp.is-error .cf-otp__cell { border-color: var(--border-error); }
+.cf-otp__error { font: 500 12px/18px var(--font-text); color: var(--text-error); }
+
+/* Textarea: a multi-line .cf-field */
+.cf-field--area { height: auto; align-items: stretch; padding: var(--space-8) var(--space-12); cursor: text; }
+.cf-field--area .cf-field__input { height: auto; min-height: 88px; padding: 0; resize: vertical; line-height: 20px; }

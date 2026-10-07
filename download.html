@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Download app · Cashful</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="assets/css/cashful.css">
+  <link rel="stylesheet" href="assets/css/layouts/app.css">
+  <script src="assets/js/ds/svg-data.js" defer></script>
+  <script src="assets/js/ds/elements.js" defer></script>
+  <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/core/config.js" defer></script>
+  <script src="assets/js/core/store.js" defer></script>
+  <script src="assets/js/core/api.js" defer></script>
+  <script src="assets/js/core/demo.js" defer></script>
+  <script src="assets/js/data/peer.js" defer></script>
+  <script src="assets/js/core/format.js" defer></script>
+  <script src="assets/js/core/track.js" defer></script>
+  <script src="assets/js/data/referrals.config.js" defer></script>
+  <script src="assets/js/data/referrals.js" defer></script>
+  <script src="assets/js/app/shell.js" defer></script>
+  <script src="assets/js/app/install.js" defer></script>
+  <script src="assets/js/pages/download.js" defer></script>
+</head>
+<body data-page="download" data-account="personal">
+  <!-- Screen: PeerDownload. "How to install" appears on tile hover and opens the instructions. -->
+  <div class="cf-shell">
+    <aside class="cf-sidebar" data-sidebar data-active="download"></aside>
+    <main class="cf-shell__main">
+      <div class="cf-shell__content">
+        <header class="cf-pagehead">
+          <div class="cf-pagehead__row"><div class="cf-pagehead__titles">
+            <h1 class="cf-pagehead__title">Download app</h1>
+            <p class="cf-pagehead__desc">Install Cashful on the devices you already own. Sign in with <span data-user-email></span> and each device shows up in Overview.</p>
+          </div></div>
+        </header>
+
+        <div class="cf-grid cf-grid--2-1">
+          <!-- Recommended installer for the visitor's OS (filled by download.js) -->
+          <section class="cf-card dl-hero">
+            <div class="dl-hero__shape"><cf-brand-shape shape="pair" size="220" color="var(--yellow-500)"></cf-brand-shape></div>
+            <div class="dl-hero__body">
+              <span class="dl-hero__eyebrow">Recommended for this computer</span>
+              <div class="stack-4">
+                <h2 class="dl-hero__title" id="hero-title">Cashful for macOS</h2>
+                <span class="dl-hero__meta" id="hero-meta">Version [X] · [X] MB · macOS 12 or later · Apple silicon and Intel</span>
+              </div>
+              <div class="dl-hero__actions">
+                <a href="#" class="cf-btn cf-btn--light" id="hero-download" data-download="Download for macOS"><cf-icon name="download" size="20"></cf-icon><span>Download for macOS</span></a>
+                <button type="button" class="cf-btn cf-btn--ghost" id="hero-help" data-help="macos"><cf-icon name="help" size="20"></cf-icon><span>How to install</span></button>
+              </div>
+            </div>
+          </section>
+
+          <section class="cf-card dl-qr">
+            <div class="dl-qr__code"><img src="assets/img/qr-app.svg" alt="QR code to the Cashful app"></div>
+            <div class="dl-qr__text">
+              <h3 class="cf-card__title">Get it on your phone</h3>
+              <span class="t-muted">Scan with your phone camera. It opens Google Play or the App Store.</span>
+            </div>
+          </section>
+        </div>
+
+        <div class="cf-grid cf-grid--2 cf-grid--loose">
+          <div class="dl-group">
+            <div class="section-head"><h2 class="section-head__title">Phones and tablets</h2><span class="section-head__desc">On mobile data they earn separately from home Wi-Fi.</span></div>
+            <div class="cf-grid cf-grid--2">
+              <div class="cf-tile dl-tile">
+                <div class="cf-tile__top"><span class="cf-tile__chip"><cf-icon name="smartphone" size="24"></cf-icon></span></div>
+                <div><div class="cf-tile__name">Android</div><div class="cf-tile__meta">Android 8 or later</div></div>
+                <div class="dl-tile__actions">
+                  <a href="#" class="cf-btn cf-btn--secondary cf-btn--sm cf-btn--block" data-download="Google Play"><cf-icon name="download" size="16"></cf-icon><span>Google Play</span></a>
+                  <button type="button" class="cf-btn cf-btn--ghost cf-btn--sm cf-btn--block dl-help" data-help="android"><cf-icon name="help" size="16"></cf-icon><span>How to install</span></button>
+                </div>
+              </div>
+              <div class="cf-tile dl-tile">
+                <div class="cf-tile__top"><span class="cf-tile__chip"><cf-icon name="smartphone" size="24"></cf-icon></span></div>
+                <div><div class="cf-tile__name">iOS and iPadOS</div><div class="cf-tile__meta">iOS 15 or later</div></div>
+                <div class="dl-tile__actions">
+                  <a href="#" class="cf-btn cf-btn--secondary cf-btn--sm cf-btn--block" data-download="App Store"><cf-icon name="download" size="16"></cf-icon><span>App Store</span></a>
+                  <button type="button" class="cf-btn cf-btn--ghost cf-btn--sm cf-btn--block dl-help" data-help="ios"><cf-icon name="help" size="16"></cf-icon><span>How to install</span></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dl-group">
+            <div class="section-head"><h2 class="section-head__title">Computers</h2><span class="section-head__desc">Lives in the taskbar or menu bar.</span></div>
+            <div class="cf-grid cf-grid--2">
+              <div class="cf-tile dl-tile">
+                <div class="cf-tile__top"><span class="cf-tile__chip"><cf-icon name="monitor" size="24"></cf-icon></span></div>
+                <div><div class="cf-tile__name">Windows</div><div class="cf-tile__meta">Windows 10 or later</div></div>
+                <div class="dl-tile__actions">
+                  <a href="#" class="cf-btn cf-btn--secondary cf-btn--sm cf-btn--block" data-download="Cashful for Windows"><cf-icon name="download" size="16"></cf-icon><span>Download</span></a>
+                  <button type="button" class="cf-btn cf-btn--ghost cf-btn--sm cf-btn--block dl-help" data-help="windows"><cf-icon name="help" size="16"></cf-icon><span>How to install</span></button>
+                </div>
+              </div>
+              <div class="cf-tile dl-tile">
+                <div class="cf-tile__top"><span class="cf-tile__chip"><cf-icon name="monitor" size="24"></cf-icon></span></div>
+                <div><div class="cf-tile__name">macOS</div><div class="cf-tile__meta">macOS 12 or later</div></div>
+                <div class="dl-tile__actions">
+                  <a href="#" class="cf-btn cf-btn--secondary cf-btn--sm cf-btn--block" data-download="Cashful for macOS"><cf-icon name="download" size="16"></cf-icon><span>Download</span></a>
+                  <button type="button" class="cf-btn cf-btn--ghost cf-btn--sm cf-btn--block dl-help" data-help="macos"><cf-icon name="help" size="16"></cf-icon><span>How to install</span></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Marked "Soon" until the client confirms servers and routers (open question 1) -->
+        <div class="section-head"><h2 class="section-head__title">Servers and routers</h2><span class="section-head__desc">Coming later. We’ll email you when they’re ready.</span></div>
+        <div class="cf-grid cf-grid--4" id="soon-tiles"></div>
+
+        <div class="section-head"><h2 class="section-head__title">How it works</h2></div>
+        <div class="cf-grid cf-grid--3">
+          <div class="cf-card how-card">
+            <span class="how-card__icon"><cf-icon name="download" size="20"></cf-icon></span>
+            <div class="stack-4"><span class="how-card__title">1. Install the app</span><span class="t-muted">On as many devices as you like. Only one device per network earns at a time.</span></div>
+          </div>
+          <div class="cf-card how-card">
+            <span class="how-card__icon"><cf-icon name="user" size="20"></cf-icon></span>
+            <div class="stack-4"><span class="how-card__title">2. Sign in with this account</span><span class="t-muted">Use <span data-user-email></span>. The device shows up in Overview within a minute.</span></div>
+          </div>
+          <div class="cf-card how-card">
+            <span class="how-card__icon"><cf-icon name="wifi" size="20"></cf-icon></span>
+            <div class="stack-4"><span class="how-card__title">3. Leave it running</span><span class="t-muted">Cashful shares only bandwidth you’re not using. Set data caps, choose Wi-Fi only or pause it in one tap.</span></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

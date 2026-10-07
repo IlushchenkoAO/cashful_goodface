@@ -1,0 +1,17 @@
+/* Sidebar + shell - ported 1:1 from the design prototype, used by the dashboard screens */
+.cf-sidebar{display:flex;flex-direction:column;gap:var(--space-24);width:var(--sidebar-width);box-sizing:border-box;padding:var(--space-24) var(--space-16) var(--space-16);background:var(--bg-surface);border-right:1px solid var(--border-subtle);height:100%;min-height:640px}
+.cf-sidebar__logo{padding-left:var(--space-12);display:flex}
+.cf-sidebar__menu{display:flex;flex-direction:column;gap:2px}
+.cf-sidebar__spacer{flex:1}
+.cf-usercard{display:flex;align-items:center;gap:var(--space-12);padding:var(--space-12);border-radius:var(--radius-md);background:var(--bg-canvas);color:var(--icon-secondary)}
+.cf-usercard__info{flex:1;min-width:0}
+.cf-usercard__name{font:600 14px/20px var(--font-text);color:var(--text-primary)}
+.cf-usercard__email{font-size:12px;line-height:18px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cf-shell{display:flex;min-height:900px;background:var(--bg-canvas)}
+.cf-shell__main{flex:1;min-width:0}
+.cf-shell__content{max-width:var(--content-max);margin:0 auto;padding:var(--space-32);display:flex;flex-direction:column;gap:var(--space-24)}
+.cf-grid{display:grid;gap:var(--space-16)}
+.cf-grid--4{grid-template-columns:repeat(4,1fr)}
+.cf-grid--3{grid-template-columns:repeat(3,1fr)}
+.cf-grid--2{grid-template-columns:repeat(2,1fr)}
+.cf-grid--2-1{grid-template-columns:2fr 1fr}

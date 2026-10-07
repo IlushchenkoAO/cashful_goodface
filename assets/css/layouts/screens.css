@@ -1,0 +1,15 @@
+/* Screen map (prototype navigation page) */
+.map { max-width: 960px; margin: 0 auto; padding: 40px 16px 64px; display: flex; flex-direction: column; gap: 24px; }
+.map__head { display: flex; flex-direction: column; gap: 24px; }
+.map__actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.map .cf-table td { height: 52px; }
+.map .cf-table td:first-child { width: 34%; }
+.map .cf-table td:last-child { width: 38%; }
+.map .cf-table td .cf-badge { margin-left: 8px; }
+.map__key { font: 500 13px/20px var(--font-mono); color: var(--text-secondary); }
+.map .cf-table a { font: 500 13px/20px var(--font-mono); word-break: break-all; }
+
+@media (max-width: 640px) {
+  .map .cf-table td { display: block; height: auto; width: auto !important; padding: 4px 16px; border: 0; }
+  .map .cf-table tr { display: block; padding: 8px 0; border-bottom: 1px solid var(--border-subtle); }
+}

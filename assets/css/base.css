@@ -1,0 +1,65 @@
+/* Base: reset, typography, links, utilities */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-text);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-canvas);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, p { margin: 0; }
+button, input { font: inherit; }
+strong { font-weight: 600; color: var(--text-primary); }
+
+a { color: var(--text-brand); font-weight: 600; }
+a:hover { color: var(--purple-700); }
+a.cf-btn { text-decoration: none; }
+
+[hidden] { display: none !important; }
+
+/* Text styles */
+.t-display { font: 800 36px/40px var(--font-display); letter-spacing: -0.03em; }
+.t-lead    { font: 500 16px/24px var(--font-text); }
+.t-body    { font: 500 14px/20px var(--font-text); }
+.t-caption { font: 500 12px/18px var(--font-text); }
+.t-secondary { color: var(--text-secondary); }
+.t-center  { text-align: center; }
+
+/* Link-styled button */
+.cf-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 600 14px/20px var(--font-text);
+  color: var(--text-brand);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.cf-link:hover { color: var(--purple-700); }
+.cf-link:disabled { color: var(--text-disabled); cursor: default; }
+
+.cf-icon { flex: none; display: block; }
+.cf-mono { font-family: var(--font-mono); font-size: 13px; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Custom elements render inline SVG */
+cf-icon, cf-brand-icon, cf-logo, cf-mascot, cf-brand-shape { display: inline-flex; flex: none; }

@@ -1,0 +1,74 @@
+/* Button, IconButton */
+.cf-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  height: var(--control-md);
+  padding: 0 var(--space-16);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font: 600 14px/20px var(--font-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, border-color .15s;
+}
+.cf-btn--sm { height: var(--control-sm); padding: 0 var(--space-12); gap: var(--space-6); font-size: 12px; line-height: 16px; }
+.cf-btn--block { width: 100%; }
+
+.cf-btn--primary { background: var(--bg-brand); color: var(--text-on-brand); }
+.cf-btn--primary:hover { background: var(--bg-brand-hover); color: var(--text-on-brand); }
+.cf-btn--primary:active { background: var(--bg-brand-pressed); }
+
+.cf-btn--secondary { background: var(--bg-surface); border-color: var(--border-default); color: var(--text-primary); }
+.cf-btn--secondary:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.cf-btn--accent { background: var(--bg-accent); color: var(--text-on-accent); }
+.cf-btn--accent:hover { background: var(--bg-accent-hover); }
+
+.cf-btn--ghost { background: transparent; color: var(--text-primary); }
+.cf-btn--ghost:hover { background: var(--bg-hover); }
+
+.cf-btn--destructive { background: var(--bg-error); color: var(--text-on-brand); }
+.cf-btn--destructive:hover { background: var(--bg-error-hover); }
+
+.cf-btn:disabled { background: var(--bg-disabled); color: var(--text-disabled); border-color: transparent; cursor: not-allowed; }
+.cf-btn--ghost:disabled { background: transparent; }
+.cf-btn--secondary:disabled { background: var(--bg-surface); border-color: var(--border-subtle); }
+
+/* Loading: keeps the button width, hides the label, shows a spinner */
+.cf-btn.is-loading { color: transparent !important; pointer-events: none; }
+.cf-btn.is-loading::after {
+  content: "";
+  position: absolute;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--text-on-brand);
+  border-right-color: transparent;
+  animation: cf-spin .7s linear infinite;
+}
+.cf-btn--secondary.is-loading::after { border-color: var(--icon-brand); border-right-color: transparent; }
+@keyframes cf-spin { to { transform: rotate(360deg); } }
+
+.cf-btn:focus-visible,
+.cf-ibtn:focus-visible,
+.cf-link:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+
+.cf-ibtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-md);
+  height: var(--control-md);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--icon-primary);
+  cursor: pointer;
+}
+.cf-ibtn--sm { width: var(--control-sm); height: var(--control-sm); }
+.cf-ibtn--ghost:hover { background: var(--bg-hover); }
+.cf-ibtn--secondary { background: var(--bg-surface); border-color: var(--border-default); }
+.cf-ibtn--primary { background: var(--bg-brand); color: var(--icon-inverse); }

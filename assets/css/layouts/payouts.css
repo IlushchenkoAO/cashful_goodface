@@ -1,0 +1,64 @@
+/* Payouts page: balance, payout methods, history, and the request / add-method dialogs. */
+
+/* Balance */
+.pay-balance { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-24); align-items: start; }
+.pay-fig { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+.pay-fig + .pay-fig { padding-left: var(--space-24); border-left: 1px solid var(--border-subtle); }
+.pay-fig__label { font: 600 14px/20px var(--font-text); color: var(--text-secondary); }
+.pay-fig__value { font: 800 36px/40px var(--font-display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.pay-fig__value--sm { font-size: 28px; line-height: 32px; }
+.pay-fig__hint { font: 500 12px/18px var(--font-text); color: var(--text-tertiary); }
+.pay-fig__row { display: flex; align-items: center; gap: var(--space-16); flex-wrap: wrap; }
+.pay-notes { display: flex; flex-direction: column; gap: var(--space-12); margin-top: var(--space-6); }
+.pay-notes:empty { display: none; }
+.pay-note { display: inline-flex; align-items: center; gap: var(--space-8); font: 500 14px/20px var(--font-text); color: var(--text-secondary); }
+.pay-progress { display: flex; flex-direction: column; gap: var(--space-6); max-width: 320px; }
+.pay-progress__label { display: flex; justify-content: space-between; gap: var(--space-12); font: 600 12px/16px var(--font-text); }
+.pay-progress__label span:last-child { font-weight: 500; color: var(--text-secondary); }
+.pay-progress .cf-progress { width: 100%; }
+
+/* Payout methods */
+.pay-methods { margin: 0; padding: 0; list-style: none; }
+.pay-method { display: flex; align-items: center; gap: var(--space-16); padding: var(--space-16) var(--space-24); border-top: 1px solid var(--border-subtle); }
+.pay-method__icon { flex: none; width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--bg-brand-muted); color: var(--icon-brand); display: flex; align-items: center; justify-content: center; }
+.pay-method__body { flex: 1; min-width: 0; }
+.pay-method__title { display: flex; align-items: center; gap: var(--space-8); font: 600 14px/20px var(--font-text); }
+.pay-method__detail { font: 500 14px/20px var(--font-text); color: var(--text-secondary); overflow-wrap: anywhere; }
+.pay-method__actions { display: flex; align-items: center; gap: var(--space-4); }
+.pay-danger { color: var(--text-error); }
+.pay-danger:hover { background: var(--bg-error-subtle); }
+.cf-card--flush > .cf-empty { padding-top: var(--space-32, 32px); padding-bottom: var(--space-48); border-top: 1px solid var(--border-subtle); }
+
+/* History */
+.pay-filters { display: flex; gap: var(--space-12); }
+.pay-filter { width: 170px; }
+.pay-table td, .pay-table th { vertical-align: middle; }
+.pay-table tbody tr:not(.pay-reason) td { height: 68px; }
+.pay-reason td { height: auto; padding: 0 var(--space-16) var(--space-16); }
+.pay-reason__box { display: flex; gap: var(--space-12); padding: var(--space-12) var(--space-16); border-radius: var(--radius-md); background: var(--bg-error-subtle); }
+.pay-reason__box cf-icon { color: var(--icon-error); margin-top: 1px; }
+.pay-count { padding: var(--space-12) var(--space-24); font: 500 12px/18px var(--font-text); color: var(--text-secondary); }
+#pay-history-body > .cf-empty { border-top: 1px solid var(--border-subtle); }
+[tabindex="-1"]:focus { outline: none; }
+
+/* Dialogs */
+.pay-form { display: flex; flex-direction: column; gap: var(--space-16); }
+.pay-summary { display: flex; flex-direction: column; margin: 0; padding: var(--space-4) var(--space-16); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-surface-sunken); }
+.pay-summary__row { display: flex; justify-content: space-between; gap: var(--space-16); padding: 10px 0; }
+.pay-summary__row + .pay-summary__row { border-top: 1px solid var(--border-subtle); }
+.pay-summary dt { color: var(--text-secondary); }
+.pay-summary dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.pay-summary__row.is-total dd { font: 800 16px/20px var(--font-display); letter-spacing: -0.01em; }
+.pay-types { display: flex; flex-direction: column; gap: var(--space-12); }
+.pay-type { width: 100%; padding: var(--space-16); font: inherit; text-align: left; cursor: pointer; }
+.pay-type .cf-choice__title { font-size: 16px; line-height: 24px; }
+.pay-address { display: flex; flex-direction: column; gap: var(--space-6); padding: var(--space-16); border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--bg-surface); }
+.pay-address__label { font: 600 12px/16px var(--font-text); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); }
+.pay-address__value { font-size: 15px; line-height: 22px; overflow-wrap: anywhere; }
+.pay-modal-empty { padding: var(--space-16) 0; }
+
+@media (max-width: 1000px) {
+  .pay-balance { grid-template-columns: 1fr 1fr; }
+  .pay-fig--lead { grid-column: 1 / -1; }
+  .pay-fig + .pay-fig { padding-left: 0; border-left: 0; }
+}

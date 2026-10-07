@@ -1,0 +1,8 @@
+/* Tile - ported 1:1 from the design prototype, used by the dashboard screens */
+.cf-tile{display:flex;flex-direction:column;gap:var(--space-16);padding:var(--space-20);background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg)}
+.cf-tile__top{display:flex;align-items:center;justify-content:space-between}
+.cf-tile__chip{display:inline-flex;padding:10px;border-radius:var(--radius-md);background:var(--bg-brand-muted);color:var(--icon-brand)}
+.cf-tile__name{font:600 16px/24px var(--font-text);letter-spacing:-.01em}
+.cf-tile__meta{font-size:12px;line-height:18px;color:var(--text-secondary)}
+.cf-tile.is-soon .cf-tile__chip{background:var(--bg-disabled);color:var(--icon-disabled)}
+.cf-tile.is-soon .cf-tile__name,.cf-tile.is-soon .cf-tile__meta{color:var(--text-disabled)}

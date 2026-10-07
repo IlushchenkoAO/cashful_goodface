@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analytics · Cashful</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="assets/css/cashful.css">
+  <link rel="stylesheet" href="assets/css/layouts/app.css">
+  <script src="assets/js/ds/svg-data.js" defer></script>
+  <script src="assets/js/ds/elements.js" defer></script>
+  <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/core/config.js" defer></script>
+  <script src="assets/js/core/store.js" defer></script>
+  <script src="assets/js/core/api.js" defer></script>
+  <script src="assets/js/core/demo.js" defer></script>
+  <script src="assets/js/app/shell.js" defer></script>
+  <script src="assets/js/pages/analytics.js" defer></script>
+</head>
+<body data-page="analytics" data-account="developer">
+  <!-- Screens: DashboardDeveloper (in review), DevAnalyticsApproved, DevAnalyticsActionNeeded.
+       The state comes from the developer verification status; ?state=review|approved|action switches it for demos. -->
+  <div class="cf-shell">
+    <aside class="cf-sidebar" data-sidebar data-active="analytics"></aside>
+    <main class="cf-shell__main">
+      <div class="cf-shell__content" id="analytics"></div>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Check your email · Cashful</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="assets/css/cashful.css">
+  <link rel="stylesheet" href="assets/css/layouts/auth.css">
+  <script src="assets/js/ds/svg-data.js" defer></script>
+  <script src="assets/js/ds/elements.js" defer></script>
+  <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/core/config.js" defer></script>
+  <script src="assets/js/core/store.js" defer></script>
+  <script src="assets/js/core/api.js" defer></script>
+  <script src="assets/js/core/demo.js" defer></script>
+  <script src="assets/js/pages/auth-common.js" defer></script>
+  <script src="assets/js/pages/verify-email.js" defer></script>
+</head>
+<body data-page="verify-email">
+  <!-- Screens: VerifyEmail, VerifyEmailError, VerifyEmailResent, VerifyEmailDev -->
+  <div class="auth">
+    <!-- Personal -->
+    <aside class="auth__aside auth__aside--yellow" data-for="personal">
+      <cf-logo version="color" height="28"></cf-logo>
+      <div class="auth__shape"><cf-brand-shape shape="pair" size="220" color="var(--purple-500)"></cf-brand-shape></div>
+      <div class="auth__pitch">
+        <cf-mascot character="main" size="104"></cf-mascot>
+        <h2 class="auth__pitch-title">Almost there</h2>
+        <p class="auth__pitch-text">Confirm your email so payout updates and security alerts reach the right inbox.</p>
+      </div>
+      <div class="auth__trust"><cf-icon name="shield" size="20"></cf-icon><span>Built by the team behind Byteful</span></div>
+    </aside>
+    <!-- Developer -->
+    <aside class="auth__aside auth__aside--purple" data-for="developer" hidden>
+      <cf-logo version="white" height="28"></cf-logo>
+      <div class="auth__shape"><cf-brand-shape shape="pair" size="220" color="var(--yellow-500)"></cf-brand-shape></div>
+      <div class="auth__pitch">
+        <cf-mascot character="form" size="104"></cf-mascot>
+        <h2 class="auth__pitch-title">Almost there</h2>
+        <p class="auth__pitch-text">Confirm your work email. We’ll use it for review updates, payout notices and security alerts.</p>
+      </div>
+      <div class="auth__trust"><cf-icon name="shield" size="20"></cf-icon><span>Built by the team behind Byteful</span></div>
+    </aside>
+
+    <main class="auth__main">
+      <div class="auth__topbar"><a href="login.html" data-logout>Log out</a></div>
+
+      <div class="auth__center">
+        <form class="auth__form" id="verify-form" novalidate>
+          <div id="alert-slot" hidden></div>
+
+          <div class="auth__head">
+            <h1 class="auth__title">Check your email</h1>
+            <p class="auth__lead">We sent a 6-digit code to <strong data-email></strong>. It expires in <span id="ttl"></span> minutes.</p>
+          </div>
+
+          <div class="cf-otp" id="otp"></div>
+
+          <button type="submit" class="cf-btn cf-btn--primary cf-btn--block">Verify email</button>
+
+          <p class="auth__note">
+            Didn’t get it?
+            <span id="resend-wait">You can resend the code in <span id="resend-timer">1:00</span></span>
+            <button type="button" class="cf-link" id="resend" hidden>Resend code</button>
+            · <a href="signup.html" id="change-email">Change email</a>
+          </p>
+        </form>
+      </div>
+
+      <footer class="auth__footer"><span>© 2026 Cashful</span><a href="#">Terms</a><a href="#">Privacy</a></footer>
+    </main>
+  </div>
+</body>
+</html>
