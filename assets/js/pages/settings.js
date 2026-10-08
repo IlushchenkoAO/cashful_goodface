@@ -612,7 +612,7 @@
   function stageListHtml(status) {
     var L = DS.kyc.stageLabels;
     var stages = [
-      { label: L.details, st: status === 'changes_requested' ? 'attention' : status === 'not_started' ? (devNow().started ? 'current' : 'todo') : 'done' },
+      { label: L.details, st: status === 'changes_requested' ? 'attention' : status === 'not_started' ? (devNow().started ? 'done' : 'todo') : 'done' },
       { label: L.agreements, st: api.kyc.signed('developer-agreement') ? 'done' : 'todo' },
       { label: L.review, st: status === 'in_review' ? 'current' : status === 'approved' ? 'done' : status === 'rejected' ? 'failed' : 'todo' },
       { label: L.approved, st: status === 'approved' ? 'done' : 'todo' }
