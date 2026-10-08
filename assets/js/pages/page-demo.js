@@ -107,11 +107,21 @@
       '</select><cf-icon name="chevron-down" size="20"></cf-icon></div></div>';
   }
 
+  // "In progress" is Not started with the onboarding begun (dev.started)
   var KYC_OPTIONS = [
-    { id: 'not_started', label: 'Not started' }, { id: 'in_review', label: 'In review' },
-    { id: 'changes_requested', label: 'Changes requested' }, { id: 'approved', label: 'Approved' }
+    { id: 'not_started', label: 'Not started' }, { id: 'in_progress', label: 'In progress' }, { id: 'in_review', label: 'In review' },
+    { id: 'changes_requested', label: 'Changes requested' }, { id: 'rejected', label: 'Rejected' }, { id: 'approved', label: 'Approved' }
   ];
   function kycOptions() { return KYC_OPTIONS; }
+  function kycValue() {
+    var s = api.kyc.status(), u = api.currentUser();
+    return s === 'not_started' && u && u.dev && u.dev.started ? 'in_progress' : s;
+  }
+  function setKyc(value) {
+    var started = value === 'in_progress';
+    api.updateDev({ started: started });
+    api.kyc.set(started ? 'not_started' : value);
+  }
 
   // Developer Settings: the Developer Agreement and whether this login also has a Personal account
   var showExtras = !!cfg.extras && Cashful.app.account === 'developer';
@@ -127,7 +137,7 @@
     '<div class="demo__panel" id="page-demo" hidden>' +
       '<div class="demo__title">' + ui.esc(cfg.title) + '</div>' +
       (cfg.accounts ? select('demo-account', 'Account', cfg.accounts, currentAccount) : '') +
-      (showKyc ? select('demo-kyc', 'KYC status', kycOptions(), api.kyc.status()) : '') +
+      (showKyc ? select('demo-kyc', 'KYC status', kycOptions(), kycValue()) : '') +
       (showExtras ? select('demo-agreement', 'Developer Agreement', AGREEMENT_OPTIONS, api.kyc.signed('developer-agreement') ? 'signed' : 'unsigned') +
         select('demo-personal', 'Personal account', PERSONAL_OPTIONS, user.accounts.indexOf('personal') > -1 ? 'exists' : 'none') : '') +
       (hasStates ? select('demo-state', cfg.stateLabel || 'State', cfg.states, cfg.current()) : '') +
@@ -148,14 +158,14 @@
     var kycSelect = ui.$('#demo-kyc', el);
     // The alert's X can change the status too — keep the select in step
     api.kyc.onChange(function () {
-      kycSelect.value = api.kyc.status();
+      kycSelect.value = kycValue();
       var ag = ui.$('#demo-agreement', el);
       if (ag) ag.value = api.kyc.signed('developer-agreement') ? 'signed' : 'unsigned';
     });
   }
 
   el.addEventListener('change', function (e) {
-    if (e.target.id === 'demo-kyc') { api.kyc.set(e.target.value); return; }
+    if (e.target.id === 'demo-kyc') { setKyc(e.target.value); return; }
     if (e.target.id === 'demo-agreement') {
       if (e.target.value === 'signed') api.kyc.sign('developer-agreement', user.name || 'Demo Developer'); else api.kyc.unsign('developer-agreement');
       return;
@@ -176,6 +186,6 @@
   });
 
   ui.$('#demo-reset', el).addEventListener('click', function () {
-    if (hasStates) location.reload(); else api.kyc.set('in_review');
+    if (hasStates) location.reload(); else setKyc('in_review');
   });
 })();

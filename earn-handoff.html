@@ -16,6 +16,7 @@
   <script src="assets/js/core/store.js" defer></script>
   <script src="assets/js/core/api.js" defer></script>
   <script src="assets/js/core/demo.js" defer></script>
+  <script src="assets/js/pages/auth-common.js" defer></script>
   <script src="assets/js/pages/earn-handoff.js" defer></script>
 </head>
 <body data-page="earn-handoff">
@@ -29,7 +30,7 @@
         <h1 class="auth__title">Signing you in</h1>
         <p class="auth__lead">You opened Payouts from the Cashful app on <strong id="device">Pixel 8</strong>. This takes a second.</p>
         <div class="cf-progress" role="progressbar" aria-label="Signing in" aria-valuemin="0" aria-valuemax="100"><div class="cf-progress__bar" id="bar"></div></div>
-        <p class="auth__note">Not you? <a href="login.html">Log in with another account</a></p>
+        <p class="auth__note">Not you? <a href="auth.html">Log in with another account</a></p>
         <a href="dashboard.html#payouts" class="cf-btn cf-btn--secondary" id="continue" hidden>Continue</a>
       </div>
 
@@ -37,7 +38,7 @@
         <cf-mascot character="main" size="104"></cf-mascot>
         <h1 class="auth__title">This link has expired</h1>
         <p class="auth__lead">Links from the Cashful app work for 5 minutes. Log in and we’ll take you straight to Payouts.</p>
-        <a href="login.html" class="cf-btn cf-btn--primary">Log in</a>
+        <a href="auth.html" class="cf-btn cf-btn--primary">Log in</a>
       </div>
     </div>
   </div>

@@ -1,12 +1,19 @@
 /* Developer Settings — placeholder business values and texts. The client edits this file only.
-   kycStatus (the shared store) is the single source of truth: not_started | in_review | changes_requested | approved.
+   kycStatus (the shared store) is the single source of truth: not_started | in_review | changes_requested | rejected | approved.
+   "In progress" is not_started with the onboarding begun (dev.started).
    `featuresUnlocked` = kycApproved && (!agreementsBlockFeatures || the Developer Agreement is signed): it locks the
    SDK download and payout requests, nothing else. */
 window.Cashful = window.Cashful || {};
 Cashful.developerSettingsConfig = {
   supportEmail: 'support@cashful.example',
   kyc: {
-    unlocks: ['SDK download', 'Payout requests'],
+    unlocks: ['SDK download', 'Sending apps for review', 'Payout requests'],
+    reviewTime: '1–2 business days',       // "usually within …": shown wherever a review is pending
+    // Rejected: the reason a reviewer would give, and what happens next
+    rejection: {
+      reason: 'We couldn’t confirm that the company name and address match your registration documents.',
+      nextStep: 'You can contact support to talk it through. If the details were wrong, support can reopen your verification.'
+    },
     startRoute: '/kyc',                    // a placeholder page: this is where the KYC provider would open
     stageLabels: {
       details: 'Business details completed',
@@ -16,7 +23,7 @@ Cashful.developerSettingsConfig = {
     }
   },
   businessDetails: {
-    lockedStatuses: ['in_review', 'approved']   // read-only here, change via support
+    lockedStatuses: ['in_review', 'approved', 'rejected']   // read-only here, change via support
   },
   agreementsBlockFeatures: false,               // true: SDK download and payouts also need the signed Developer Agreement
   agreementLockHint: 'Sign the Developer Agreement and complete KYC',
@@ -39,7 +46,7 @@ Cashful.developerSettingsConfig = {
     mailSubject: 'Close my Cashful developer account'
   },
   alertTexts: {
-    not_started: 'Complete verification to unlock SDK download and payout requests.',
-    changes_requested: 'Your verification needs your attention.'
+    changes_requested: 'Your verification needs your attention.',
+    rejected: 'Your verification wasn’t approved.'
   }
 };

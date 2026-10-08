@@ -21,7 +21,11 @@
   });
 
   function done(res) {
-    if (res.ok) ui.go(res.redirect);
+    if (res.ok) {
+      // A Developer or Personal CTA (?type) from the entry: open that profile, or start its onboarding
+      var intent = Cashful.store.takeFlash('authIntent');
+      (intent ? api.applyIntent(intent) : Promise.resolve(null)).then(function (url) { ui.go(url || res.redirect); });
+    }
     return res;
   }
 

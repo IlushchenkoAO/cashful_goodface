@@ -67,17 +67,50 @@
         'This is a placeholder file from the prototype. The real SDK package is provided by Cashful.\r\n'
     };
   }
-  function consentFile() {
+  /* ---------- Consent screen colors ---------- */
+
+  function themeById(id) {
+    return cfg.consent.themes.filter(function (t) { return t.id === id; })[0] || cfg.consent.themes[0];
+  }
+  /** "#abc" or "7760e7" → "#AABBCC"; anything else → null. */
+  function normalizeHex(v) {
+    var m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(v || '').trim());
+    if (!m) return null;
+    var h = m[1].length === 3 ? m[1].split('').map(function (c) { return c + c; }).join('') : m[1];
+    return '#' + h.toUpperCase();
+  }
+  function luminance(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    return [n >> 16 & 255, n >> 8 & 255, n & 255].map(function (v) {
+      v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    }).reduce(function (sum, v, i) { return sum + v * [0.2126, 0.7152, 0.0722][i]; }, 0);
+  }
+  /** WCAG contrast ratio of two #RRGGBB colors, 1 to 21. */
+  function contrast(a, b) {
+    var l1 = luminance(a), l2 = luminance(b);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  }
+
+  /** The placeholder template follows the colors chosen on the page. */
+  function consentFile(theme) {
+    var c = (theme && theme.colors) || themeById(cfg.consent.defaultTheme);
+    var NL = '\r\n';
     return {
       name: cfg.consent.templateFileName + '.placeholder.txt',
-      text: 'Cashful consent screen template\r\n\r\nThis is a placeholder file from the prototype. The real template is provided by Cashful.\r\n\r\n' +
-        'Requirements:\r\n' + cfg.consent.requirements.map(function (r) { return '- ' + r; }).join('\r\n') + '\r\n'
+      text: [
+        'Cashful consent screen template', '',
+        'This is a placeholder file from the prototype. The real template is provided by Cashful.', '',
+        'Colors (' + ((theme && theme.mode) || cfg.consent.defaultTheme) + '):',
+        '- background: ' + c.bg, '- text: ' + c.text, '- button: ' + c.button, '- button text: ' + c.buttonText, '',
+        'Requirements:'
+      ].concat(cfg.consent.requirements.map(function (r) { return '- ' + r; })).join(NL) + NL
     };
   }
 
   Cashful.sdk = {
     config: cfg, SCENARIOS: SCENARIOS,
     scenarioFrom: scenarioFrom, appsFor: appsFor, parseUrl: parseUrl, buildUrl: buildUrl,
-    platformById: platformById, snippet: snippet, sdkFile: sdkFile, consentFile: consentFile
+    platformById: platformById, snippet: snippet, sdkFile: sdkFile, consentFile: consentFile,
+    themeById: themeById, normalizeHex: normalizeHex, contrast: contrast
   };
 })();

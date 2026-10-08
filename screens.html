@@ -27,37 +27,40 @@
       </div>
       <div class="map__actions">
         <a class="cf-btn cf-btn--primary" href="index.html">Start from the beginning</a>
+        <a class="cf-btn cf-btn--secondary" href="flow.html">User flow and screen list</a>
         <button type="button" class="cf-btn cf-btn--secondary" id="reset"><cf-icon name="refresh" size="20"></cf-icon><span>Reset demo data</span></button>
       </div>
     </header>
 
     <section class="cf-card cf-card--flush">
-      <div class="cf-card__head"><h3 class="cf-card__title">Sign up and email verification</h3></div>
+      <div class="cf-card__head"><h3 class="cf-card__title">Log in or sign up (one entry)</h3></div>
       <table class="cf-table">
         <tbody>
-          <tr><td class="map__key">Main</td><td>Choose account type</td><td><a href="index.html">index.html</a></td></tr>
-          <tr><td class="map__key">SignupPersonal</td><td>Sign up — Personal</td><td><a href="signup.html">signup.html</a></td></tr>
-          <tr><td class="map__key">SignupPersonalEmailTaken</td><td>Email already registered</td><td><a href="signup.html?demo=taken">signup.html?demo=taken</a></td></tr>
-          <tr><td class="map__key">SignupInvited</td><td>From a referral link</td><td><a href="signup.html?ref=JORDAN24">signup.html?ref=JORDAN24</a></td></tr>
-          <tr><td class="map__key">SignupReferralError</td><td>Referral code not found</td><td><a href="signup.html?ref=JORDN24&amp;demo=ref-error">signup.html?ref=JORDN24&amp;demo=ref-error</a></td></tr>
-          <tr><td class="map__key">VerifyEmail</td><td>Verify email — Personal</td><td><a href="verify-email.html" data-fresh>verify-email.html</a></td></tr>
-          <tr><td class="map__key">VerifyEmailError</td><td>Wrong code</td><td><a href="verify-email.html?demo=error" data-fresh>verify-email.html?demo=error</a></td></tr>
-          <tr><td class="map__key">VerifyEmailResent</td><td>Code resent</td><td><a href="verify-email.html?demo=resent" data-fresh>verify-email.html?demo=resent</a></td></tr>
-          <tr><td class="map__key">SignupDeveloper</td><td>Sign up — Developer</td><td><a href="signup-developer.html">signup-developer.html</a></td></tr>
-          <tr><td class="map__key">VerifyEmailDev</td><td>Verify email — Developer</td><td><a href="verify-email.html?type=developer" data-fresh>verify-email.html?type=developer</a></td></tr>
-        </tbody>
-      </table>
-    </section>
-
-    <section class="cf-card cf-card--flush">
-      <div class="cf-card__head"><h3 class="cf-card__title">Log in</h3></div>
-      <table class="cf-table">
-        <tbody>
-          <tr><td class="map__key">Login</td><td>Log in</td><td><a href="login.html">login.html</a></td></tr>
-          <tr><td class="map__key">LoginError</td><td>Wrong password</td><td><a href="login.html?demo=error">login.html?demo=error</a></td></tr>
-          <tr><td class="map__key">LoginLocked</td><td>Locked after 5 attempts</td><td><a href="login.html?demo=locked">login.html?demo=locked</a></td></tr>
+          <tr><td class="map__key">01 Entry</td><td>Log in or sign up</td><td><a href="auth.html">auth.html</a></td></tr>
+          <tr><td class="map__key">01 Entry, intent</td><td>With a site CTA: “Signing up to monetize your app”</td><td><a href="auth.html?type=developer">auth.html?type=developer</a> · <a href="auth.html?type=peer">?type=peer</a></td></tr>
+          <tr><td class="map__key">01 Entry, referral</td><td>From a referral link</td><td><a href="auth.html?ref=JORDAN24">auth.html?ref=JORDAN24</a></td></tr>
+          <tr><td class="map__key">01 Error</td><td>Rate limited (neutral wording, countdown)</td><td><a href="auth.html?demo=rate-limit">auth.html?demo=rate-limit</a></td></tr>
+          <tr><td class="map__key">01 Error</td><td>Network error (Try again)</td><td><a href="auth.html?demo=network">auth.html?demo=network</a></td></tr>
+          <tr><td class="map__key">01 Error</td><td>Provider sign-in cancelled (press a provider button)</td><td><a href="auth.html?demo=sso-cancelled">auth.html?demo=sso-cancelled</a></td></tr>
+          <tr><td class="map__key">01 Notice</td><td>Logged out</td><td><a href="auth.html?state=logged-out">auth.html?state=logged-out</a></td></tr>
+          <tr><td class="map__key">02 Welcome back</td><td>Existing email: password, “Email me a login link instead”</td><td><a href="auth.html?demo=wrong-password">(starts here)</a> · type <b>artem@goodface.agency</b> on the entry</td></tr>
+          <tr><td class="map__key">02 Error</td><td>Wrong password with attempts left</td><td><a href="auth.html?demo=wrong-password">auth.html?demo=wrong-password</a></td></tr>
+          <tr><td class="map__key">02 Locked</td><td>Too many attempts, countdown</td><td><a href="auth.html?demo=locked">auth.html?demo=locked</a></td></tr>
+          <tr><td class="map__key">02b Link sent</td><td>Login link by email, resend countdown</td><td><a href="auth.html?demo=link-sent">auth.html?demo=link-sent</a></td></tr>
+          <tr><td class="map__key">03 Account type</td><td>New email, no ?type: pick Personal or Developer</td><td><a href="auth.html?demo=type">auth.html?demo=type</a></td></tr>
+          <tr><td class="map__key">04 Create account</td><td>New email: password and consent (the country is read on the server)</td><td><a href="auth.html?demo=create">auth.html?demo=create</a></td></tr>
+          <tr><td class="map__key">04 Create, Developer</td><td>Same, from a Developer CTA (the type step is skipped)</td><td><a href="auth.html?demo=create&amp;type=developer">auth.html?demo=create&amp;type=developer</a></td></tr>
+          <tr><td class="map__key">04 Referral error</td><td>Referral code not found</td><td><a href="auth.html?ref=JORDN24&amp;demo=ref-error&amp;type=peer">auth.html?ref=JORDN24&amp;demo=ref-error&amp;type=peer</a></td></tr>
+          <tr><td class="map__key">04 Unsupported country</td><td>Detected country is not served: a dedicated state with “Notify me”</td><td><a href="auth.html?demo=unsupported">auth.html?demo=unsupported</a> · <a href="auth.html?geo=Canada">?geo=Canada, then a new email</a></td></tr>
+          <tr><td class="map__key">Log in, on purpose</td><td>Any typed email is an existing account (shows 02 Welcome back)</td><td><a href="auth.html?entry=login">auth.html?entry=login</a></td></tr>
+          <tr><td class="map__key">Sign up, on purpose</td><td>Any typed email is a new account (shows 03 / 04)</td><td><a href="auth.html?entry=signup">auth.html?entry=signup</a> · back to the default: <a href="auth.html?entry=auto">?entry=auto</a></td></tr>
+          <tr><td class="map__key">05 Verify email</td><td>6-digit code, resend countdown, “Wrong email? Change”</td><td><a href="verify-email.html" data-fresh>verify-email.html</a></td></tr>
+          <tr><td class="map__key">05 Wrong code</td><td></td><td><a href="verify-email.html?demo=error" data-fresh>verify-email.html?demo=error</a></td></tr>
+          <tr><td class="map__key">05 Code resent</td><td></td><td><a href="verify-email.html?demo=resent" data-fresh>verify-email.html?demo=resent</a></td></tr>
+          <tr><td class="map__key">05 Developer</td><td>Same, for a Developer sign-up</td><td><a href="verify-email.html?type=developer" data-fresh>verify-email.html?type=developer</a></td></tr>
+          <tr><td class="map__key">06 Link a provider</td><td>Existing email via GitHub: log in once to link it</td><td><a href="auth.html?demo=link">auth.html?demo=link</a></td></tr>
+          <tr><td class="map__key">Providers</td><td>Google logs in the Personal demo (then 2FA) · GitHub asks to link · Apple is a new account</td><td>press the provider buttons on <a href="auth.html">auth.html</a></td></tr>
           <tr><td class="map__key">Login2FA</td><td>Two-step verification <span class="cf-badge cf-badge--warning"><span class="cf-badge__dot"></span>Form not in design</span></td><td><a href="login-2fa.html">login-2fa.html</a></td></tr>
-          <tr><td class="map__key">LoggedOut</td><td>Logged out</td><td><a href="login.html?state=logged-out">login.html?state=logged-out</a></td></tr>
         </tbody>
       </table>
     </section>
@@ -194,6 +197,7 @@
           <tr><td class="map__key">—</td><td>2FA: setup, wrong code (000000)</td><td><a href="settings.html?state=2fa-wrong-code" data-accounts="personal">settings.html?state=2fa-wrong-code</a></td></tr>
           <tr><td class="map__key">—</td><td>2FA: on</td><td><a href="settings.html?state=2fa-on" data-accounts="personal">settings.html?state=2fa-on</a></td></tr>
           <tr><td class="map__key">—</td><td>2FA section off in the config</td><td><a href="settings.html?state=2fa-hidden" data-accounts="personal">settings.html?state=2fa-hidden</a></td></tr>
+          <tr><td class="map__key">—</td><td>Verification (needed only to withdraw): not started / in review / verified</td><td><a href="settings.html?state=verification-none" data-accounts="personal">verification-none</a> · <a href="settings.html?state=verification-review" data-accounts="personal">verification-review</a> · <a href="settings.html?state=verification-done" data-accounts="personal">verification-done</a></td></tr>
           <tr><td class="map__key">—</td><td>Notifications: all on / all off</td><td><a href="settings.html?state=notifications-on" data-accounts="personal">notifications-on</a> · <a href="settings.html?state=notifications-off" data-accounts="personal">notifications-off</a></td></tr>
           <tr><td class="map__key">—</td><td>Avatar: no photo / photo set / preview before save</td><td><a href="settings.html?state=avatar-none" data-accounts="personal">avatar-none</a> · <a href="settings.html?state=avatar-set" data-accounts="personal">avatar-set</a> · <a href="settings.html?state=avatar-preview" data-accounts="personal">avatar-preview</a></td></tr>
           <tr><td class="map__key">—</td><td>Avatar: invalid format / file too large</td><td><a href="settings.html?state=avatar-invalid" data-accounts="personal">avatar-invalid</a> · <a href="settings.html?state=avatar-too-large" data-accounts="personal">avatar-too-large</a></td></tr>
@@ -216,7 +220,16 @@
           <tr><td class="map__key">—</td><td>KYC changes requested (reviewer comment)</td><td><a href="settings.html#verification" data-accounts="personal,developer" data-account="developer" data-dev-status="action_needed">settings.html#verification</a></td></tr>
           <tr><td class="map__key">—</td><td>KYC approved</td><td><a href="settings.html#verification" data-accounts="personal,developer" data-account="developer" data-dev-status="approved">settings.html#verification</a></td></tr>
           <tr><td class="map__key">—</td><td>Developer Agreement (sign it here; the demo control resets it)</td><td><a href="settings.html#agreements" data-accounts="personal,developer" data-account="developer" data-dev-status="not_started">settings.html#agreements</a></td></tr>
-          <tr><td class="map__key">—</td><td>Account type: no Personal account (“Create personal account”)</td><td><a href="settings.html#account-type" data-accounts="developer" data-account="developer" data-dev-status="not_started">settings.html#account-type</a></td></tr>
+          <tr><td class="map__key">—</td><td>KYC in progress (onboarding begun, not submitted)</td><td><a href="settings.html#verification" data-accounts="personal,developer" data-account="developer" data-dev-status="in_progress">settings.html#verification</a></td></tr>
+          <tr><td class="map__key">—</td><td>KYC rejected (reason, next step, support)</td><td><a href="settings.html#verification" data-accounts="personal,developer" data-account="developer" data-dev-status="rejected">settings.html#verification</a></td></tr>
+          <tr><td class="map__key">—</td><td>Connected sign-in providers (Google, GitHub, Apple)</td><td><a href="settings.html#security" data-accounts="personal,developer" data-account="developer" data-dev-status="in_review">settings.html#security</a></td></tr>
+          <tr><td class="map__key">—</td><td>Verification reminder, bottom-right (Not started / In progress), closable</td><td><a href="analytics.html" data-accounts="developer" data-dev-status="in_progress">analytics.html</a></td></tr>
+          <tr><td class="map__key">—</td><td>Sign-up details: legal form, country, full address, apps, installs, then KYC now or later</td><td><a href="developer-verification.html#type" data-accounts="developer" data-dev-status="not_started">developer-verification.html</a></td></tr>
+          <tr><td class="map__key">—</td><td>Verification page with “Complete verification”</td><td><a href="kyc.html" data-accounts="developer" data-dev-status="in_progress">kyc.html</a></td></tr>
+          <tr><td class="map__key">—</td><td>Locked in the menu (Needs KYC) and a locked Apps page</td><td><a href="apps.html" data-accounts="developer" data-dev-status="not_started">apps.html</a></td></tr>
+          <tr><td class="map__key">—</td><td>Consent screen colors (Light, Dark, Brand, Custom) and the contrast check</td><td><a href="sdk.html#sdk-consent-card" data-accounts="developer" data-dev-status="approved">sdk.html#sdk-consent-card</a></td></tr>
+          <tr><td class="map__key">—</td><td>Verify your identity to withdraw (first withdrawal, Personal)</td><td><a href="payouts.html?state=default" data-accounts="personal">payouts.html</a></td></tr>
+          <tr><td class="map__key">—</td><td>A new developer: empty Apps; add an app, then set its status on the app page (“Simulate status”)</td><td><a href="apps.html?data=no-apps" data-accounts="developer" data-dev-status="approved">apps.html (empty)</a></td></tr>
           <tr><td class="map__key">—</td><td>KYC placeholder page</td><td><a href="kyc.html" data-accounts="developer" data-account="developer" data-dev-status="not_started">kyc.html</a></td></tr>
         </tbody>
       </table>

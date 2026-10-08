@@ -1,4 +1,4 @@
-/* Developer App details (app.html?id=<UUID>). Nothing here depends on KYC.
+/* Developer App details (app.html?id=<UUID>). The whole Apps area waits for an approved verification (a locked page explains it until then).
    Statuses: draft and changes_requested are editable; in_review and active are read-only. Delete is for Drafts only.
    Apps come from the shared store (data/apps.js). The review itself is not part of the MVP: the dev-only block in
    pages/app-review-sim.js approves or requests changes. */
@@ -28,6 +28,11 @@
   host.innerHTML = '<div data-kyc-alert></div><div class="u-contents" id="app-root"></div>';
   Cashful.kyc.mountAlert(ui.$('[data-kyc-alert]', host));
   var root = ui.$('#app-root', host);
+  // Apps wait for an approved verification. Until then the page says so, and follows the status live.
+  var unlockedAtLoad = api.kyc.featuresUnlocked();
+  api.kyc.onChange(function () { if (api.kyc.featuresUnlocked() !== unlockedAtLoad) location.reload(); });
+  if (!unlockedAtLoad) { root.innerHTML = Cashful.kyc.lockedPageHtml('Apps', 'apps and sending them for review'); return; }
+
 
   var toastText = Cashful.store.takeFlash('appToast');
   var highlight = Cashful.store.takeFlash('appHighlight') === id;

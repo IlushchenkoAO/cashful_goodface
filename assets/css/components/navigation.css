@@ -12,3 +12,8 @@
 .cf-tabs{display:flex;gap:var(--space-24);border-bottom:1px solid var(--border-subtle)}
 .cf-tab{padding:var(--space-8) 0 10px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;color:var(--text-secondary);font:600 14px/20px var(--font-text);cursor:pointer}
 .cf-tab.is-on{color:var(--text-primary);border-color:var(--border-focus)}
+/* A locked item (Developer, before verification): shown, labelled with what is missing, and not clickable */
+.cf-nav.is-locked{cursor:not-allowed;color:var(--text-secondary)}
+.cf-nav.is-locked:hover{background:transparent}
+.cf-nav__badge{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;box-sizing:border-box;border-radius:999px;background:var(--bg-warning-subtle);color:var(--text-warning);font:600 11px/20px var(--font-text);white-space:nowrap}
+.cf-nav:focus-visible{outline:2px solid var(--border-focus,var(--icon-brand));outline-offset:2px}

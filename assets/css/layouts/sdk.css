@@ -45,9 +45,37 @@
 
 /* Consent */
 .sdk-consent { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-24); align-items: start; }
-.sdk-consent__preview { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-12); padding: var(--space-24); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); background: var(--bg-surface-sunken); }
+.sdk-int__divider { height: 1px; background: var(--border-subtle); margin: var(--space-8) 0; }
+/* The example screen takes its colors from the four --cp-* variables the page sets */
+.sdk-consent__preview { --cp-bg: #FFFDF8; --cp-text: #1B1B1F; --cp-btn: #7760E7; --cp-btn-text: #FFFFFF; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-12); padding: var(--space-24); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--cp-bg); color: var(--cp-text); transition: background .2s ease, color .2s ease; }
+.sdk-consent__tag { font: 600 12px/16px var(--font-text); padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; opacity: .8; }
 .sdk-consent__title { font: 800 22px/28px var(--font-display); letter-spacing: -.03em; }
+.sdk-consent__fine { font: 500 12px/18px var(--font-text); opacity: .8; }
 .sdk-consent__buttons { display: flex; flex-wrap: wrap; gap: var(--space-8); }
+.sdk-consent__btn { height: 44px; padding: 0 20px; border-radius: 8px; border: 2px solid var(--cp-text); background: transparent; color: var(--cp-text); font: 700 14px/20px var(--font-text); cursor: pointer; }
+.sdk-consent__btn--primary { background: var(--cp-btn); border-color: var(--cp-btn); color: var(--cp-btn-text); }
+.sdk-consent__btn:focus-visible { outline: 3px solid var(--cp-text); outline-offset: 2px; }
+/* Color choices */
+.sdk-themes { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-8); min-width: 0; }
+.sdk-themes__opts { display: flex; flex-wrap: wrap; gap: var(--space-8); }
+.sdk-theme { cursor: pointer; }
+.sdk-theme__input { position: absolute; opacity: 0; pointer-events: none; }
+.sdk-theme__card { display: inline-flex; align-items: center; gap: var(--space-8); height: 36px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--bg-surface); font: 600 14px/20px var(--font-text); }
+.sdk-theme__input:checked + .sdk-theme__card { border-color: var(--icon-brand); box-shadow: 0 0 0 1px var(--icon-brand); background: var(--bg-brand-muted); }
+.sdk-theme__input:focus-visible + .sdk-theme__card { outline: 2px solid var(--border-focus, var(--icon-brand)); outline-offset: 2px; }
+.sdk-theme__sw { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; border: 2px solid; }
+.sdk-theme__sw span { width: 8px; height: 8px; border-radius: 50%; }
+.sdk-theme__sw--custom { border-color: var(--icon-secondary); color: var(--icon-secondary); }
+.sdk-colors { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-12); }
+.sdk-colors[hidden] { display: none; }
+.sdk-colors > div:last-child { grid-column: 1 / -1; }
+.sdk-color { display: flex; align-items: center; gap: var(--space-8); }
+.sdk-color__pick { flex: none; width: 44px; height: 44px; padding: 2px; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-surface); cursor: pointer; }
+.sdk-contrast { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-6); }
+.sdk-contrast__row { display: flex; align-items: flex-start; gap: var(--space-8); font: 500 13px/18px var(--font-text); }
+.sdk-contrast__row cf-icon { margin-top: 1px; }
+.sdk-contrast__row.is-ok cf-icon { color: var(--icon-success); }
+.sdk-contrast__row.is-low cf-icon { color: var(--icon-error); }
 .sdk-consent__side { display: flex; flex-direction: column; gap: var(--space-16); }
 .sdk-reqs { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-8); }
 .sdk-reqs li { display: flex; align-items: flex-start; gap: var(--space-8); }
@@ -55,3 +83,4 @@
 
 @media (max-width: 1000px) { .sdk-plats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 900px) { .sdk-consent, .sdk-meta { grid-template-columns: 1fr; } }
+

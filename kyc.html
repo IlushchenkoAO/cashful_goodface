@@ -18,22 +18,15 @@
   <script src="assets/js/core/format.js" defer></script>
   <script src="assets/js/data/developer-settings.config.js" defer></script>
   <script src="assets/js/app/shell.js" defer></script>
+  <script src="assets/js/pages/kyc.js" defer></script>
 </head>
-<body data-page="kyc" data-account="developer">
-  <!-- Placeholder: this is where the verification provider would open. The real KYC flow is out of scope. -->
+<body data-page="kyc" data-account="auto">
+  <!-- The verification partner (an ID check and a selfie) would open here. The prototype passes the check with one
+       button: "Complete verification". Reached from Settings → Verification, the reminder and the alerts. For a Developer and for a Personal account. -->
   <div class="cf-shell">
     <aside class="cf-sidebar" data-sidebar data-active="settings"></aside>
     <main class="cf-shell__main">
-      <div class="cf-shell__content">
-        <header class="cf-pagehead"><div class="cf-pagehead__row"><div class="cf-pagehead__titles">
-          <h1 class="cf-pagehead__title">Verification</h1>
-          <p class="cf-pagehead__desc">The identity and business check opens here. This is a placeholder page in the prototype.</p>
-        </div></div></header>
-        <div class="cf-card" style="max-width:760px">
-          <p class="t-muted">Use the demo control to move the KYC status, then go back to Settings.</p>
-          <div><a class="cf-btn cf-btn--primary" href="settings.html#verification">Back to Settings</a></div>
-        </div>
-      </div>
+      <div class="cf-shell__content" id="kyc"></div>
     </main>
   </div>
 </body>

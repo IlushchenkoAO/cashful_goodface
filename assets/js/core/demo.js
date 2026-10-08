@@ -9,11 +9,8 @@
   var stage = function (s, label) { return '<a href="dashboard.html?state=' + s + '">' + label + '</a>'; };
 
   var LENIENT_HINTS = {
-    'choose-type': ['Pick an account type to start sign-up.'],
-    'signup-personal': [ANY, 'Referral link: <a href="signup.html?ref=JORDAN24">signup.html?ref=JORDAN24</a>'],
-    'signup-developer': [ANY],
+    'auth': [ANY + ' An empty email is the only thing it refuses.', 'Existing accounts: <b>' + u[0].email + '</b> (Personal, 2FA) and <b>' + u[1].email + '</b> (Developer). Any other email starts sign-up.', 'Providers: Google logs in the Personal demo · GitHub asks to link (Developer demo) · Apple is a new account.', 'To show <b>log in</b> with any email: set “Any typed email is…” below, or open <a href="auth.html?entry=login">?entry=login</a>.', 'Site CTAs: <a href="auth.html?type=developer">?type=developer</a> · <a href="auth.html?type=peer">?type=peer</a> · <a href="auth.html?ref=JORDAN24">?ref=JORDAN24</a>'],
     'verify-email': [ANY + ' Six digits submit automatically.'],
-    'login': [ANY, '<b>dev@studio.dev</b> opens the developer flow.'],
     'login-2fa': [ANY],
     'forgot-password': [ANY],
     'reset-password': [ANY],
@@ -30,24 +27,28 @@
   };
 
   var HINTS = {
-    'choose-type': ['Pick an account type to start sign-up.'],
-    'signup-personal': [
-      'Taken email: <b>' + u[0].email + '</b>',
-      'Valid referral code: <b>JORDAN24</b>',
-      'Referral link: <a href="signup.html?ref=JORDAN24">signup.html?ref=JORDAN24</a>'
+    'auth': [
+      'Existing: <b>' + u[0].email + '</b> / <b>' + u[0].password + '</b> (Personal + 2FA), <b>' + u[1].email + '</b> / <b>' + u[1].password + '</b> (Developer)',
+      'Any other email starts sign-up. Valid referral code: <b>JORDAN24</b>',
+      'Wrong password ' + cfg.rules.maxLoginAttempts + ' times → locked for ' + cfg.rules.lockMinutes + ' min',
+      'Providers: Google logs in the Personal demo · GitHub asks to link · Apple is a new account'
     ],
-    'signup-developer': ['Taken email: <b>' + u[1].email + '</b>', 'Valid referral code: <b>JORDAN24</b>'],
     'verify-email': ['Correct code: <b>' + d.emailCode + '</b>', 'Any other code shows the error state.'],
-    'login': [
-      'Personal + 2FA: <b>' + u[0].email + '</b> / <b>' + u[0].password + '</b>',
-      'Developer, unfinished verification: <b>' + u[1].email + '</b> / <b>' + u[1].password + '</b>',
-      'Wrong password ' + cfg.rules.maxLoginAttempts + ' times → locked for ' + cfg.rules.lockMinutes + ' min'
-    ],
     'login-2fa': ['Authenticator code: <b>' + d.totpCode + '</b>', 'Backup code: <b>' + d.backupCode + '</b>'],
     'forgot-password': ['Use <b>' + u[0].email + '</b> to get a working reset link.'],
     'reset-password': ['Password needs 8+ characters and a number.'],
     'earn-handoff': ['<a href="earn-handoff.html?token=expired">Expired link</a>']
   };
+
+  /** Log in or sign up? The entry screen decides from the email; this forces one, to show either flow on purpose. */
+  function entryControl() {
+    var mode = Cashful.api.entryMode();
+    var opts = [['auto', 'By the email (default)'], ['login', 'Always an existing account (log in)'], ['signup', 'Always a new account (sign up)']];
+    return '<div class="cf-input demo__field"><label class="cf-input__label" for="demo-entry">Any typed email is…</label>' +
+      '<div class="cf-field cf-field--select"><select class="cf-field__input" id="demo-entry">' +
+      opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === mode ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+      '</select><cf-icon name="chevron-down" size="20"></cf-icon></div><div class="cf-input__helper">Use “existing” to show log in with any email.</div></div>';
+  }
 
   function render() {
     var page = document.body.dataset.page;
@@ -59,6 +60,7 @@
       '<div class="demo__panel" hidden>' +
         '<div class="demo__title">Demo data</div>' +
         (hints.length ? '<ul class="demo__list">' + hints.map(function (h) { return '<li>' + h + '</li>'; }).join('') + '</ul>' : '<p class="demo__muted">Nothing to enter on this screen.</p>') +
+        (page === 'auth' ? entryControl() : '') +
         '<div class="demo__actions">' +
           '<a class="cf-btn cf-btn--secondary cf-btn--sm" href="screens.html">Screen map</a>' +
           '<button type="button" class="cf-btn cf-btn--ghost cf-btn--sm" data-demo-reset>Reset data</button>' +
@@ -70,8 +72,12 @@
     var panel = el.querySelector('.demo__panel');
     toggle.addEventListener('click', function () {
       panel.hidden = !panel.hidden;
+      var entrySel = el.querySelector('#demo-entry');
+      if (entrySel) entrySel.value = Cashful.api.entryMode();   // ?entry= may have changed it after the panel was drawn
       toggle.setAttribute('aria-expanded', String(!panel.hidden));
     });
+    var entry = el.querySelector('#demo-entry');
+    if (entry) entry.addEventListener('change', function () { Cashful.api.entryMode(entry.value); Cashful.ui.toast('Typed emails are now: ' + entry.options[entry.selectedIndex].text.toLowerCase()); });
     el.querySelector('[data-demo-reset]').addEventListener('click', function () {
       Cashful.store.reset();
       Cashful.ui.toast('Demo data reset');

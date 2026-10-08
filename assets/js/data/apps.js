@@ -171,6 +171,34 @@ window.Cashful = window.Cashful || {};
       write(apps);
       return clone(app);
     },
+    /**
+     * Status simulation (the real review is not part of the MVP): any status, from any status.
+     * opts.comment: the reviewer's words for Changes requested. opts.data (Active only, default true): give the app mock
+     * traffic so it shows up in Analytics; false leaves it Active with no data yet.
+     */
+    setStatus: function (id, status, opts) {
+      opts = opts || {};
+      var apps = read();
+      var app = find(apps, id);
+      if (!app || !STATUSES.some(function (s) { return s.id === status; })) return null;
+      var now = Date.now();
+      app.status = status;
+      app.updatedAt = now;
+      if (status === 'in_review') app.history.push({ type: 'submitted', at: now });
+      else if (status === 'changes_requested') app.history.push({ type: 'changes_requested', at: now, reviewer: 'Cashful review team', comment: opts.comment || 'Please check the app details and send it again.' });
+      else if (status === 'active') {
+        app.history.push({ type: 'approved', at: now });
+        if (opts.data !== false) {
+          // A traffic profile like the seeded apps have (see data/analytics.js), so the app has numbers to show
+          var n = app.name.length;
+          app.base = 420 + (n * 37) % 700;
+          app.weekend = 0.08;
+          app.activeDaysAgo = 45;
+        } else { delete app.base; delete app.weekend; delete app.activeDaysAgo; }
+      }
+      write(apps);
+      return clone(app);
+    },
     /** Only Drafts can be deleted. */
     remove: function (id) {
       var apps = read();

@@ -14,7 +14,20 @@ Cashful.config = {
     maxLoginAttempts: 5,      // "After 5 failed attempts…"
     lockMinutes: 15,          // "…logging in pauses for 15 minutes"
     resetLinkTtlMin: 60,      // "It works for 1 hour"
+    loginLinkTtlMin: 15,      // "The link works for 15 minutes"
+    lookupsPerMinute: 10,     // email lookups on the entry screen, per minute (rate limit)
     handoffTtlMin: 5          // "Links from the Cashful app work for 5 minutes"
+  },
+
+  /* Who can sign up: the US and the EU. `geoGuess` stands in for the country found from the visitor's IP
+     (?geo=Brazil in the sign-up URL tries another one). Anything else gets the "not available yet" state. */
+  eligibility: {
+    geoGuess: 'United States',
+    supported: ['United States', 'Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus', 'Czechia', 'Denmark', 'Estonia', 'Finland',
+      'France', 'Germany', 'Greece', 'Hungary', 'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Netherlands',
+      'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden'],
+    // Shown in the list but not served yet, so the unsupported state can be reached by hand
+    unsupported: ['Brazil', 'Canada', 'India', 'United Kingdom', 'Other country']
   },
 
   // Codes the mock backend accepts. Shown in the Prototype panel.

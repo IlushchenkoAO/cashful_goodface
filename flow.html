@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>User flow and screens · Cashful</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="assets/css/cashful.css">
+  <link rel="stylesheet" href="assets/css/layouts/screens.css">
+  <script src="assets/js/ds/svg-data.js" defer></script>
+  <script src="assets/js/ds/elements.js" defer></script>
+  <style>
+    .fl { max-width: 1120px; margin: 0 auto; padding: 32px 24px 64px; display: flex; flex-direction: column; gap: 32px; }
+    .fl h1 { font: 800 36px/40px var(--font-display); letter-spacing: -0.03em; }
+    .fl h2 { font: 700 22px/28px var(--font-display); letter-spacing: -0.02em; }
+    .fl p, .fl li { font: 500 14px/20px var(--font-text); }
+    .fl__lead { color: var(--text-secondary); max-width: 760px; }
+    .lane { display: flex; flex-direction: column; gap: 16px; padding: 20px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface); }
+    .lane > ol { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 12px 8px; align-items: flex-start; }
+    .step { display: flex; flex-direction: column; gap: 6px; width: 200px; }
+    .step + .step::before { content: none; }
+    .node { padding: 10px 12px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--bg-surface); font: 600 14px/20px var(--font-text); }
+    .node small { display: block; font: 500 12px/16px var(--font-text); color: var(--text-secondary); margin-top: 2px; }
+    .node--start { background: var(--bg-brand-muted); border-color: transparent; }
+    .node--end { background: var(--bg-success-subtle); border-color: transparent; }
+    .arrow { align-self: center; color: var(--text-secondary); font: 700 18px/1 var(--font-text); margin-top: 10px; }
+    .branches { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .branch { padding: 4px 8px; border-radius: var(--radius-sm); font: 500 12px/16px var(--font-text); }
+    .branch b { font-weight: 700; }
+    .branch--error { background: var(--bg-error-subtle); color: var(--text-error); }
+    .branch--wait { background: var(--bg-warning-subtle); color: var(--text-warning); }
+    .branch--lock { background: var(--bg-hover); color: var(--text-secondary); }
+    .branch--ok { background: var(--bg-success-subtle); color: var(--text-success); }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; }
+    .fl table { width: 100%; border-collapse: collapse; }
+    .fl th, .fl td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--border-subtle); font: 500 13px/18px var(--font-text); }
+    .fl th { font-weight: 700; color: var(--text-secondary); }
+    .fl td:first-child { font-weight: 700; white-space: nowrap; }
+    .fl a { color: var(--text-brand); }
+    .tbl-wrap { overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-surface); }
+    @media (max-width: 700px) { .step { width: 100%; } .arrow { display: none; } }
+  </style>
+</head>
+<body>
+  <main class="fl">
+    <header>
+      <h1>User flow and screens</h1>
+      <p class="fl__lead">One login, two account types (Peer / Personal and Developer). Sign-up stays minimal; everything about qualification happens later, inside the dashboard. Boxes are screens, the coloured notes under them are the error, waiting, locked and rejected branches. Every screen is clickable in the prototype: see the <a href="screens.html">screen map</a>.</p>
+      <div class="legend" aria-label="Legend">
+        <span class="branch branch--error">Error or rejection</span>
+        <span class="branch branch--wait">Waiting (with how long)</span>
+        <span class="branch branch--lock">Locked (with the reason)</span>
+        <span class="branch branch--ok">Success</span>
+      </div>
+    </header>
+
+    <section class="lane" aria-labelledby="l1">
+      <h2 id="l1">1. One entry: identify, then log in, link or sign up</h2>
+      <p class="t-muted">Nobody chooses between “Log in” and “Sign up”. They give an email or use a provider; the server decides. The CTA on the site can pass <b>?type=peer</b> or <b>?type=developer</b>; it is kept through the whole flow. Log in never asks for an account type: the person lands in the profile they used last.</p>
+      <ol>
+        <li class="step"><div class="node node--start">01 Log in or sign up<small>Google, GitHub, Apple, or email + Continue. A small line shows the CTA’s intent.</small></div>
+          <ul class="branches">
+            <li class="branch branch--wait"><b>Rate limited</b> → neutral message, Continue paused with a countdown</li>
+            <li class="branch branch--error"><b>Network error</b> → Try again</li>
+            <li class="branch branch--error"><b>Provider cancelled</b> → notice, email still works</li>
+          </ul></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">Account exists?<small>The lookup always takes the same time, known email or not.</small></div></li>
+      </ol>
+      <ol>
+        <li class="step"><div class="node">02 Welcome back<small>Existing email. Password, forgot password, or “Email me a login link instead”.</small></div>
+          <ul class="branches">
+            <li class="branch branch--error"><b>Wrong password</b> → attempts left</li>
+            <li class="branch branch--wait"><b>5 failed attempts</b> → paused 15 minutes, countdown</li>
+            <li class="branch branch--lock"><b>Linked provider</b> → this screen is skipped</li>
+          </ul></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">Two-step check<small>Only when 2FA is on</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node node--end">Dashboard<small>Last used profile. With a Developer CTA from a Personal login, the Developer account is added and opened in the same login.</small></div></li>
+      </ol>
+      <ol>
+        <li class="step"><div class="node">06 You already have an account<small>The email of the provider already has a password. Log in once to link it.</small></div>
+          <ul class="branches"><li class="branch branch--lock"><b>Use a different account</b> → back to 01</li></ul></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node node--end">Dashboard<small>Both ways of signing in work from now on</small></div></li>
+      </ol>
+      <ol>
+        <li class="step"><div class="node">03 How do you want to earn?<small>New email, and only when there is no ?type. Personal or Developer.</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">04 Create account<small>Account type chip (Change), email locked, password (not for providers), consent. The country is read on the server.</small></div>
+          <ul class="branches"><li class="branch branch--error"><b>Country not US or EU</b> → a dedicated screen with “Notify me”</li></ul></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">05 Check your email<small>6-digit code, 10 minutes. Skipped for provider sign-ups.</small></div>
+          <ul class="branches">
+            <li class="branch branch--error"><b>Wrong or expired code</b> → try again or resend</li>
+            <li class="branch branch--wait"><b>Resend</b> → wait 60 s. “Wrong email? Change” returns to 01.</li>
+          </ul></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node node--end">Dashboard<small>Peer: “Download the app”. Developer: the details and KYC step first (KYC can wait), then Analytics.</small></div></li>
+      </ol>
+      <p class="t-muted">Under 30 seconds, no ID, no payment details, no business data at sign-up.</p>
+    </section>
+
+    <section class="lane" aria-labelledby="l2">
+      <h2 id="l2">2. Peer (Personal)</h2>
+      <ol>
+        <li class="step"><div class="node node--start">Overview, new user<small>Primary action: “Download the earn app”</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">Download and connect a device<small>Install links, add-device modal, device connected</small></div>
+          <ul class="branches"><li class="branch branch--wait"><b>No device yet</b> → empty state with the install steps</li></ul></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">Earnings and balance<small>Day 1 → active → ready for payout</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">First payout request<small>Only now is verification mentioned</small></div>
+          <ul class="branches"><li class="branch branch--lock"><b>Below the minimum</b> → request disabled, shows how much is missing</li></ul></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">Verify your identity to withdraw<small>A short explanation, then Settings → Verification</small></div>
+          <ul class="branches"><li class="branch branch--wait"><b>Not now</b> → the balance stays safe, nothing is lost</li></ul></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">Verification page<small>The partner’s check (prototype: “Complete verification”), then back to Settings</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">Add payout method<small>Then request the payout</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node node--end">Payout requested<small>Requested → Processing → Paid</small></div>
+          <ul class="branches"><li class="branch branch--error"><b>Failed / Rejected</b> → reason in the history row</li></ul></li>
+      </ol>
+    </section>
+
+    <section class="lane" aria-labelledby="l3">
+      <h2 id="l3">3. Developer: details and KYC right after sign-up, or later</h2>
+      <ol>
+        <li class="step"><div class="node node--start">Account created<small>Email verified, or a provider sign-up. Straight into the details.</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">1. Legal form<small>Company (LLC) or independent developer</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">2. Business details<small>Country, full address, name. All required.</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">3. Your apps<small>Number of apps and installations (whole numbers). Required.</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">4. Agreements<small>Sign the Developer Agreement</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">5. Verify identity (KYC)<small>ID and a selfie with the partner, about 2 minutes</small></div>
+          <ul class="branches"><li class="branch branch--lock"><b>Complete verification later</b> → Analytics, with the reminder</li></ul></li>
+      </ol>
+      <ol>
+        <li class="step"><div class="node">Verification done at sign-up<small>Submitted to review</small></div>
+          <ul class="branches"><li class="branch branch--wait"><b>In review</b>, usually 1–2 business days. The dashboard says so.</li></ul></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node node--end">Approved<small>Analytics shows data. Apps, SDK download and Payouts open.</small></div>
+          <ul class="branches">
+            <li class="branch branch--error"><b>Action required</b> (“Changes requested”) → reviewer comment, update, back to review</li>
+            <li class="branch branch--error"><b>Rejected</b> → reason, next step, contact support</li>
+          </ul></li>
+      </ol>
+      <ol>
+        <li class="step"><div class="node">Verification skipped<small>Status “Not started” (or “In progress” once details are saved)</small></div>
+          <ul class="branches">
+            <li class="branch branch--lock"><b>Analytics:</b> an empty state with the way to verify</li>
+            <li class="branch branch--lock"><b>Apps and Payouts:</b> a “Needs KYC” badge in the menu, not clickable</li>
+            <li class="branch branch--lock"><b>SDK:</b> open to read; the download is locked</li>
+            <li class="branch branch--wait"><b>Reminder</b> bottom-right with what is left. Closing it hides it for the session.</li>
+          </ul></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">Settings → Verification<small>Start verification</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">Verification page<small>The partner’s check. Prototype: “Complete verification”.</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node node--end">Everything opens<small>Menu badges go, the reminder goes, Analytics fills in</small></div></li>
+      </ol>
+      <p class="t-muted">Two-factor authentication is only asked when logging in (and only if it is on). Nothing inside the dashboard asks for it.</p>
+    </section>
+
+    <section class="lane" aria-labelledby="l4">
+      <h2 id="l4">4. Forgot and reset password</h2>
+      <ol>
+        <li class="step"><div class="node node--start">Forgot password<small>Email</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">Link sent<small>Works for 1 hour</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">Create a new password</div>
+          <ul class="branches"><li class="branch branch--error"><b>Link expired</b> → ask for a new one</li></ul></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node node--end">Password updated → Log in</div></li>
+      </ol>
+    </section>
+
+    <section class="lane" aria-labelledby="l5">
+      <h2 id="l5">5. Account switching (same login, no new sign-up)</h2>
+      <ol>
+        <li class="step"><div class="node node--start">Switcher: Personal / Developer</div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">Peer adds Developer<small>“Become a developer” confirmation → Developer onboarding</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node">Developer adds Personal<small>Settings → “Create personal account” → Overview</small></div></li>
+        <li class="arrow" aria-hidden="true">→</li>
+        <li class="step"><div class="node node--end">Switch back and forth<small>Name, photo, email, password and 2FA are shared. Notifications and payouts are per account.</small></div></li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="sl">
+      <h2 id="sl">Screen list</h2>
+      <p class="fl__lead">States: <b>D</b> default, <b>L</b> loading, <b>E</b> error, <b>M</b> empty, <b>K</b> locked. Only the states that make sense for the screen are listed.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Screen</th><th>Purpose</th><th>States</th><th>Open</th></tr></thead>
+          <tbody>
+            <tr><td>01 Log in or sign up</td><td>The one entry. Providers or email; decides the path.</td><td>D · L · E (rate limited, network, provider cancelled) · logged out · CTA intent</td><td><a href="auth.html">auth.html</a> · <a href="auth.html?type=developer">?type=developer</a></td></tr>
+            <tr><td>02 Welcome back</td><td>Existing email: password or a login link.</td><td>D · L · E (wrong password) · locked · link sent</td><td><a href="auth.html?demo=wrong-password">wrong password</a> · <a href="auth.html?demo=locked">locked</a> · <a href="auth.html?demo=link-sent">link sent</a></td></tr>
+            <tr><td>03 Account type</td><td>New email without ?type: Personal or Developer.</td><td>D</td><td><a href="auth.html?demo=type">auth.html?demo=type</a></td></tr>
+            <tr><td>04 Create account</td><td>Password, consent. Shows who pays, what is shared and how payouts work. The country is read on the server.</td><td>D · L · E · unsupported country (own screen)</td><td><a href="auth.html?demo=create">create</a> · <a href="auth.html?demo=unsupported">unsupported</a></td></tr>
+            <tr><td>05 Verify email</td><td>Confirm the address with a 6-digit code.</td><td>D · L · E (wrong, expired) · resent</td><td><a href="verify-email.html">verify-email.html</a></td></tr>
+            <tr><td>06 You already have an account</td><td>Link a provider to an existing password account.</td><td>D · L · E</td><td><a href="auth.html?demo=link">auth.html?demo=link</a></td></tr>
+            <tr><td>Two-step check</td><td>Code from the authenticator app at log in.</td><td>D · E</td><td><a href="login-2fa.html">login-2fa.html</a></td></tr>
+            <tr><td>Forgot / reset password</td><td>Recover access.</td><td>D · sent · E (link expired) · done</td><td><a href="forgot-password.html">forgot</a> · <a href="reset-password.html?token=demo">reset</a></td></tr>
+            <tr><td>Overview (Peer)</td><td>Earnings and devices; “Download the earn app” first.</td><td>M (new, no devices) · day 1 · active · payout ready</td><td><a href="dashboard.html?state=new">dashboard.html</a></td></tr>
+            <tr><td>Download app</td><td>Install links per platform with install help.</td><td>D · help open</td><td><a href="download.html">download.html</a></td></tr>
+            <tr><td>Analytics (Developer landing)</td><td>Nodes, connected IPs and earnings across apps. Empty until the account is verified.</td><td>D · L · E · M (not verified, no apps, none Active, no data, empty period)</td><td><a href="analytics.html">analytics.html</a></td></tr>
+            <tr><td>Apps and App details</td><td>Apps (UUID), edit, send for review, feedback. A new developer starts with none. “Simulate status” (dev only) sets any status, including Active with data.</td><td>D · M · no results · K (the whole area is locked until approval)</td><td><a href="apps.html">apps.html</a></td></tr>
+            <tr><td>SDK</td><td>Documentation, one Integration section (App ID and steps), consent screen with colors, download.</td><td>D · M (no apps) · K (download locked)</td><td><a href="sdk.html">sdk.html</a></td></tr>
+            <tr><td>Verification (Settings)</td><td>Status, stages, what it unlocks, the next action.</td><td>Not started · In progress · In review · Changes requested · Rejected · Approved</td><td><a href="settings.html#verification">settings.html#verification</a></td></tr>
+            <tr><td>Business details, Agreements (Settings)</td><td>Business data; sign the Developer Agreement.</td><td>Editable · K (read-only) · signed / unsigned</td><td><a href="settings.html#business">#business</a> · <a href="settings.html#agreements">#agreements</a></td></tr>
+            <tr><td>Security (Settings)</td><td>Password, 2FA (asked at log in only; turning it off needs a code or a backup code), connected sign-in providers.</td><td>D · E · 2FA off/on · provider connected or not</td><td><a href="settings.html#security">#security</a></td></tr>
+            <tr><td>Payouts</td><td>Balance, methods, history, request a payout.</td><td>D · M (no methods, empty history, zero balance) · K (Developer before approval) · in progress · below minimum</td><td><a href="payouts.html">payouts.html</a></td></tr>
+            <tr><td>Verification (Settings, Personal)</td><td>Identity check. Needed only to withdraw; shown to the person the first time they try.</td><td>Not started · In review · Verified</td><td><a href="settings.html?state=verification-none#verification">settings.html</a></td></tr>
+            <tr><td>Verify to withdraw (Payouts)</td><td>Explains why and sends to Settings → Verification.</td><td>D</td><td><a href="payouts.html?state=default">payouts.html</a></td></tr>
+            <tr><td>Locked feature state</td><td>Every lock says what, why and how to unlock, and links to Settings.</td><td>K</td><td><a href="sdk.html">SDK</a> · <a href="payouts.html">Payouts</a></td></tr>
+            <tr><td>Account type (Settings, Personal)</td><td>Add the Developer account. A Developer uses the switcher in the sidebar instead.</td><td>none / draft / submitted</td><td><a href="settings.html#account-type">#account-type</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

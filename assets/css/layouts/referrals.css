@@ -1,7 +1,7 @@
 /* Referrals page: summary, share card, steps, funnel, milestones, table, rules. */
 
 /* Summary */
-.ref-summary { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: var(--space-24); align-items: center; }
+.ref-summary { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--space-24); align-items: center; }
 .ref-fig { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
 .ref-fig + .ref-fig { padding-left: var(--space-24); border-left: 1px solid var(--border-subtle); }
 .ref-fig__label { font: 600 14px/20px var(--font-text); color: var(--text-secondary); }

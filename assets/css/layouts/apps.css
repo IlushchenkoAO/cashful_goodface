@@ -62,3 +62,4 @@ tr.is-clickable { cursor: pointer; }
 .sim__form { display: flex; flex-direction: column; gap: var(--space-12); }
 
 @media (max-width: 900px) { .app-dl, .app-checklist { grid-template-columns: 1fr; } }
+

@@ -1,5 +1,9 @@
-/* Developer verification — six steps, progress saved after each one.
+/* Developer sign-up details and KYC — six steps, progress saved after each one. A new developer lands here right
+   after the account is created (or right after the email is verified).
    type → details (company | independent) → apps → agreements → kyc → review
+   Every field without an "Optional" note is required. The KYC step can be skipped: "Complete verification later"
+   leaves the status Not started (In progress) and the dashboard reminds the developer. The details are also saved as
+   dev.business, the same record Settings → Business details edits.
    #step opens a step directly; ?resume=1 shows "Welcome back" (DevOnbResume).
    An account with kycStatus 'changes_requested' lands on the identity step to resubmit documents. */
 (function () {
@@ -8,7 +12,7 @@
   var cfg = Cashful.config;
 
   var user = api.currentUser();
-  if (!user) { location.replace('login.html'); return; }
+  if (!user) { location.replace('auth.html'); return; }
   if (user.accounts.indexOf('developer') < 0) { location.replace(api.homeFor(user)); return; }
   if (api.activeAccount() !== 'developer') api.switchAccount('developer');
 
@@ -16,9 +20,7 @@
   var dev = user.dev;
 
   var OPTIONS = {
-    countries: ['United States', 'United Kingdom', 'Canada', 'Germany', 'Poland', 'Ukraine', 'Other'],
-    appCounts: ['1–3', '4–10', 'More than 10'],
-    installs: ['Under 10,000', '10,000–100,000', '100,000–1,000,000', 'More than 1,000,000'],
+    countries: cfg.eligibility.supported,
     regions: ['United States, European Union', 'United States', 'European Union', 'Worldwide', 'Other']
   };
   var PLATFORMS = ['Android', 'iOS', 'Windows', 'macOS', 'Linux', 'Other'];
@@ -27,12 +29,11 @@
   /* ---------- Static setup ---------- */
 
   ui.$$('[data-user-email]').forEach(function (el) { el.textContent = user.email; });
+  ui.$$('[data-review-time]').forEach(function (el) { el.textContent = Cashful.developerSettingsConfig.kyc.reviewTime; });
 
   ui.$$('select[data-options]').forEach(function (s) {
     s.innerHTML = OPTIONS[s.dataset.options].map(function (o) { return '<option>' + ui.esc(o) + '</option>'; }).join('');
   });
-  // Design defaults
-  ui.$$('select[name="installs"]').forEach(function (s) { s.value = '10,000–100,000'; });
 
   ui.$('#platforms').innerHTML = PLATFORMS.map(function (p) {
     return '<label class="cf-check"><input class="cf-check__input" type="checkbox" name="platforms" value="' + p + '"' +
@@ -72,18 +73,35 @@
     return out;
   }
 
-  /** Strict mode only: every field without an "Optional" helper must be filled. */
+  /** Every field without an "Optional" note is required (any text passes), the numbers must be whole numbers. */
   function validate(form) {
-    if (!api.strict) return true;
     var ok = true;
     ui.$$('.cf-field__input', form).forEach(function (el) {
       var helper = ui.$('.cf-input__helper', el.closest('.cf-input'));
       if (helper && /optional/i.test(helper.textContent)) return;
       if (!el.value.trim()) { ui.setError(el, 'Fill in this field.'); ok = false; }
+      else if ((el.name === 'count' || el.name === 'installs') && !/^\d+$/.test(el.value.trim().replace(/[,\s]/g, ''))) {
+        ui.setError(el, 'Enter a whole number, 0 or more.'); ok = false;
+      }
     });
     var agree = form.elements.agree;
     if (agree && !agree.checked) { ui.setError(agree, 'Agree to the documents to sign.'); ok = false; }
+    if (!ok) { var bad = ui.$('.is-error input, .is-error select', form); if (bad) bad.focus(); }
     return ok;
+  }
+
+  /** The record Settings → Business details edits, built from the answers above. Only known values are written. */
+  function businessFrom(d) {
+    var det = d.details || {}, ap = d.apps || {};
+    var b = {
+      kind: d.kind === 'indie' ? 'indie' : 'llc',
+      name: d.kind === 'indie' ? [det.firstName, det.lastName].filter(Boolean).join(' ') : det.company,
+      country: det.country, street: det.street, city: det.city, postal: det.zip,
+      apps: ap.count != null ? String(ap.count).replace(/[,\s]/g, '') : undefined,
+      installs: ap.installs != null ? String(ap.installs).replace(/[,\s]/g, '') : undefined
+    };
+    Object.keys(b).forEach(function (k) { if (b[k] == null || b[k] === '') delete b[k]; });
+    return b;
   }
 
   /* ---------- Step display ---------- */
@@ -164,8 +182,20 @@
       else patch[SECTION[form.dataset.view]] = data;
 
       ui.withLoading(submit, function () {
-        return api.saveOnboarding(patch, next(step)).then(function (d) { dev = d; go(next(step)); });
+        return api.saveOnboarding(patch, next(step)).then(function (d) {
+          dev = d;
+          if (step === 'type' || step === 'details' || step === 'apps') dev = api.updateDev({ business: Object.assign({}, dev.business, businessFrom(dev)) });
+          // The Developer Agreement is signed here once; Settings → Agreements shows it as signed
+          if (step === 'agreements' && data.signature) api.kyc.sign('developer-agreement', data.signature);
+          go(next(step));
+        });
       });
+    });
+
+    var later = ui.$('#kyc-later', form);
+    if (later) later.addEventListener('click', function () {
+      // The details are saved; the verification itself waits. The dashboard keeps reminding, Settings finishes it.
+      ui.withLoading(later, function () { return api.saveOnboarding({}, 'kyc'); }).then(function () { ui.go('analytics.html'); });
     });
 
     var back = ui.$('[data-back]', form);

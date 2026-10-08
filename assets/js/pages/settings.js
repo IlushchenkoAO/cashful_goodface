@@ -28,6 +28,9 @@
   // A preset opens a state; the parts that live on the login are written there so every page agrees
   if (presetId === 'email-pending') api.updateProfile({ emailPending: state.emailPending });
   if (presetId === '2fa-on') api.updateProfile({ tfaEnabled: true });
+  if (presetId === 'verification-none') api.peerKyc.set('not_started');
+  if (presetId === 'verification-review') api.peerKyc.set('in_review');
+  if (presetId === 'verification-done') api.peerKyc.set('approved');
   function persistNotifications() {
     var all = Object.assign({}, user.notif || {});
     all[account] = state.notifications;
@@ -254,7 +257,7 @@
     el.innerHTML = '<div class="set-row">' +
       '<div class="set-row__text"><h3 class="set-sub">Two-factor authentication ' +
         '<span class="cf-badge cf-badge--' + (on ? 'success' : 'neutral') + '"><span class="cf-badge__dot"></span>' + (on ? 'On' : 'Off') + '</span></h3>' +
-        '<p class="t-muted">' + (on ? 'You’ll enter a code from your authenticator app each time you sign in.' : 'Protect your earnings with a second step at sign-in.') + '</p></div>' +
+        '<p class="t-muted">' + (on ? 'You’ll enter a code from your authenticator app each time you log in. Nothing else in Cashful asks for it.' : 'Add a second step to logging in, so a stolen password isn’t enough.') + '</p></div>' +
       '<button type="button" class="cf-btn ' + (on ? 'cf-btn--secondary' : 'cf-btn--primary') + '" data-act="' + (on ? 'tfa-disable' : 'tfa-enable') + '">' + (on ? 'Disable' : 'Enable') + '</button>' +
     '</div>';
     ui.$('[data-act]', el).addEventListener('click', function (e) {
@@ -262,7 +265,36 @@
     });
   }
 
-  var CODE_ERROR = 'That code didn’t work. Check your authenticator app and try again.';
+  /* ---------- Security: connected sign-in providers (Google, GitHub, Apple) ---------- */
+
+  var PROVIDERS = [['google', 'Google'], ['github', 'GitHub'], ['apple', 'Apple']];
+
+  function renderSso() {
+    var el = body('security').querySelector('[data-part="sso"]');
+    var sso = (api.currentUser() || {}).sso || {};
+    el.innerHTML = '<h3 class="set-sub">Connected sign-in providers</h3>' +
+      '<p class="t-muted">Connect an account to log in with one click. Your password keeps working.</p>' +
+      '<ul class="set-providers">' + PROVIDERS.map(function (p) {
+        var on = !!sso[p[0]];
+        return '<li class="set-provider"><cf-brand-icon name="' + p[0] + '"></cf-brand-icon><span class="set-provider__name">' + p[1] + '</span>' +
+          badgeOf(on) + '<button type="button" class="cf-btn cf-btn--' + (on ? 'ghost' : 'secondary') + ' cf-btn--sm" data-provider="' + p[0] + '" data-on="' + on +
+          '" aria-label="' + (on ? 'Disconnect ' : 'Connect ') + p[1] + '">' + (on ? 'Disconnect' : 'Connect') + '</button></li>';
+      }).join('') + '</ul>';
+    ui.$$('[data-provider]', el).forEach(function (b) {
+      b.addEventListener('click', function () {
+        var id = b.dataset.provider, next = Object.assign({}, (api.currentUser() || {}).sso);
+        var name = PROVIDERS.filter(function (p) { return p[0] === id; })[0][1];
+        if (b.dataset.on === 'true') delete next[id]; else next[id] = true;
+        api.updateProfile({ sso: Object.keys(next).length ? next : null });
+        renderSso();
+        ui.toast(name + (next[id] ? ' connected' : ' disconnected'));
+        ui.$('[data-provider="' + id + '"]', body('security')).focus();
+      });
+    });
+  }
+  function badgeOf(on) { return '<span class="cf-badge cf-badge--' + (on ? 'success' : 'neutral') + '"><span class="cf-badge__dot"></span>' + (on ? 'Connected' : 'Not connected') + '</span>'; }
+
+  var CODE_ERROR ='That code didn’t work. Check your authenticator app and try again.';
 
   /** Shared 6-digit check: any 6 digits pass, "000000" simulates a wrong code. */
   function checkCode(otp) {
@@ -320,26 +352,66 @@
       '<div class="stack-4"><span class="t-caption t-secondary">Setup key</span>' + ui.copyField(S.SETUP_KEY) + '</div>';
   }
 
+  /**
+   * Turning 2FA off is the one risky step, so it asks for proof you still hold the second factor: a code from the
+   * authenticator app, or a backup code when the phone is lost. It says what changes and that an email follows.
+   */
   function openTfaDisable() {
+    var backupMode = false;
     var m = ui.modal({
-      title: 'Disable two-factor authentication?',
+      title: 'Turn off two-factor authentication?',
       width: 480,
-      body: '<p class="cf-modal__desc">Your account will only be protected by your password. Enter a code from your authenticator app to confirm.</p><div class="cf-otp" id="tfa-otp"></div>',
-      footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button><button type="button" class="cf-btn cf-btn--destructive" data-act="disable">Disable</button>'
+      body: ui.alertHtml({ tone: 'warning', title: 'Logging in will only need your password', text: 'Anyone who gets your password could log in. We’ll email you to say it was turned off.' }) +
+        '<div id="tfa-proof"></div>',
+      footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Keep it on</button><button type="button" class="cf-btn cf-btn--destructive" data-act="disable">Turn off</button>'
     });
-    var otp = ui.otp(ui.$('#tfa-otp', m.el), { onComplete: disable, onEnter: disable });
-    otp.focus();
+    var otp = null;
+
+    function drawProof() {
+      var box = ui.$('#tfa-proof', m.el);
+      if (backupMode) {
+        box.innerHTML = '<p class="cf-modal__desc">Enter one of your backup codes.</p>' +
+          ui.fieldHtml({ id: 'tfa-backup', name: 'backup', label: 'Backup code', autocomplete: 'off', spellcheck: false, autofocus: true }) +
+          '<button type="button" class="cf-link" data-act="use-app">Use my authenticator app instead</button>';
+        ui.$('#tfa-backup', m.el).focus();
+        otp = null;
+      } else {
+        box.innerHTML = '<p class="cf-modal__desc">Enter the 6-digit code from your authenticator app to confirm.</p><div class="cf-otp" id="tfa-otp"></div>' +
+          '<button type="button" class="cf-link" data-act="use-backup">Lost your phone? Use a backup code</button>';
+        otp = ui.otp(ui.$('#tfa-otp', m.el), { onComplete: disable, onEnter: disable });
+        otp.focus();
+      }
+    }
+
+    function proven() {
+      if (!backupMode) return checkCode(otp);
+      var f = ui.$('#tfa-backup', m.el);
+      var v = f.value.trim();
+      var ok = v && (!api.strict || v.toUpperCase() === Cashful.config.demo.backupCode);
+      ui.setError(f, ok ? '' : (v ? 'This backup code isn’t valid or was already used.' : 'Enter a backup code.'));
+      if (!ok) f.focus();
+      return !!ok;
+    }
 
     function disable() {
-      if (!checkCode(otp)) return;
+      if (!proven()) return;
       state.tfa.enabled = false;
       api.updateProfile({ tfaEnabled: null });
       m.close();
       renderTfa();
-      ui.toast('Two-factor authentication is off');
+      ui.toast('Two-factor authentication is off. We’ve emailed you.');
       ui.$('[data-part="tfa"] [data-act]', root).focus();
     }
-    m.el.addEventListener('click', function (e) { if (e.target.closest('[data-act="disable"]')) disable(); });
+
+    m.el.addEventListener('click', function (e) {
+      var act = e.target.closest('[data-act]');
+      if (!act) return;
+      if (act.dataset.act === 'disable') disable();
+      else if (act.dataset.act === 'use-backup') { backupMode = true; drawProof(); }
+      else if (act.dataset.act === 'use-app') { backupMode = false; drawProof(); }
+    });
+    m.el.addEventListener('keydown', function (e) { if (e.key === 'Enter' && backupMode && e.target.id === 'tfa-backup') { e.preventDefault(); disable(); } });
+    drawProof();
   }
 
   /* ---------- Notifications ---------- */
@@ -404,7 +476,6 @@
   };
 
   function renderAccountType() {
-    if (isDev) { renderDevAccountType(); return; }
     var s = developerState();
     var t = ACCOUNT_TYPE[s];
     body('account-type').innerHTML = '<div class="set-row">' +
@@ -475,7 +546,7 @@
         '</form>',
       footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button>' +
         '<button type="submit" form="delete-form" class="cf-btn cf-btn--destructive" id="del-go" disabled>Delete account</button>',
-      onClose: function () { if (deleted) ui.go('index.html'); }
+      onClose: function () { if (deleted) ui.go('auth.html'); }
     });
 
     var input = ui.$('#del-confirm', m.el);
@@ -496,6 +567,27 @@
     });
   }
 
+  /* ---------- Personal: Verification (identity check, needed only to withdraw) ---------- */
+
+  var PEER_STATUS = { not_started: ['neutral', 'Not started'], in_review: ['warning', 'In review'], approved: ['success', 'Verified'] };
+
+  function renderPeerVerification() {
+    var status = api.peerKyc.status();
+    var u = api.currentUser();
+    var m = PEER_STATUS[status];
+    var text = {
+      not_started: 'You don’t need this to earn. We ask once, before your first withdrawal. It takes about 3 minutes.',
+      in_review: 'We’re checking your ID. This is usually instant, and we’ll email you if we need anything else.',
+      approved: 'Verified' + (u.peerKycAt ? ' on ' + fmt.date(u.peerKycAt) : '') + '. You can withdraw whenever you reach the minimum.'
+    }[status];
+    body('verification').innerHTML =
+      '<div class="set-row"><div class="set-row__text"><h3 class="set-sub">Status <span class="cf-badge cf-badge--' + m[0] + '"><span class="cf-badge__dot"></span>' + m[1] + '</span></h3><p class="t-muted">' + esc(text) + '</p></div>' +
+        (status === 'not_started' ? '<a class="cf-btn cf-btn--primary" href="kyc.html" data-act="peer-kyc-start">Start verification</a>' : '') + '</div>' +
+      (status === 'approved' ? '' : ui.alertHtml({ tone: 'info', title: 'Who sees your documents', text: 'Our verification partner collects your ID. Cashful only receives the result. We never sell this data.' })) +
+      '<div class="set-unlocks"><h3 class="set-sub">What this unlocks:</h3><ul class="set-unlocks__list"><li>' + icon(status === 'approved' ? 'check-circle' : 'lock', 16) + '<span>Withdrawals' + (status === 'approved' ? ' — unlocked' : '') + '</span></li></ul></div>';
+  }
+  window.addEventListener('cashful:peer-kyc', function () { if (!isDev && ui.$('[data-body="verification"]', root)) renderPeerVerification(); });
+
   /* ---------- Developer: shared bits ---------- */
 
   function devNow() { var u = api.currentUser(); return (u && u.dev) || {}; }
@@ -505,24 +597,28 @@
 
   var STATUS_META = {
     not_started: { tone: 'neutral', label: 'Not started' },
+    in_progress: { tone: 'brand', label: 'In progress' },
     in_review: { tone: 'warning', label: 'In review' },
     changes_requested: { tone: 'error', label: 'Changes requested' },
+    rejected: { tone: 'error', label: 'Rejected' },
     approved: { tone: 'success', label: 'Approved' }
   };
-  function statusBadge(status) { var m = STATUS_META[status]; return badgeHtml(m.tone, m.label); }
+  // "In progress" is Not started with the onboarding begun
+  function shownStatus(status) { return status === 'not_started' && devNow().started ? 'in_progress' : status; }
+  function statusBadge(status) { var m = STATUS_META[shownStatus(status)]; return badgeHtml(m.tone, m.label); }
 
   /** Which stage is where. Every stage says its state in words, not only by colour or icon. */
-  var STAGE_STATE = { done: 'Done', current: 'In progress', attention: 'Needs action', todo: 'To do' };
+  var STAGE_STATE = { done: 'Done', current: 'In progress', attention: 'Needs action', failed: 'Not approved', todo: 'To do' };
   function stageListHtml(status) {
     var L = DS.kyc.stageLabels;
     var stages = [
-      { label: L.details, st: status === 'changes_requested' ? 'attention' : status === 'not_started' ? 'todo' : 'done' },
+      { label: L.details, st: status === 'changes_requested' ? 'attention' : status === 'not_started' ? (devNow().started ? 'current' : 'todo') : 'done' },
       { label: L.agreements, st: api.kyc.signed('developer-agreement') ? 'done' : 'todo' },
-      { label: L.review, st: status === 'in_review' ? 'current' : status === 'approved' ? 'done' : 'todo' },
+      { label: L.review, st: status === 'in_review' ? 'current' : status === 'approved' ? 'done' : status === 'rejected' ? 'failed' : 'todo' },
       { label: L.approved, st: status === 'approved' ? 'done' : 'todo' }
     ];
     return '<ol class="set-stages" aria-label="Verification progress">' + stages.map(function (s, i) {
-      var mark = s.st === 'done' ? icon('check', 14) : (s.st === 'attention' ? '!' : String(i + 1));
+      var mark = s.st === 'done' ? icon('check', 14) : (s.st === 'attention' || s.st === 'failed' ? '!' : String(i + 1));
       return '<li class="set-stage is-' + s.st + '"><span class="set-stage__mark" aria-hidden="true">' + mark + '</span>' +
         '<span class="set-stage__label">' + esc(s.label) + '</span><span class="set-stage__state">' + STAGE_STATE[s.st] + '</span></li>';
     }).join('') + '</ol>';
@@ -533,18 +629,30 @@
   function renderVerification() {
     var status = api.kyc.status();
     var d = devNow();
+    var inProgress = status === 'not_started' && !!d.started;
+    var time = DS.kyc.reviewTime;
     var text = {
-      not_started: 'Verify your business to start earning from your apps.',
-      in_review: 'We’re reviewing your details. This usually takes 1–2 business days, and we’ll email you.',
-      changes_requested: 'Update your information and send it again.',
+      not_started: inProgress ? 'You’ve started. Your answers are saved, so you can pick up where you left off.' : 'Verify your business to start earning from your apps. It takes about 5 minutes.',
+      in_review: 'We’re reviewing your details. This usually takes ' + time + ', and we’ll email you. You don’t need to do anything.',
+      changes_requested: 'A reviewer needs one more thing. Update your information and we’ll look again, usually within ' + time + '.',
+      rejected: 'We couldn’t approve this application.',
       approved: 'Verified' + (d.approvedAt ? ' on ' + dateOf(d.approvedAt) : '') + '. You’re all set.'
     }[status];
     var comment = status === 'changes_requested'
-      ? ui.alertHtml({ tone: 'error', title: 'A reviewer left a comment', text: d.reviewerComment || S.SAMPLE_FEEDBACK }) : '';
+      ? ui.alertHtml({ tone: 'error', title: 'Action required: a reviewer left a comment', text: d.reviewerComment || S.SAMPLE_FEEDBACK }) : '';
+    if (status === 'rejected') {
+      comment = ui.alertHtml({ tone: 'error', title: 'Why it wasn’t approved', text: d.rejectionReason || DS.kyc.rejection.reason }) +
+        '<div class="set-next"><h3 class="set-sub">What you can do next</h3><p class="t-muted">' + esc(DS.kyc.rejection.nextStep) + '</p>' +
+        '<div><a class="cf-btn cf-btn--secondary" data-act="kyc-support" href="' + esc(mailto('Question about my verification')) + '">Contact support</a></div></div>';
+    }
+    // Where the documents go: said at the moment people hesitate most
+    var trust = (status === 'not_started' || status === 'changes_requested')
+      ? ui.alertHtml({ tone: 'info', title: 'Who sees your documents', text: 'Our verification partner collects your ID and address. Cashful only receives the result. We never sell this data.' }) : '';
     var action = status === 'not_started'
-      ? '<button type="button" class="cf-btn cf-btn--primary" data-act="kyc-start">Start verification</button>'
+      ? '<button type="button" class="cf-btn cf-btn--primary" data-act="kyc-start">' + (inProgress ? 'Continue verification' : 'Start verification') + '</button>'
       : status === 'changes_requested'
         ? '<button type="button" class="cf-btn cf-btn--primary" data-act="kyc-update">Update information</button>' : '';
+    comment = comment + trust;
 
     body('verification').innerHTML =
       '<div class="set-row"><div class="set-row__text"><h3 class="set-sub">Status ' + statusBadge(status) + '</h3><p class="t-muted">' + esc(text) + '</p></div>' + action + '</div>' +
@@ -562,6 +670,13 @@
 
   /* ---------- Developer: business details ---------- */
 
+  /** Cashful serves the US and the EU; a country saved earlier that is outside the list stays selectable. */
+  function countryOptions(current) {
+    var list = Cashful.config.eligibility.supported.slice();
+    if (current && list.indexOf(current) < 0) list.push(current);
+    return list;
+  }
+
   function renderBusiness(savedText) {
     var status = api.kyc.status();
     var locked = DS.businessDetails.lockedStatuses.indexOf(status) > -1;
@@ -569,12 +684,12 @@
     var indie = b.kind === 'indie';
 
     body('business').innerHTML = '<form class="set-form" id="business-form" novalidate>' +
-      (locked ? ui.alertHtml({ tone: 'info', title: status === 'approved' ? 'Your business is verified' : 'Your details are being reviewed',
+      (locked ? ui.alertHtml({ tone: 'info', title: status === 'approved' ? 'Your business is verified' : status === 'rejected' ? 'Your application wasn’t approved' : 'Your details are being reviewed',
         text: 'These details are read-only. To change them, contact support.' }) +
         '<div><a href="' + esc(mailto('Change my business details')) + '">Contact support</a></div>' : '') +
       ui.selectHtml({ id: 'biz-kind', name: 'kind', label: 'Account type', options: S.BUSINESS_KINDS, value: b.kind }) +
       ui.fieldHtml({ id: 'biz-name', name: 'name', label: indie ? 'Legal name' : 'Company name', value: b.name, autocomplete: 'organization' }) +
-      ui.selectHtml({ id: 'biz-country', name: 'country', label: 'Country', options: S.COUNTRIES, value: b.country }) +
+      ui.selectHtml({ id: 'biz-country', name: 'country', label: 'Country', options: countryOptions(b.country), value: b.country }) +
       ui.fieldHtml({ id: 'biz-street', name: 'street', label: 'Street address', value: b.street, autocomplete: 'street-address' }) +
       '<div class="set-grid">' +
         ui.fieldHtml({ id: 'biz-city', name: 'city', label: 'City', value: b.city, autocomplete: 'address-level2' }) +
@@ -694,22 +809,7 @@
     });
   }
 
-  /* ---------- Developer: account type & closing ---------- */
-
-  function renderDevAccountType() {
-    var hasPersonal = user.accounts.indexOf('personal') > -1;
-    body('account-type').innerHTML = '<div class="set-row">' +
-      '<span class="set-row__icon">' + icon('user') + '</span>' +
-      '<div class="set-row__text"><h3 class="set-sub">Personal account</h3><p class="t-muted">' +
-        (hasPersonal ? 'Share your own bandwidth and earn from it. You keep one login and switch accounts in the sidebar.'
-          : 'Share your own bandwidth too. It uses the same login, and your developer account isn’t affected.') + '</p></div>' +
-      '<button type="button" class="cf-btn ' + (hasPersonal ? 'cf-btn--primary' : 'cf-btn--secondary') + '" data-act="account-type">' + (hasPersonal ? 'Switch to Personal' : 'Create personal account') + '</button></div>';
-    ui.$('[data-act]', body('account-type')).addEventListener('click', function (e) {
-      track('account_switch_clicked', { target: 'personal' });
-      if (hasPersonal) ui.go(api.switchAccount('personal'));
-      else ui.withLoading(e.currentTarget, function () { return api.addPersonalAccount(); }).then(function (res) { ui.go(res.redirect); });
-    });
-  }
+  /* ---------- Developer: closing the account ---------- */
 
   function renderClose() {
     body('close-account').innerHTML = '<p class="t-muted">' + esc(DS.closeAccount.text) + '</p>' +
@@ -721,7 +821,7 @@
 
   var DEV_SECTIONS = [
     ['verification', 'Verification'], ['business', 'Business details'], ['agreements', 'Agreements'], ['profile', 'Profile'],
-    ['security', 'Security'], ['notifications', 'Notifications'], ['account-type', 'Account type'], ['close-account', 'Close account']
+    ['security', 'Security'], ['notifications', 'Notifications'], ['close-account', 'Close account']
   ];
 
   function anchorNavHtml() {
@@ -789,21 +889,22 @@
         card('profile', 'Profile', 'How you appear in Cashful.') +
         card('security', 'Security', 'Keep your account and your earnings safe.') +
         card('notifications', 'Notifications', 'Choose which emails you get.') +
-        card('account-type', 'Account type') +
         card('close-account', 'Close account', '', 'set-danger') +
       '</div></div>';
-    body('security').innerHTML = '<div data-part="password"></div><div class="set-divider" role="separator"></div><div data-part="tfa"></div>';
+    body('security').innerHTML = '<div data-part="password"></div><div class="set-divider" role="separator"></div><div data-part="tfa"></div>' +
+      '<div class="set-divider" role="separator"></div><div data-part="sso"></div>';
     renderVerification();
     renderBusiness();
     renderAgreements();
     renderProfile();
     renderPassword();
     renderTfa();
+    renderSso();
     if (!c.twoFactorEnabled) ui.$('.set-divider', root).hidden = true;
     renderNotifications();
-    renderAccountType();
     renderClose();
     setupAnchors();
+    if (Cashful.store.takeFlash('kycDone')) ui.toast('Verification complete. Apps, the SDK download and payouts are unlocked.');
   }
 
   // The demo control changes the KYC status or the signature: refresh the parts that depend on them
@@ -825,16 +926,21 @@
       '<div class="set-stack">' +
         card('profile', 'Profile', 'How you appear in Cashful.') +
         card('security', 'Security', 'Keep your account and your earnings safe.') +
+        card('verification', 'Verification', 'Needed only when you withdraw money.') +
         card('notifications', 'Notifications', 'Choose which emails you get.') +
         card('account-type', 'Account type') +
         card('legal', 'Legal') +
         card('delete', 'Delete account', '', 'set-danger') +
       '</div>';
-    body('security').innerHTML = '<div data-part="password"></div><div class="set-divider" role="separator"></div><div data-part="tfa"></div>';
+    body('security').innerHTML = '<div data-part="password"></div><div class="set-divider" role="separator"></div><div data-part="tfa"></div>' +
+      '<div class="set-divider" role="separator"></div><div data-part="sso"></div>';
     renderProfile();
     renderPassword();
     renderTfa();
+    renderSso();
     if (!c.twoFactorEnabled) ui.$('.set-divider', root).hidden = true;
+    renderPeerVerification();
+    if (Cashful.store.takeFlash('kycDone')) ui.toast('Verification complete. You can withdraw.');
     renderNotifications();
     renderAccountType();
     renderLegal();

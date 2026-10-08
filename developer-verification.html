@@ -15,6 +15,7 @@
   <script src="assets/js/core/config.js" defer></script>
   <script src="assets/js/core/store.js" defer></script>
   <script src="assets/js/core/api.js" defer></script>
+  <script src="assets/js/data/developer-settings.config.js" defer></script>
   <script src="assets/js/core/demo.js" defer></script>
   <script src="assets/js/pages/developer-verification.js" defer></script>
 </head>
@@ -36,7 +37,7 @@
     <main class="auth__main auth__main--wide">
       <div class="auth__topbar auth__topbar--split">
         <span>Developer verification · Step <span id="step-num">1</span> of 6</span>
-        <span><span data-user-email></span> · <a href="login.html?state=logged-out" data-logout>Log out</a></span>
+        <span><span data-user-email></span> · <a href="auth.html?state=logged-out" data-logout>Log out</a></span>
       </div>
 
       <div class="onb">
@@ -74,7 +75,7 @@
             <div class="cf-input"><label class="cf-input__label" for="street-c">Street address</label><div class="cf-field"><input class="cf-field__input" id="street-c" name="street" placeholder="Street and building" autocomplete="street-address"></div><div class="cf-input__helper"></div></div>
             <div class="cf-field-row">
               <div class="cf-input"><label class="cf-input__label" for="city-c">City</label><div class="cf-field"><input class="cf-field__input" id="city-c" name="city" placeholder="City" autocomplete="address-level2"></div><div class="cf-input__helper"></div></div>
-              <div class="cf-input"><label class="cf-input__label" for="state-c">State or region</label><div class="cf-field"><input class="cf-field__input" id="state-c" name="region" placeholder="State" autocomplete="address-level1"></div><div class="cf-input__helper"></div></div>
+              <div class="cf-input"><label class="cf-input__label" for="state-c">State or region</label><div class="cf-field"><input class="cf-field__input" id="state-c" name="region" placeholder="State" autocomplete="address-level1"></div><div class="cf-input__helper">Optional outside the US</div></div>
             </div>
             <div class="cf-field-row">
               <div class="cf-input"><label class="cf-input__label" for="zip-c">ZIP or postal code</label><div class="cf-field"><input class="cf-field__input" id="zip-c" name="zip" placeholder="ZIP code" autocomplete="postal-code"></div><div class="cf-input__helper"></div></div>
@@ -99,7 +100,7 @@
             <div class="cf-input"><label class="cf-input__label" for="street-i">Street address</label><div class="cf-field"><input class="cf-field__input" id="street-i" name="street" placeholder="Street and building" autocomplete="street-address"></div><div class="cf-input__helper"></div></div>
             <div class="cf-field-row">
               <div class="cf-input"><label class="cf-input__label" for="city-i">City</label><div class="cf-field"><input class="cf-field__input" id="city-i" name="city" placeholder="City" autocomplete="address-level2"></div><div class="cf-input__helper"></div></div>
-              <div class="cf-input"><label class="cf-input__label" for="state-i">State or region</label><div class="cf-field"><input class="cf-field__input" id="state-i" name="region" placeholder="State" autocomplete="address-level1"></div><div class="cf-input__helper"></div></div>
+              <div class="cf-input"><label class="cf-input__label" for="state-i">State or region</label><div class="cf-field"><input class="cf-field__input" id="state-i" name="region" placeholder="State" autocomplete="address-level1"></div><div class="cf-input__helper">Optional outside the US</div></div>
             </div>
             <div class="cf-field-row">
               <div class="cf-input"><label class="cf-input__label" for="zip-i">ZIP or postal code</label><div class="cf-field"><input class="cf-field__input" id="zip-i" name="zip" placeholder="ZIP code" autocomplete="postal-code"></div><div class="cf-input__helper"></div></div>
@@ -114,11 +115,11 @@
           <div class="resume-slot" hidden></div>
           <div class="auth__head">
             <h1 class="auth__title">Your apps</h1>
-            <p class="auth__lead">A rough idea is enough. You’ll add each app and send it for review later.</p>
+            <p class="auth__lead">Tell us about your apps. We use it to prepare your account, not to limit it.</p>
           </div>
           <div class="auth__fields">
-            <div class="cf-input"><label class="cf-input__label" for="app-count">How many apps will you integrate?</label><div class="cf-field cf-field--select"><select class="cf-field__input" id="app-count" name="count" data-options="appCounts"></select><cf-icon name="chevron-down" size="20"></cf-icon></div><div class="cf-input__helper"></div></div>
-            <div class="cf-input"><label class="cf-input__label" for="installs">Total installs across your apps</label><div class="cf-field cf-field--select"><select class="cf-field__input" id="installs" name="installs" data-options="installs"></select><cf-icon name="chevron-down" size="20"></cf-icon></div><div class="cf-input__helper"></div></div>
+            <div class="cf-input"><label class="cf-input__label" for="app-count">Number of apps</label><div class="cf-field"><input class="cf-field__input" id="app-count" name="count" inputmode="numeric" placeholder="e.g. 3" autocomplete="off"></div><div class="cf-input__helper">How many apps you will integrate. A whole number.</div></div>
+            <div class="cf-input"><label class="cf-input__label" for="installs">Number of installations</label><div class="cf-field"><input class="cf-field__input" id="installs" name="installs" inputmode="numeric" placeholder="e.g. 50000" autocomplete="off"></div><div class="cf-input__helper">Total installs across all your apps. A whole number, 0 or more.</div></div>
             <div class="cf-input"><label class="cf-input__label" for="regions">Where are most of your users?</label><div class="cf-field cf-field--select"><select class="cf-field__input" id="regions" name="regions" data-options="regions"></select><cf-icon name="chevron-down" size="20"></cf-icon></div><div class="cf-input__helper"></div></div>
             <div class="cf-check-grid" role="group" aria-labelledby="platforms-label">
               <span class="cf-check-grid__label" id="platforms-label">Platforms</span>
@@ -165,7 +166,8 @@
             <div class="feature" data-company-only><span class="feature__icon"><cf-icon name="shield" size="20"></cf-icon></span><span class="feature__text"><span class="feature__title">Authority to act for <span data-company-name>Studio Apps LLC</span></span><span class="feature__desc">You must be an owner, director or authorized representative.</span></span></div>
           </div>
           <div class="cf-alert cf-alert--info" role="status"><cf-icon class="cf-alert__icon" name="info" size="20"></cf-icon><div class="cf-alert__text"><div class="cf-alert__title">Your documents stay with our partner</div><div class="cf-alert__desc">Cashful only receives the result of the check, not copies of your documents.</div></div></div>
-          <div class="onb__nav"><button type="button" class="cf-btn cf-btn--ghost" data-back><cf-icon name="chevron-left" size="20"></cf-icon><span>Back</span></button><button type="submit" class="cf-btn cf-btn--primary"><span>Start verification</span><cf-icon name="arrow-right" size="20"></cf-icon></button></div>
+          <p class="auth__note">Not now? You can verify later in Settings. Until you do, Apps and Payouts stay locked and Analytics stays empty.</p>
+          <div class="onb__nav"><button type="button" class="cf-btn cf-btn--ghost" data-back><cf-icon name="chevron-left" size="20"></cf-icon><span>Back</span></button><span class="onb__nav-end"><button type="button" class="cf-btn cf-btn--secondary" id="kyc-later">Complete verification later</button><button type="submit" class="cf-btn cf-btn--primary"><span>Start verification</span><cf-icon name="arrow-right" size="20"></cf-icon></button></span></div>
         </form>
 
         <!-- 6. Review -->
@@ -173,9 +175,9 @@
           <div><span class="cf-badge cf-badge--warning"><span class="cf-badge__dot"></span>In review</span></div>
           <div class="auth__head">
             <h1 class="auth__title">We’re reviewing your account</h1>
-            <p class="auth__lead">We usually reply within [X] business days. We’ll email <span data-user-email></span> when you’re approved or if we need anything else.</p>
+            <p class="auth__lead">We usually reply within <span data-review-time>1–2 business days</span>. We’ll email <span data-user-email></span> when you’re approved or if we need anything else.</p>
           </div>
-          <p class="t-body t-secondary">Meanwhile you can explore the SDK and add your apps as drafts. Sending apps for review and payouts unlock after approval.</p>
+          <p class="t-body t-secondary">Meanwhile you can read the SDK documentation. Apps, the SDK download and payouts unlock after approval.</p>
           <div><a href="analytics.html" class="cf-btn cf-btn--primary"><span>Go to Analytics</span><cf-icon name="arrow-right" size="20"></cf-icon></a></div>
         </div>
       </div>

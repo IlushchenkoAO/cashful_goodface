@@ -59,6 +59,18 @@
 .auth__row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .auth__note { font: 500 14px/20px var(--font-text); color: var(--text-secondary); text-align: center; }
 
+/* Trust facts in the brand panel */
+.auth__facts { margin: 8px 0 0; display: flex; flex-direction: column; gap: 12px; }
+.auth__facts dt { font: 700 14px/20px var(--font-text); }
+.auth__facts dd { margin: 2px 0 0; font: 500 14px/20px var(--font-text); opacity: .92; }
+
+/* Identifier-first entry: the email (or account type) the person already gave, with a way to change it */
+.auth__chip { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--bg-surface); font: 500 14px/20px var(--font-text); }
+.auth__chip-text { min-width: 0; overflow-wrap: anywhere; }
+.auth__legal { font: 500 12px/18px var(--font-text); color: var(--text-secondary); text-align: center; }
+.auth__back { align-self: center; text-decoration: none; }
+.auth__form .cf-choice { width: 100%; text-align: left; cursor: pointer; }
+
 .auth__divider { display: flex; align-items: center; gap: 12px; font: 500 12px/16px var(--font-text); color: var(--text-secondary); }
 .auth__divider::before,
 .auth__divider::after { content: ""; flex: 1; height: 1px; background: var(--border-default); }
@@ -103,8 +115,10 @@
 }
 
 @media (max-width: 640px) {
-  .auth__aside { padding: 24px 16px; min-height: 0; }
-  .auth__shape { display: none; }
+  /* The brand panel collapses to a compact header: the logo, nothing else */
+  .auth__aside { padding: 16px; min-height: 0; gap: 0; }
+  .auth__pitch, .auth__trust, .auth__shape { display: none; }
   .auth__main, .solo { padding: 24px 16px; }
   .auth__title, .auth__pitch-title { font-size: 28px; line-height: 32px; }
 }
+.onb__nav-end { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }

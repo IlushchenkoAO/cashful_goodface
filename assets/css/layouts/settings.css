@@ -93,3 +93,15 @@
 @media (max-width: 700px) {
   .set-row { flex-wrap: wrap; }
 }
+
+/* Connected sign-in providers */
+.set-providers { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.set-provider { display: flex; align-items: center; gap: var(--space-12); padding: var(--space-8) 0; border-bottom: 1px solid var(--border-subtle); }
+.set-provider:last-child { border-bottom: 0; }
+.set-provider__name { flex: 1; font: 600 14px/20px var(--font-text); }
+
+/* Rejected: what happens next */
+.set-next { display: flex; flex-direction: column; gap: var(--space-8); }
+.set-stage.is-failed { border-color: var(--border-error); }
+.set-stage.is-failed .set-stage__mark { background: var(--bg-error-subtle); color: var(--text-error); }
+.set-stage.is-failed .set-stage__state { color: var(--text-error); }

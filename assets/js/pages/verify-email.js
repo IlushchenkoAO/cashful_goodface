@@ -72,8 +72,8 @@
   ui.$('#change-email').addEventListener('click', function (e) {
     e.preventDefault();
     var p = api.cancelPending();
-    Cashful.store.flash('signupEmail', p ? p.email : '');
-    ui.go(p && p.type === 'developer' ? 'signup-developer.html' : 'signup.html');
+    Cashful.store.flash('authEmail', p ? p.email : '');
+    ui.go('auth.html' + (p ? '?type=' + (p.type === 'developer' ? 'developer' : 'peer') : ''));
   });
 
   /* Demo states */

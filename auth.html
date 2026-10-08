@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in or sign up · Cashful</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="assets/css/cashful.css">
+  <link rel="stylesheet" href="assets/css/layouts/auth.css">
+  <script src="assets/js/ds/svg-data.js" defer></script>
+  <script src="assets/js/ds/elements.js" defer></script>
+  <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/core/config.js" defer></script>
+  <script src="assets/js/core/store.js" defer></script>
+  <script src="assets/js/core/api.js" defer></script>
+  <script src="assets/js/core/format.js" defer></script>
+  <script src="assets/js/data/referrals.config.js" defer></script>
+  <script src="assets/js/data/referrals.js" defer></script>
+  <script src="assets/js/core/demo.js" defer></script>
+  <script src="assets/js/pages/auth-common.js" defer></script>
+  <script src="assets/js/pages/auth.js" defer></script>
+</head>
+<body data-page="auth">
+  <!-- One entry for log in and sign up (identifier-first). The steps are drawn by pages/auth.js:
+       entry → welcome (existing user) | type → create (new user) | link (existing email, new provider) | verify-email.html.
+       ?type=peer|developer comes from a site CTA and is kept through the whole flow. -->
+  <div class="auth">
+    <aside class="auth__aside auth__aside--purple">
+      <cf-logo version="white" height="28"></cf-logo>
+      <div class="auth__shape"><cf-brand-shape shape="pair" size="220" color="var(--yellow-500)"></cf-brand-shape></div>
+      <div class="auth__pitch">
+        <cf-mascot character="c" size="104"></cf-mascot>
+        <h2 class="auth__pitch-title">Turn your unused internet into cash</h2>
+        <p class="auth__pitch-text">Share bandwidth you don’t use, or earn from your app’s users. We never see your browsing, messages, files or passwords.</p>
+        <dl class="auth__facts">
+          <div><dt>Who pays for this traffic?</dt><dd>Vetted companies, for things like price comparison and ad checks. Every buyer is reviewed.</dd></div>
+          <div><dt>What do you share?</dt><dd>Only spare internet capacity, and only after you opt in.</dd></div>
+          <div><dt>How do you get paid?</dt><dd>Earnings build up in your balance. Withdraw to a bank account, PayPal or crypto.</dd></div>
+        </dl>
+      </div>
+      <div class="auth__trust"><cf-icon name="shield" size="20"></cf-icon><span>Built by the team behind Byteful</span></div>
+    </aside>
+
+    <main class="auth__main">
+      <div class="auth__topbar"><span></span></div>
+      <div class="auth__center">
+        <div class="auth__form" id="auth-view"></div>
+      </div>
+      <footer class="auth__footer"><span>© 2026 Cashful</span><a href="#">Terms</a><a href="#">Privacy</a></footer>
+    </main>
+  </div>
+</body>
+</html>

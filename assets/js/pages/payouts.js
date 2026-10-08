@@ -78,7 +78,7 @@
     var notes = '';
     if (locked) {
       action = '';
-      notes = '<span class="pay-note">' + icon('shield', 16) + (Cashful.api.kyc.lockReason() === 'agreement' ? Cashful.developerSettingsConfig.agreementLockHint : 'Payouts unlock after your KYC is approved') + '.</span>';
+      notes = '<span class="pay-note">' + icon('shield', 16) + (Cashful.api.kyc.lockReason() === 'agreement' ? Cashful.developerSettingsConfig.agreementLockHint : Cashful.api.kyc.lockReason() === 'rejected' ? 'Payouts are off because your verification wasn’t approved' : 'Payouts unlock after your KYC is approved') + '.</span>';
     } else {
       action = '<button type="button" class="cf-btn cf-btn--primary" data-act="request" aria-describedby="pay-notes"' + (busy || below ? ' disabled' : '') + '>' +
         icon('banknote') + '<span>Request payout</span></button>';
@@ -106,7 +106,7 @@
   function lockedHtml() {
     return '<section class="cf-card" aria-labelledby="pay-locked-title"><div class="cf-empty">' +
       '<span class="cf-tile__chip">' + icon('shield', 24) + '</span>' +
-      '<h2 class="cf-empty__title" id="pay-locked-title" tabindex="-1">' + (Cashful.api.kyc.lockReason() === 'agreement' ? Cashful.developerSettingsConfig.agreementLockHint + ' to request payouts' : 'Complete KYC to request payouts') + '</h2>' +
+      '<h2 class="cf-empty__title" id="pay-locked-title" tabindex="-1">' + (Cashful.api.kyc.lockReason() === 'agreement' ? Cashful.developerSettingsConfig.agreementLockHint + ' to request payouts' : Cashful.api.kyc.lockReason() === 'rejected' ? 'Payouts are off for now' : 'Complete KYC to request payouts') + '</h2>' +
       '<p class="cf-empty__desc">Payout methods and payout requests unlock once your developer account is approved. Your balance and history stay visible.</p>' +
       '<a href="settings.html#' + (Cashful.api.kyc.lockReason() === 'agreement' ? 'agreements' : 'verification') + '" class="cf-btn cf-btn--primary">Go to Settings</a>' +
     '</div></section>';
@@ -458,13 +458,31 @@
     });
   }
 
+  /* ---------- Verification before the first withdrawal (Personal) ----------
+     Nobody is asked at sign-up. The first time a Personal account tries to withdraw, it learns that identity
+     verification is needed and is sent to Settings → Verification. A Developer account is already gated by KYC. */
+
+  function guardRequest(next) {
+    if (isDeveloper || Cashful.api.peerKyc.approved()) { next(); return; }
+    var m = ui.modal({
+      title: 'Verify your identity to withdraw',
+      width: 480,
+      body: '<p class="cf-modal__desc">Before your first withdrawal we check your ID. It’s a legal requirement for paying out money, and you only do it once.</p>' +
+        '<div class="feature"><span class="feature__icon">' + icon('shield') + '</span><span class="feature__text"><span class="feature__title">A partner does the check</span><span class="feature__desc">Cashful never keeps your document photos.</span></span></div>' +
+        '<div class="feature"><span class="feature__icon">' + icon('clock') + '</span><span class="feature__text"><span class="feature__title">About 3 minutes</span><span class="feature__desc">You need a government ID and a camera. The result is usually instant.</span></span></div>' +
+        '<p class="t-caption t-secondary">Your balance is safe and keeps growing while you wait.</p>',
+      footer: CANCEL + '<a class="cf-btn cf-btn--primary" href="settings.html#verification" data-act-go>Start verification</a>'
+    });
+    m.el.addEventListener('click', function (e) { if (e.target.closest('[data-act-go]')) m.close(); });
+  }
+
   /* ---------- Events ---------- */
 
   root.addEventListener('click', function (e) {
     var b = e.target.closest('[data-act]');
     if (!b || b.disabled) return;
     var act = b.dataset.act;
-    if (act === 'request') openRequest();
+    if (act === 'request') guardRequest(openRequest);
     else if (act === 'add-method') openAddMethod();
     else if (act === 'remove') openRemove(b.dataset.id);
     else if (act === 'set-default') {

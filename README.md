@@ -8,7 +8,7 @@ account switching, developer Analytics, and the Peer side (Overview and Download
 
 ## Open it
 
-- `index.html` is the start of sign-up.
+- `auth.html` is the start: one entry for log in and sign up (`index.html` forwards to it).
 - `screens.html` is the screen map. Every screen from the design opens in the state it shows.
 - The **Prototype** button in the bottom-right corner shows hints for the current screen, the Overview stage
   switcher, a link to the screen map and "Reset data".
@@ -19,8 +19,9 @@ account switching, developer Analytics, and the Peer side (Overview and Download
 empty fields included. Any email and password log in, and any code passes. That way every flow can be
 clicked through without remembering demo data.
 
-The error states from the design (wrong password, locked, email taken, wrong code, bad referral code,
-expired link) still open from `screens.html` through `?demo=…`.
+The error states (wrong password, locked, wrong code, bad referral code, expired link, rate limit, network error,
+provider cancelled) still open from `screens.html` through `?demo=…`. A typed email that exists goes to “Welcome back”;
+any other email starts sign-up.
 
 `strictValidation: true` turns the real rules on: format checks, passwords, codes and the 5-attempt lockout.
 For that mode, use the demo data:
@@ -42,11 +43,9 @@ between its states.
 
 | Page | Design screens | Logic |
 | --- | --- | --- |
-| `index.html` | Main | choose account type |
-| `signup.html` | SignupPersonal, …EmailTaken, SignupInvited, SignupReferralError | referral link `?ref=CODE` |
-| `signup-developer.html` | SignupDeveloper | same, plus GitHub |
-| `verify-email.html` | VerifyEmail, …Error, …Resent, VerifyEmailDev | 6-digit code (paste, auto-advance), 60 s resend timer |
-| `login.html` | Login, LoginError, LoginLocked, LoggedOut | routing by account type; lockout with a live countdown |
+| `auth.html` | 01 entry, 02 welcome back, 03 account type, 04 create account, unsupported country, 06 link a provider | one entry for log in and sign up (identifier-first), see below |
+| `login.html`, `signup.html`, `signup-developer.html`, `index.html` | | only forward to `auth.html`, keeping the query |
+| `verify-email.html` | 05 VerifyEmail, …Error, …Resent | 6-digit code (paste, auto-advance), 60 s resend timer, “Wrong email? Change” |
 | `login-2fa.html` | Login2FA | authenticator code or backup code |
 | `forgot-password.html` | ForgotPassword, ForgotSent | |
 | `reset-password.html` | ResetPassword, ResetDone, ResetLinkExpired | a one-time link that expires after use |
@@ -151,7 +150,8 @@ routers are supported, whether 2FA is required, and what happens when KYC is rej
 ### Apps (Developer)
 
 `apps.html` is the list and `app.html?id=<UUID>` the details (there is no router: these are the `/apps` and
-`/apps/:id` routes). Nothing on them depends on KYC. A Personal account is sent to its Overview.
+`/apps/:id` routes). The whole area waits for an approved verification (`api.kyc.featuresUnlocked()`): the menu item shows "Needs KYC"
+and a direct visit shows a locked page with the way to unlock it. A Personal account is sent to its Overview.
 
 - **Shared store:** `assets/js/data/apps.js` keeps the apps in the prototype store. Analytics, SDK and the Apps
   pages all read apps and statuses from it (status ids: `draft`, `in_review`, `changes_requested`, `active`) and
@@ -167,7 +167,7 @@ routers are supported, whether 2FA is required, and what happens when KYC is rej
 
 ### Analytics (Developer)
 
-`analytics.html` is read-only and nothing on it depends on KYC. A Personal account that opens the route is sent
+`analytics.html` is read-only. Until the account is approved it shows an empty state that says why and how to verify. A Personal account that opens the route is sent
 to its Overview. Developer navigation: Analytics, Apps, SDK, Payouts, Settings (no Overview: that exists only for Personal).
 
 - **Business values and texts:** `assets/js/data/analytics.config.js` (default period, max custom range, page
@@ -292,7 +292,7 @@ Delete account.
 ### Settings (Developer)
 
 Same route, `settings.html`. Eight cards in this order, each with an anchor (`#verification`, `#business`,
-`#agreements`, `#profile`, `#security`, `#notifications`, `#account-type`, `#close-account`), a sticky
+`#agreements`, `#profile`, `#security`, `#notifications`, `#close-account`), a sticky
 "Settings sections" navigation with scroll-spy, and a URL hash that scrolls to the section and focuses its heading.
 Each form saves on its own (Save stays disabled until something changes, then an inline "saved" message).
 
@@ -306,17 +306,87 @@ Each form saves on its own (Save stays disabled until something changes, then an
 - **Profile, Security, Notifications:** the Personal components. Name, photo, pending email and 2FA are stored
   on the login and shared with Personal. Notifications use the Developer set (stored per account type);
   there is no Country field.
-- **Account type:** "Switch to Personal", or "Create personal account" when the login has none.
+- **No Account type card:** a developer switches (or adds a Personal account) with the sidebar switcher.
 - **Close account:** support email only.
 - **Config:** `assets/js/data/developer-settings.config.js` (support email, what KYC unlocks, locked business
   statuses, agreements, notifications, alert texts, `agreementsBlockFeatures`).
 - **`featuresUnlocked`:** `api.kyc.featuresUnlocked()` = KYC approved and (flag off, or Developer Agreement
   signed). The SDK download and the Payout requests read it; `api.kyc.lockReason()` picks the hint, which links
   to `#agreements` or `#verification`.
-- **Demo control (Settings, Developer):** KYC status (Not started, In review, Changes requested, Approved),
+- **Demo control (Settings, Developer):** KYC status (Not started, In progress, In review, Changes requested, Rejected, Approved),
   Developer Agreement (Unsigned, Signed), Personal account (Exists, None; reloads the page).
 - **Events:** `settings_anchor_clicked`, `kyc_start_clicked`, `kyc_update_info_clicked`, `business_details_saved`,
   `agreement_viewed`, `agreement_signed`, `account_switch_clicked`, `close_account_support_clicked`.
+
+### Log in or sign up (identifier-first)
+
+`auth.html` is the only entry. The person gives an email or uses Google, GitHub or Apple, and the server decides:
+
+- **Existing email** → 02 Welcome back (password, “Forgot password?”, “Email me a login link instead”). A provider that is
+  already linked skips this screen. 2FA still applies.
+- **Existing email, a provider not linked yet** → 06 “You already have an account”: log in once, the provider is linked.
+- **New email** → 03 “How do you want to earn?” (only when there is no `?type`) → 04 Create account (password is skipped for
+  providers) → 05 Verify email (skipped for providers) → dashboard. A country outside the US and EU gets its own screen.
+- **`?type=peer|developer`** comes from a site CTA, is kept through the whole flow (and on the forgot-password pages),
+  and only a new user is ever asked for a type. A log in never asks: it opens the last used profile, and with a Developer CTA
+  a Personal login gets the Developer account added and opened (no new account).
+- **Security:** the lookup takes the same time for a known and an unknown email, is rate limited (`rules.lookupsPerMinute`),
+  and the messages are neutral.
+- **Mock identities:** Google is the Personal demo (already linked), GitHub is the Developer demo (not linked, so it asks to link),
+  Apple is a new account. `api.identify`, `api.social`, `api.sendLoginLink`, `api.applyIntent` are in `assets/js/core/api.js`.
+- **States for the screen map:** `?demo=wrong-password | locked | link | link-sent | type | create | unsupported | sso-cancelled | network | rate-limit | ref-error`.
+
+### Developer sign-up: details, KYC now or later
+
+A new developer (after the email code, right after a provider sign-up, or when a Personal login adds a Developer
+account) lands in `developer-verification.html` and gives the required details: legal form (company or independent
+developer), country, full address, name, **number of apps** and **number of installations** (whole numbers). Then they sign the
+Developer Agreement and meet the KYC step. The answers are saved as `dev.business`, the same record Settings → Business
+details edits, and the signature shows in Settings → Agreements.
+
+- **Verify now** → the status is In review and the dashboard says so (banner, empty Analytics, "In review" in the menu).
+- **Complete verification later** → status Not started ("In progress" once details are saved). Then:
+  - **Analytics** shows an empty state with the way to verify.
+  - **Apps** and **Payouts** carry a "Needs KYC" badge in the menu and cannot be clicked. Opening them by URL shows a locked page.
+  - **SDK** can be opened and read. The download (and "Submit for review") is locked, with the reason.
+  - A **reminder** (bottom-right, with what is left) appears on every Developer page until verified. Its X hides it for the
+    browser session so it does not nag; it comes back in a new session.
+- **Finishing later:** Settings → Verification → **Start verification** opens the Verification page (`kyc.html`). The
+  prototype passes the check with **Complete verification**: the status becomes Approved and everything opens.
+- **SDK page:** App ID and Integration steps are one section. The consent screen has colors: Light, Dark, Brand or Custom (four
+  color pickers with hex fields), a contrast check (4.5 : 1, shown in words, not only color) and Reset. The downloaded template
+  follows the chosen colors. The choice is kept in this browser only. Presets: `consent.themes` in `sdk.config.js`.
+
+### Prototype: a new developer starts empty
+
+A developer who signs up (or a Personal login that adds a Developer account) starts with **no apps**: the Apps list, Analytics
+and the SDK page are empty. Payouts show zero until an app is Active. Add an app on the Apps page (after verification), open it,
+and use the dev-only **Simulate status** block on its page: Draft, In review, Changes requested, Active with data or Active with no
+data yet. "Active, with data" gives the app mock traffic, so it appears in Analytics.
+
+### Prototype: log in or sign up, on purpose
+
+The entry screen decides from the email (a known one logs in, any other starts sign-up). To show **log in** with any email, open
+the **Prototype** panel on `auth.html` and set "Any typed email is…" to "Always an existing account", or open
+`auth.html?entry=login`. `?entry=signup` shows sign-up for any email, `?entry=auto` goes back to the default.
+
+### Auth and onboarding brief
+
+Added from the "Auth and onboarding" brief. The full flow and the screen list are in `flow.html`
+(linked from `screens.html`).
+
+- **Sign-up** (inside `auth.html`): Google, GitHub and Apple, and one consent box (Terms, AUP, Privacy). The country is not
+  asked: the server reads it (here a mock, `?geo=Brazil` tries another one). A country outside the US and the EU stops a
+  new sign-up with its own screen and "Notify me".
+- **Two-factor authentication is asked only when logging in**, and only when the person turned it on in Settings → Security.
+  Nothing inside the dashboard asks for it (payout methods included). Turning it off asks for a code from the authenticator app,
+  or a backup code when the phone is lost, says what changes and emails the person.
+- **Personal verification** (identity check) is needed only to withdraw. It is not part of sign-up; the first withdrawal
+  explains it and sends to Settings → Verification (a Personal account has the same card and the same Verification page as a
+  developer). `api.peerKyc`: not started, in review, verified.
+- **Verification statuses:** Not started, In progress, In review, Changes requested (the brief's "Action required"),
+  Rejected (reason, next step, support) and Approved. The demo control sets all of them.
+- **Settings:** "Connected sign-in providers" (Google, GitHub, Apple) in Security, for both account types.
 
 ## Not in the design yet
 

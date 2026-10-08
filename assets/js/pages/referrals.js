@@ -82,7 +82,6 @@
         '<span class="ref-fig__hint">' + (s.bonus > 0 ? 'Includes ' + fmt.money(s.bonus) + ' in milestone bonuses. ' : '') + 'Added to your Available balance.</span></div>' +
       '<div class="ref-fig"><span class="ref-fig__label">Earned this month</span>' +
         '<span class="ref-fig__value ref-fig__value--sm">' + fmt.money(s.month) + '</span></div>' +
-      copyButton('link', 'header', 'cf-btn--primary', 'Copy link') +
     '</section>';
   }
 

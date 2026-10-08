@@ -13,6 +13,7 @@
     in_progress: { kycStatus: 'not_started', started: true },
     in_review: { kycStatus: 'in_review' },
     action_needed: { kycStatus: 'changes_requested' },
+    rejected: { kycStatus: 'rejected' },
     approved: { kycStatus: 'approved' }
   };
 

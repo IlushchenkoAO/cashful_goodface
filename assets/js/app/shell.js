@@ -10,7 +10,7 @@
   var esc = ui.esc;
 
   var user = api.currentUser();
-  if (!user) { location.replace('login.html'); return; }
+  if (!user) { location.replace('auth.html'); return; }
 
   var account = document.body.dataset.account;
   // Pages both accounts share (Payouts) use data-account="auto": they follow the active account
@@ -34,9 +34,9 @@
     // Overview exists only for Personal accounts; a Developer starts on Analytics
     developer: [
       { id: 'analytics', label: 'Analytics', icon: 'chart', href: 'analytics.html' },
-      { id: 'apps', label: 'Apps', icon: 'apps', href: 'apps.html' },
+      { id: 'apps', label: 'Apps', icon: 'apps', href: 'apps.html', needsKyc: true },
       { id: 'sdk', label: 'SDK', icon: 'package', href: 'sdk.html' },
-      { id: 'payouts', label: 'Payouts', icon: 'wallet', href: 'payouts.html' },
+      { id: 'payouts', label: 'Payouts', icon: 'wallet', href: 'payouts.html', needsKyc: true },
       { id: 'settings', label: 'Settings', icon: 'settings', href: 'settings.html' }
     ]
   };
@@ -69,7 +69,15 @@
     });
   }
 
+  /** Developer items that wait for verification: shown with a badge, and not clickable until it is approved. */
   function navItem(item, active) {
+    if (item.needsKyc && account === 'developer' && !api.kyc.featuresUnlocked()) {
+      var why = api.kyc.status() === 'in_review' ? 'in review' : 'complete KYC to unlock';
+      return '<a class="cf-nav is-locked" href="#" data-nav-locked aria-disabled="true"' + (item.id === active ? ' aria-current="page"' : '') +
+        ' aria-label="' + esc(item.label) + ', locked: ' + why + '" title="' + (api.kyc.status() === 'in_review' ? 'Unlocks when your verification is approved' : 'Complete verification to unlock') + '">' +
+        '<cf-icon name="' + item.icon + '" size="20"></cf-icon><span class="cf-nav__label">' + esc(item.label) + '</span>' +
+        '<span class="cf-nav__badge" aria-hidden="true"><cf-icon name="lock" size="12"></cf-icon>' + (api.kyc.status() === 'in_review' ? 'In review' : 'Needs KYC') + '</span></a>';
+    }
     var cls = 'cf-nav' + (item.id === active ? ' is-active' : '');
     var attrs = item.href ? 'href="' + item.href + '"' : 'href="#" data-soon="' + esc(item.label) + '"';
     if (item.id === active) attrs += ' aria-current="page"';
@@ -110,6 +118,19 @@
   }
 
   ui.$$('[data-sidebar]').forEach(renderSidebar);
+
+  // Locked items do nothing when clicked, and the menu follows the verification status live
+  ui.$$('[data-sidebar]').forEach(function (el) {
+    el.addEventListener('click', function (e) { if (e.target.closest('[data-nav-locked]')) e.preventDefault(); });
+  });
+  if (account === 'developer') {
+    api.kyc.onChange(function () {
+      ui.$$('[data-sidebar]').forEach(function (el) {
+        var menu = ui.$('.cf-sidebar__menu', el);
+        if (menu) menu.innerHTML = MENUS[account].map(function (n) { return navItem(n, el.dataset.active); }).join('');
+      });
+    });
+  }
 
   /* ---------- Adding the second account (BecomeDeveloper, PersonalAdded) ---------- */
 
@@ -166,7 +187,7 @@
     }
 
     if (e.target.closest('[data-logout]')) {
-      api.logOut().then(function () { ui.go('login.html?state=logged-out'); });
+      api.logOut().then(function () { ui.go('auth.html?state=logged-out'); });
     }
   });
 

@@ -57,7 +57,15 @@ Cashful.sdkConfig = {
       'Let users switch it off at any time.',
       'Describe in plain language what happens when they opt in.'
     ],
-    templateFileName: 'cashful-consent-template'
+    templateFileName: 'cashful-consent-template',
+    // Colors of the example screen (and of the template that is downloaded). 'Custom' is added by the page.
+    defaultTheme: 'light',
+    minContrast: 4.5,                              // WCAG AA for normal text
+    themes: [
+      { id: 'light', label: 'Light', bg: '#FFFDF8', text: '#1B1B1F', button: '#7760E7', buttonText: '#FFFFFF' },
+      { id: 'dark', label: 'Dark', bg: '#1B1B1F', text: '#FFFFFF', button: '#A998F5', buttonText: '#1B1B1F' },
+      { id: 'brand', label: 'Brand', bg: '#7760E7', text: '#FFFFFF', button: '#FFD84D', buttonText: '#1B1B1F' }
+    ]
   },
 
   texts: {

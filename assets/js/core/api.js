@@ -34,14 +34,24 @@
   }
 
   /** Where a signed-in user lands for an account (default: their first one): Overview for Personal, Apps for Developer. */
+  /** The profile a login opens in: the one used last, else the first. */
+  function lastAccount(user) {
+    return user.lastAccount && user.accounts.indexOf(user.lastAccount) > -1 ? user.lastAccount : user.accounts[0];
+  }
+
   function homeFor(user, account) {
-    account = account || user.accounts[0];
+    account = account || lastAccount(user);
     return account === 'personal' ? 'dashboard.html' : 'analytics.html';
+  }
+
+  /** Where a developer starts: a brand-new one fills in the business details and meets the KYC step first. */
+  function devEntry(user) {
+    return user.dev && !user.dev.started && user.dev.kycStatus === 'not_started' ? 'developer-verification.html' : 'analytics.html';
   }
 
   function startSession(db, email, remember) {
     var user = db.users[email];
-    db.session = { email: email, remember: !!remember, at: Date.now(), account: user ? user.accounts[0] : 'personal' };
+    db.session = { email: email, remember: !!remember, at: Date.now(), account: user ? lastAccount(user) : 'personal' };
     db.challenge = null;
   }
 
@@ -74,18 +84,78 @@
     return cfg.referrals[code] || (strict ? null : { name: 'Jordan M.', initials: 'JM' });
   };
 
+  /* ---------- Identifier-first entry ----------
+     One entry for log in and sign up: the person gives an email (or uses a provider) and the server decides.
+     The lookup always takes the same time, whatever the answer, and is rate limited. */
+
+  var lookupLog = [];   // timestamps of recent lookups (in memory: a reload is a fresh start)
+
   /**
+   * @returns {ok:true, exists, hasPassword, providers:[…]} | {ok:false, error:'rate_limited', retryIn} | {ok:false, error:'network'}
+   * `opts.demo` forces 'rate-limit' or 'network' for the screen map.
+   */
+  api.identify = function (email, opts) {
+    opts = opts || {};
+    email = normEmail(email);
+    return delay(null, 650).then(function () {   // the same wait for known and unknown emails
+      if (opts.demo === 'network') return { ok: false, error: 'network' };
+      var now = Date.now();
+      lookupLog = lookupLog.filter(function (t) { return now - t < MIN; });
+      if (opts.demo === 'rate-limit' || lookupLog.length >= R.lookupsPerMinute) {
+        return { ok: false, error: 'rate_limited', retryIn: Math.max(5, Math.ceil((MIN - (now - (lookupLog[0] || now))) / 1000)) };
+      }
+      lookupLog.push(now);
+      var u = store.get().users[email];
+      // Prototype only: db.demo.entryMode decides what any typed email is, so log in can be shown as well as sign up.
+      //   'auto' (default) a known email logs in and any other starts sign-up; 'login' every email is an existing
+      //   account; 'signup' every email is new. Set from the Prototype panel, or with ?entry=login|signup|auto.
+      var mode = (store.get().demo || {}).entryMode || 'auto';
+      if (mode === 'login') return { ok: true, exists: true, hasPassword: true, providers: u && u.sso ? Object.keys(u.sso).filter(function (k) { return u.sso[k]; }) : [] };
+      if (mode === 'signup') return { ok: true, exists: false, hasPassword: false, providers: [] };
+      return {
+        ok: true,
+        exists: !!u,
+        hasPassword: !!(u && (u.password || !strict)),
+        providers: u && u.sso ? Object.keys(u.sso).filter(function (k) { return u.sso[k]; }) : []
+      };
+    });
+  };
+
+  /** The Prototype panel's switch for what an email on the entry screen is (see api.identify). */
+  api.entryMode = function (mode) {
+    if (mode) store.update(function (db) { db.demo = db.demo || {}; db.demo.entryMode = mode; });
+    return (store.get().demo || {}).entryMode || 'auto';
+  };
+
+  /**
+   * Creates the login. With `input.sso` (a provider name) it needs no password and no email check: it signs in.
    * @returns {ok:true, redirect} | {ok:false, field, error}
    */
+  var PROVIDER_NAMES = { google: 'Google user', github: 'GitHub user', apple: 'Apple user' };
   api.signUp = function (input) {
     var email = normEmail(input.email) || (input.type === 'developer' ? 'new.dev@studio.dev' : 'new.user@example.com');
     var code = String(input.referral || '').trim();
     return delay().then(function () {
-      if (strict && store.get().users[email]) return { ok: false, field: 'email', error: 'taken' };
+      if (strict && !input.sso && store.get().users[email]) return { ok: false, field: 'email', error: 'taken' };
       if (strict && code && !api.findReferral(code)) return { ok: false, field: 'referral', error: 'referral_not_found' };
+      if (input.country && Cashful.config.eligibility.supported.indexOf(input.country) < 0) return { ok: false, field: 'country', error: 'unsupported_country' };
+      if (input.sso) {
+        return store.update(function (db) {
+          var p = {}; p[input.sso] = true;
+          db.users[email] = db.users[email] || newUser(email, input.type, {
+            name: PROVIDER_NAMES[input.sso] || 'New user', verified: true, sso: p, referral: code ? code.toUpperCase() : null
+          });
+          if (input.country) db.users[email].country = input.country;
+          if (input.type === 'developer') db.apps = [];   // a new developer starts with no apps
+          startSession(db, email, true);
+          return { ok: true, redirect: input.type === 'developer' ? devEntry(db.users[email]) : homeFor(db.users[email], input.type) };
+        });
+      }
       store.update(function (db) {
         if (!db.users[email]) {
           db.users[email] = newUser(email, input.type, { password: input.password, referral: code ? code.toUpperCase() : null });
+          if (input.country) db.users[email].country = input.country;
+          if (input.type === 'developer') db.apps = [];   // a new developer starts with no apps
         }
         startPending(db, email, input.type);
       });
@@ -93,24 +163,62 @@
     });
   };
 
-  /** Sign up / log in with Google or GitHub (simulated). */
-  api.social = function (provider, intent) {
+  /**
+   * A provider (Google, GitHub, Apple) was picked. The mock identity behind each one is in SSO_IDENTITY.
+   * @returns {status:'ok', redirect} | {status:'2fa'} | {status:'link_required', email, provider}
+   *        | {status:'new', email, provider} | {status:'cancelled'} | {status:'network'}
+   */
+  var SSO_IDENTITY = { google: DEMO_EMAIL, github: 'dev@studio.dev', apple: 'apple.user@example.com' };
+  api.social = function (provider, opts) {
+    opts = opts || {};
     return delay(null, 700).then(function () {
+      if (opts.demo === 'network') return { status: 'network' };
+      if (opts.demo === 'sso-cancelled') return { status: 'cancelled', provider: provider };
+      var email = SSO_IDENTITY[provider];
       return store.update(function (db) {
-        var email;
-        if (intent === 'login') {
-          // Google → the demo personal account, GitHub → the demo developer account
-          email = provider === 'github' ? 'dev@studio.dev' : DEMO_EMAIL;
-        } else {
-          email = provider + '.user@example.com';
-          db.users[email] = db.users[email] || newUser(email, intent, {
-            name: provider === 'github' ? 'GitHub user' : 'Google user', verified: true
-          });
+        var user = db.users[email];
+        if (!user) return { status: 'new', email: email, provider: provider };
+        // Google is already linked to the demo personal account
+        var linked = (user.sso && user.sso[provider]) || (provider === 'google' && email === DEMO_EMAIL);
+        if (!linked) return { status: 'link_required', email: email, provider: provider };
+        if (user.twoFactor) {
+          db.challenge = { email: email, remember: true, at: Date.now() };
+          return { status: '2fa' };
         }
         startSession(db, email, true);
-        return { ok: true, redirect: homeFor(db.users[email]) };
+        return { status: 'ok', redirect: homeFor(user) };
       });
     });
+  };
+
+  /** "Email me a login link instead": always answers the same. `api.logInWithLink` stands in for opening it. */
+  api.sendLoginLink = function () { return delay({ ok: true }, 650); };
+  api.logInWithLink = function (email) {
+    email = normEmail(email);
+    return delay(null, 400).then(function () {
+      return store.update(function (db) {
+        var user = db.users[email];
+        if (!user) return { status: 'invalid' };
+        if (user.twoFactor) {
+          db.challenge = { email: email, remember: false, at: Date.now() };
+          return { status: '2fa' };
+        }
+        startSession(db, email, false);
+        return { status: 'ok', redirect: homeFor(user) };
+      });
+    });
+  };
+
+  /**
+   * After a log in with a CTA that carried ?type: a Developer CTA opens the Developer onboarding inside the same
+   * login (no new account), a Personal CTA the Personal one. Resolves to a url, or null when there is nothing to do.
+   */
+  api.applyIntent = function (type) {
+    var want = type === 'developer' ? 'developer' : type === 'personal' || type === 'peer' ? 'personal' : null;
+    var user = api.currentUser();
+    if (!want || !user) return Promise.resolve(null);
+    if (user.accounts.indexOf(want) > -1) return Promise.resolve(api.switchAccount(want));
+    return (want === 'developer' ? api.addDeveloperAccount() : api.addPersonalAccount()).then(function (res) { return res.redirect; });
   };
 
   /* ---------- Email verification ---------- */
@@ -128,7 +236,7 @@
         user.verified = true;
         db.pending = null;
         startSession(db, user.email, false);
-        return { ok: true, redirect: homeFor(user), justVerified: true };
+        return { ok: true, redirect: lastAccount(user) === 'developer' ? devEntry(user) : homeFor(user), justVerified: true };
       });
     });
   };
@@ -188,6 +296,8 @@
         }
 
         delete db.attempts[email];
+        // "Log in and link Google": the password proves it is the same person, then the provider is linked
+        if (input.link) user.sso = Object.assign({}, user.sso, (function () { var o = {}; o[input.link] = true; return o; })());
         if (!user.verified) {
           startPending(db, email, user.accounts[0]);
           return { status: 'ok', redirect: 'verify-email.html' };
@@ -314,6 +424,7 @@
     return withUser(function (user, db) {
       if (user.accounts.indexOf(account) < 0) return null;
       db.session.account = account;
+      user.lastAccount = account;   // the next login opens here
       return homeFor(user, account);
     });
   };
@@ -323,9 +434,10 @@
     return delay(null, 400).then(function () {
       return withUser(function (user, db) {
         if (user.accounts.indexOf('developer') < 0) user.accounts.push('developer');
+        if (!user.dev) db.apps = [];   // a developer account that is new starts with no apps
         user.dev = user.dev || newDev();
         db.session.account = 'developer';
-        return { ok: true, redirect: homeFor(user, 'developer') };
+        return { ok: true, redirect: devEntry(user) };
       });
     });
   };
@@ -396,7 +508,7 @@
      account in the store (dev.kycStatus); a change is announced with the "cashful:kyc" event so open
      pages update without a reload. */
   api.kyc = {
-    STATUSES: ['not_started', 'in_review', 'changes_requested', 'approved'],
+    STATUSES: ['not_started', 'in_review', 'changes_requested', 'rejected', 'approved'],
     status: function () {
       var u = api.currentUser();
       return (u && u.dev && u.dev.kycStatus) || 'not_started';
@@ -442,6 +554,7 @@
     lockReason: function () {
       if (api.kyc.featuresUnlocked()) return null;
       var c = Cashful.developerSettingsConfig;
+      if (api.kyc.status() === 'rejected') return 'rejected';
       return c && c.agreementsBlockFeatures && !api.kyc.signed('developer-agreement') ? 'agreement' : 'kyc';
     },
     /** Calls fn(status) on every change, here or in another tab. Returns a function that stops listening. */
@@ -453,6 +566,22 @@
         window.removeEventListener('cashful:kyc', onEvent);
         window.removeEventListener('storage', onEvent);
       };
+    }
+  };
+
+  /* ---------- Identity verification (Personal) ----------
+     Needed only to withdraw money, never at sign-up. It lives in Settings → Verification, like the developer's.
+     Status: 'not_started' | 'in_review' | 'approved'. Payouts asks for it the first time a withdrawal is requested. */
+  api.peerKyc = {
+    STATUSES: ['not_started', 'in_review', 'approved'],
+    status: function () { var u = api.currentUser(); return (u && u.peerKyc) || 'not_started'; },
+    approved: function () { return api.peerKyc.status() === 'approved'; },
+    set: function (status) {
+      withUser(function (user) {
+        user.peerKyc = status;
+        if (status === 'approved') user.peerKycAt = Date.now(); else delete user.peerKycAt;
+      });
+      window.dispatchEvent(new CustomEvent('cashful:peer-kyc', { detail: { status: status } }));
     }
   };
 

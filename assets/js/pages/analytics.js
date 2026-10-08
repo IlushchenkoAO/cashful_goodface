@@ -134,7 +134,7 @@
   function syncFilters(kind) {
     var filters = ui.$('#an-filters', root);
     // No apps, or none Active: no filter makes sense. A not-Active app from the URL keeps only the App select.
-    filters.hidden = kind === 'no-apps' || kind === 'none-active';
+    filters.hidden = kind === 'no-apps' || kind === 'none-active' || kind === 'unverified';
     ui.$('#an-period-wrap', root).hidden = kind === 'app-not-active';
     appDd.setOptions(appOptions(), st.app);
     periodSeg.setValue(st.period);
@@ -158,6 +158,20 @@
       '<span class="cf-tile__chip">' + icon(chip, 24) + '</span>' +
       '<h2 class="cf-empty__title">' + esc(title) + '</h2>' + (text ? '<p class="cf-empty__desc">' + esc(text) + '</p>' : '') + (extra || '') +
     '</div></section>';
+  }
+
+  /** Before the account is approved there is nothing to show: say why, and what to do (or that we are looking at it). */
+  function stateUnverified() {
+    var status = api.kyc.status();
+    var dsc = Cashful.developerSettingsConfig;
+    var begun = !!(api.currentUser().dev && api.currentUser().dev.started);
+    var copy = {
+      not_started: ['Analytics will appear after verification', 'Complete verification to unlock your account. Once you are approved and an app is Active, nodes, connected IPs and earnings show up here.', begun ? 'Continue verification' : 'Start verification'],
+      in_review: ['Your account is in review', 'We are checking your details, usually within ' + dsc.kyc.reviewTime + '. Analytics unlocks as soon as you are approved. We will email you.', 'See the status'],
+      changes_requested: ['Your verification needs one more thing', 'Update your information so we can finish the review. Analytics stays empty until you are approved.', 'Update information'],
+      rejected: ['Your verification wasn’t approved', 'Analytics stays empty for now. See why and what you can do next.', 'See details']
+    }[status];
+    return emptyCard(status === 'in_review' ? 'clock' : 'lock', copy[0], copy[1], '<a href="settings.html#verification" class="cf-btn cf-btn--primary">' + esc(copy[2]) + '</a>');
   }
 
   function stateNoApps() {
@@ -350,11 +364,12 @@
     var active = apps.filter(Cashful.apps.isActive);
     var selected = apps.filter(function (a) { return a.id === st.app; })[0];
 
-    var kind = !apps.length ? 'no-apps' : !active.length ? 'none-active' : (selected && !Cashful.apps.isActive(selected)) ? 'app-not-active' : 'data';
+    var kind = !api.kyc.approved() ? 'unverified' : !apps.length ? 'no-apps' : !active.length ? 'none-active' : (selected && !Cashful.apps.isActive(selected)) ? 'app-not-active' : 'data';
     syncFilters(kind);
     model = null;
     if (chart) { chart.destroy(); chart = null; }
 
+    if (kind === 'unverified') { body.innerHTML = stateUnverified(); return; }
     if (kind === 'no-apps') { body.innerHTML = stateNoApps(); return; }
     if (kind === 'none-active') { body.innerHTML = stateNoneActive(); return; }
     if (kind === 'app-not-active') { body.innerHTML = stateAppNotActive(selected); return; }
@@ -413,6 +428,9 @@
   mountFilters();
   writeUrl(true);
   render();
+
+  // Approving (or any status change) swaps the empty state for the data at once
+  api.kyc.onChange(render);
 
   // Apps and statuses come from the shared store: a change made on the Apps pages (another tab) shows up here
   Cashful.apps.onChange(function () {

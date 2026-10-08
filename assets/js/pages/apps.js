@@ -33,6 +33,11 @@
   host.innerHTML = '<div data-kyc-alert></div><div class="u-contents" id="apps-root"></div>';
   Cashful.kyc.mountAlert(ui.$('[data-kyc-alert]', host));
   var root = ui.$('#apps-root', host);
+  // Apps wait for an approved verification. Until then the page says so, and follows the status live.
+  var unlockedAtLoad = api.kyc.featuresUnlocked();
+  api.kyc.onChange(function () { if (api.kyc.featuresUnlocked() !== unlockedAtLoad) location.reload(); });
+  if (!unlockedAtLoad) { root.innerHTML = Cashful.kyc.lockedPageHtml('Apps', 'apps and sending them for review'); return; }
+
   root.innerHTML =
     '<div class="sr-only" role="status" aria-live="polite" id="apps-live"></div>' +
     '<div class="page-top"><header class="cf-pagehead"><div class="cf-pagehead__row"><div class="cf-pagehead__titles">' +
