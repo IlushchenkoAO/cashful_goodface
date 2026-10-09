@@ -37,7 +37,7 @@
 .sdk-note { display: flex; align-items: center; gap: var(--space-8); color: var(--text-secondary); }
 
 /* Steps */
-.sdk-snippet-note { margin-top: calc(var(--space-12) * -1); }
+.sdk-snippet-note { margin: 0; }
 .sdk-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-24); }
 .sdk-step { display: flex; align-items: flex-start; gap: var(--space-12); }
 .sdk-step__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-8); }
@@ -45,7 +45,9 @@
 
 /* Consent */
 .sdk-consent { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-24); align-items: start; }
-.sdk-int__divider { height: 1px; background: var(--border-subtle); margin: var(--space-8) 0; }
+/* The Integration card holds two blocks (App ID, steps): each is spaced the same way, and a line sits between them */
+#sdk-app-block, #sdk-steps-block { display: flex; flex-direction: column; gap: var(--space-12); }
+.sdk-int__divider { height: 1px; background: var(--border-subtle); margin: var(--space-12) 0; }
 /* The example screen takes its colors from the four --cp-* variables the page sets */
 .sdk-consent__preview { --cp-bg: #FFFDF8; --cp-text: #1B1B1F; --cp-btn: #7760E7; --cp-btn-text: #FFFFFF; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-12); padding: var(--space-24); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--cp-bg); color: var(--cp-text); transition: background .2s ease, color .2s ease; }
 .sdk-consent__tag { font: 600 12px/16px var(--font-text); padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; opacity: .8; }

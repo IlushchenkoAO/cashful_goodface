@@ -263,7 +263,7 @@
   }
 
   /** What an account has earned so far: Personal by how far the devices have come, Developer by Active apps. */
-  var PEER_EARNED = { new: [0, 0], day1: [0.62, 0.48], active: [38.2, 6.35], payout: [128.4, 14.6] };
+  var PEER_EARNED = { new: [0, 0], day1: [52.4, 6.15], active: [86.2, 9.4], payout: [128.4, 14.6] };
   function earnedFor(user, account) {
     var pair = [0, 0], key = 'none';
     if (user && account === 'developer') {
