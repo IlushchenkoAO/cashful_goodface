@@ -40,6 +40,41 @@
     if (wrap) wrap.classList.toggle('is-disabled', disabled);
   };
 
+  /* ---------- Samples: nothing is required in the prototype ----------
+     When a form is submitted, an empty field is filled with a sample value first, so a reviewer can click through
+     without typing anything. The sample is data-sample, else one that fits the field's type, else its placeholder.
+     Left alone: checkboxes, files, search, one-time codes, and anything marked data-no-sample (a referral code,
+     the word that confirms a deletion). A form with data-strict is never filled. */
+  var SAMPLE_BY_TYPE = { email: 'demo@example.com', password: 'cashful123', url: 'https://example.com/app', tel: '+1 555 0100', number: '100' };
+  ui.sampleFor = function (el) {
+    if (el.dataset.sample) return el.dataset.sample;
+    if (SAMPLE_BY_TYPE[el.type]) return SAMPLE_BY_TYPE[el.type];
+    if (el.getAttribute('inputmode') === 'numeric') return '100';
+    var ph = (el.getAttribute('placeholder') || '').replace(/^e\.g\.\s*/i, '').replace(/…$/, '').trim();
+    return ph && ph.length > 2 && !/^(\d+ digits|at least)/i.test(ph) ? ph : 'Sample';
+  };
+  function fillSamples(form) {
+    Array.prototype.forEach.call(form.elements, function (el) {
+      if (!el.name || el.disabled || el.readOnly || el.type === 'hidden' || el.hasAttribute('data-no-sample') || el.closest('.cf-otp')) return;
+      if (el.tagName === 'SELECT') {
+        if (el.value === '') {
+          for (var i = 0; i < el.options.length; i++) if (el.options[i].value !== '') { el.selectedIndex = i; el.dispatchEvent(new Event('change', { bubbles: true })); break; }
+        }
+        return;
+      }
+      if (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA') return;
+      if (/^(checkbox|radio|file|submit|button|search|range|color)$/.test(el.type)) return;
+      if (el.value.trim() !== '') return;
+      el.value = ui.sampleFor(el);
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  }
+  // Capture phase: runs before the form's own submit handler
+  document.addEventListener('submit', function (e) {
+    var f = e.target;
+    if (f && f.tagName === 'FORM' && !f.hasAttribute('data-strict')) fillSamples(f);
+  }, true);
+
   // Typing into a field clears its error
   document.addEventListener('input', function (e) {
     var t = e.target;
@@ -52,7 +87,8 @@
 
   /* ---------- Field markup (for pages that render forms from JS) ----------
      ui.fieldHtml({ id, name, label, value, type, placeholder, helper, inputmode, autocomplete, maxlength,
-                    spellcheck, autofocus, disabled, required })
+                    spellcheck, autofocus, disabled, sample, noSample })
+     sample: what an empty field gets when its form is submitted (see "Samples" below); noSample: leave it empty
      ui.selectHtml({ id, name, label, options, value, helper }) — options: strings or { value, label } */
   ui.selectOptions = function (options, value) {
     return options.map(function (opt) {
@@ -70,6 +106,8 @@
       (o.maxlength ? ' maxlength="' + o.maxlength + '"' : '') +
       (o.spellcheck === false ? ' spellcheck="false"' : '') +
       (o.autofocus ? ' data-autofocus' : '') +
+      (o.sample ? ' data-sample="' + esc(o.sample) + '"' : '') +
+      (o.noSample ? ' data-no-sample' : '') +
       (o.disabled ? ' disabled' : '') + '></div>' +
       '<div class="cf-input__helper">' + (o.helperHtml || esc(o.helper || '')) + '</div></div>';
   };

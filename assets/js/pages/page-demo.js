@@ -40,18 +40,7 @@
       kyc: true,
       extras: true,
       states: Cashful.settings && Cashful.settings.PRESETS,
-      current: function () { return Cashful.settings.preset(ui.params.get('state')); },
-      // The "Account type" card has three states, set by the developer account of this login
-      accounts: [
-        { id: 'dev-none', label: 'Developer: not started', accounts: ['personal'], active: 'personal' },
-        { id: 'dev-draft', label: 'Developer: setup in progress', accounts: BOTH, active: 'personal', dev: { kycStatus: 'not_started', started: true, step: 'apps' } },
-        { id: 'dev-submitted', label: 'Developer: submitted', accounts: BOTH, active: 'personal', dev: { kycStatus: 'in_review', step: 'review' } }
-      ],
-      currentAccount: function () {
-        if (user.accounts.indexOf('developer') < 0 || !user.dev) return 'dev-none';
-        if (user.dev.kycStatus === 'not_started') return user.dev.started ? 'dev-draft' : 'dev-none';
-        return 'dev-submitted';
-      }
+      current: function () { return Cashful.settings.preset(ui.params.get('state')); }
     },
     apps: {
       title: 'Dev only · Apps',

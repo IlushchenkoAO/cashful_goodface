@@ -16,7 +16,7 @@ Cashful.appsConfig = {
   reviewEtaText: null,               // e.g. 'Usually 2-3 business days'; shown in the In review banner only when not null
   supportEmail: 'support@cashful.example',
   statusBanners: {
-    draft: 'Add your app link and a screenshot, then submit for review.',
+    draft: 'Integrate the SDK in your app, then add its link and a screenshot of the integration. After that, send it for review.',
     in_review: 'We’re reviewing your app. You’ll see the result here.',
     changes_requested: 'Please address the feedback below and resubmit.',
     active: 'Your app is active. Analytics are available.'
@@ -26,5 +26,16 @@ Cashful.appsConfig = {
     steps: ['Create your app', 'Submit it for review', 'Once Active, track analytics']
   },
   // Shown in the feedback block when a reviewer didn't leave a name
-  reviewerFallback: 'Cashful review team'
+  reviewerFallback: 'Cashful review team',
+  // The comment a simulated "Changes requested" carries (the prototype's review result)
+  sampleFeedback: 'Please add a clearer screenshot that shows the SDK working in your app, and check that the app link points to the public store page.',
+  // What to do before sending an app for review (shown on a Draft)
+  beforeSubmit: {
+    title: 'Before you send it for review',
+    steps: [
+      'Integrate the Cashful SDK into your app.',
+      'Take a screenshot that shows the integration working, for example the consent screen.',
+      'Add the app link (the store page or your website) and the screenshot below.'
+    ]
+  }
 };

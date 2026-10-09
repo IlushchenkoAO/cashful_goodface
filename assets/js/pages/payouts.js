@@ -8,14 +8,15 @@
   var esc = ui.esc;
   var cfg = P.config;
 
-  // ?state= starts a scenario; without it the saved state continues (shared with Settings)
-  var state = P.loadState(ui.params.get('state'));
-
-  // A developer with no Active app has earned nothing: show zeros (not saved, so it follows the apps)
   var isDeveloper = Cashful.app.account === 'developer';
-  var noEarnings = isDeveloper && !ui.params.get('state') &&
-    !Cashful.apps.all().some(function (a) { return a.status === 'active'; });
-  if (noEarnings) state = P.createState('no-earnings');
+
+  // ?state= starts a scenario; without it the saved state continues (shared with Settings).
+  // Nothing saved: an empty page. The balance follows what was earned (a connected device, an Active app), there are
+  // no payout methods and no history. It is only saved once the person changes something (adds a method, withdraws).
+  var state = P.loadState(ui.params.get('state'), P.earnedFor(Cashful.app.user, Cashful.app.account), Cashful.app.account);
+  var persist = !state._virtual;
+  function touch() { persist = true; }
+  function earnedNothing() { return state.balance.available + state.balance.pending === 0 && !state.payouts.length; }
 
   // A Developer account can't request payouts until KYC is approved. The value comes from api.kyc and is
   // re-read on every render, so approving KYC (the alert's X, the demo control) unlocks the page at once.
@@ -59,7 +60,7 @@
 
   function render() {
     refreshLock();
-    if (!noEarnings) P.saveState(state);
+    if (persist) P.saveState(state, Cashful.app.account);
     root.innerHTML =
       '<header class="cf-pagehead"><div class="cf-pagehead__row"><div class="cf-pagehead__titles">' +
         '<h1 class="cf-pagehead__title">Payouts</h1>' +
@@ -82,6 +83,9 @@
     } else {
       action = '<button type="button" class="cf-btn cf-btn--primary" data-act="request" aria-describedby="pay-notes"' + (busy || below ? ' disabled' : '') + '>' +
         icon('banknote') + '<span>Request payout</span></button>';
+      if (!isDeveloper && !Cashful.api.peerKyc.approved()) {
+        notes += '<a class="pay-badge" href="settings.html#verification">' + icon('shield', 16) + '<span>Identity verification is needed for your first withdrawal</span><span class="pay-badge__go">Verify</span></a>';
+      }
       if (busy) notes += '<span class="pay-note">' + icon('clock', 16) + 'You have a payout in progress.</span>';
       if (below) {
         var pct = Math.max(0, Math.min(100, Math.floor(b.available / minCents() * 100)));
@@ -178,10 +182,10 @@
     if (!state.payouts.length) {
       el.innerHTML = '<div class="cf-empty"><span class="cf-tile__chip">' + icon('clock', 24) + '</span>' +
         '<h3 class="cf-empty__title">No payouts yet</h3>' +
-        '<p class="cf-empty__desc">' + (noEarnings
-          ? 'You haven’t earned anything yet. Earnings start once an app is Active and people opt in.'
+        '<p class="cf-empty__desc">' + (earnedNothing()
+          ? (isDeveloper ? 'You haven’t earned anything yet. Earnings start once an app is Active and people opt in.' : 'You haven’t earned anything yet. Earnings start once a device is connected.')
           : 'Your payouts show up here after you request your first one.') + '</p>' +
-        (noEarnings ? '<a href="apps.html" class="cf-btn cf-btn--secondary">Go to Apps</a>' : '') + '</div>';
+        (earnedNothing() ? '<a href="' + (isDeveloper ? 'apps.html' : 'dashboard.html') + '" class="cf-btn cf-btn--secondary">' + (isDeveloper ? 'Go to Apps' : 'Go to Overview') + '</a>' : '') + '</div>';
       return;
     }
     var rows = filteredPayouts();
@@ -233,7 +237,7 @@
         '<form class="pay-form" id="req-form" novalidate>' +
           '<div class="cf-input"><label class="cf-input__label" for="req-amount">Amount</label>' +
             '<div class="cf-field"><span class="cf-field__suffix" aria-hidden="true">$</span>' +
-              '<input class="cf-field__input" id="req-amount" name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00" data-autofocus>' +
+              '<input class="cf-field__input" id="req-amount" name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00" data-autofocus data-no-sample>' +
               '<button type="button" class="cf-btn cf-btn--ghost cf-btn--sm" data-act="max">Max</button></div>' +
             '<div class="cf-input__helper">Minimum ' + P.money(minCents()) + ' · Available ' + P.money(avail) + '</div></div>' +
           selectField({ id: 'req-method', name: 'method', label: 'Payout method', options: options, value: def.id }) +
@@ -277,6 +281,8 @@
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
+      if (!amountInput.value.trim()) amountInput.value = (Math.min(avail, Math.max(minCents(), 5000)) / 100).toFixed(2);   // nothing is required: a sample amount
+      syncSummary();
       var cents = P.parseAmount(amountInput.value);
       var error = '';
       if (!amountInput.value.trim()) error = 'Enter an amount.';
@@ -289,6 +295,7 @@
       var btn = ui.$('#req-confirm', m.el);
       ui.withLoading(btn, function () { return later(500); }).then(function () {
         var payout = P.requestPayout(state, cents, methodSelect.value);
+        touch();
         m.close();
         render();
         ui.toast('Payout of ' + P.money(payout.amount) + ' requested');
@@ -328,22 +335,24 @@
   }
 
   function networkOptions(currency) { return cfg.crypto[currency]; }
+  // A valid address for the chosen network, so an empty field can be filled with something that passes
+  function addressSample(network) { return network === 'TRC-20' ? 'TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf' : '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'; }
 
   function formBody(type, v) {
     var fields;
     if (type === 'ach') {
-      fields = field({ id: 'pm-holder', name: 'holder', label: 'Account holder name', value: v.holder, placeholder: 'Full name on the account', autocomplete: 'name', autofocus: true }) +
-        field({ id: 'pm-routing', name: 'routing', label: 'Routing number', value: v.routing, placeholder: '9 digits', inputmode: 'numeric', maxlength: 9, helper: 'The 9-digit number on your checks or in your bank app.' }) +
-        field({ id: 'pm-account', name: 'account', label: 'Account number', value: v.account, placeholder: 'Account number', inputmode: 'numeric', maxlength: 17, helper: 'We only keep the last 4 digits.' }) +
+      fields = field({ id: 'pm-holder', name: 'holder', label: 'Account holder name', value: v.holder, placeholder: 'Full name on the account', autocomplete: 'name', autofocus: true, sample: 'Alex Morgan' }) +
+        field({ id: 'pm-routing', name: 'routing', label: 'Routing number', value: v.routing, placeholder: '9 digits', inputmode: 'numeric', maxlength: 9, sample: '021000021', helper: 'The 9-digit number on your checks or in your bank app.' }) +
+        field({ id: 'pm-account', name: 'account', label: 'Account number', value: v.account, placeholder: 'Account number', inputmode: 'numeric', maxlength: 17, sample: '000123456789', helper: 'We only keep the last 4 digits.' }) +
         selectField({ id: 'pm-account-type', name: 'accountType', label: 'Account type', options: ['Checking', 'Savings'], value: v.accountType });
     } else if (type === 'wise' || type === 'paypal') {
-      fields = field({ id: 'pm-email', name: 'email', label: P.TYPES[type].label + ' account email', value: v.email, placeholder: 'you@example.com', autocomplete: 'email', spellcheck: false, autofocus: true, helper: 'The email you use to sign in to ' + P.TYPES[type].label + '.' });
+      fields = field({ id: 'pm-email', name: 'email', label: P.TYPES[type].label + ' account email', value: v.email, placeholder: 'you@example.com', autocomplete: 'email', spellcheck: false, autofocus: true, sample: 'alex.morgan@gmail.com', helper: 'The email you use to sign in to ' + P.TYPES[type].label + '.' });
     } else {
       var currency = v.currency || Object.keys(cfg.crypto)[0];
       var network = networkOptions(currency).indexOf(v.network) > -1 ? v.network : networkOptions(currency)[0];
       fields = selectField({ id: 'pm-currency', name: 'currency', label: 'Currency', options: Object.keys(cfg.crypto), value: currency }) +
         selectField({ id: 'pm-network', name: 'network', label: 'Network', options: networkOptions(currency), value: network }) +
-        field({ id: 'pm-address', name: 'address', label: 'Wallet address', value: v.address, placeholder: 'Paste your wallet address', spellcheck: false }) +
+        field({ id: 'pm-address', name: 'address', label: 'Wallet address', value: v.address, placeholder: 'Paste your wallet address', spellcheck: false, sample: addressSample(network) }) +
         ui.alertHtml({ tone: 'warning', title: 'Make sure the network matches your wallet.', text: 'Funds sent to the wrong network can’t be recovered.' });
     }
     return '<form class="pay-form" id="pm-form" novalidate>' + fields + '</form>';
@@ -387,6 +396,7 @@
       ui.withLoading(btn, function () { return later(400); }).then(function () {
         var first = !state.methods.length;
         P.addMethod(state, draft.type, P.buildDetails(draft.type, draft.values));
+        touch();
         m.close();
         render();
         ui.toast(first ? 'Method added and set as default' : 'Method added');
@@ -413,9 +423,14 @@
 
     // The networks depend on the chosen currency
     m.el.addEventListener('change', function (e) {
-      if (e.target.id !== 'pm-currency') return;
-      var network = ui.$('#pm-network', m.el);
-      network.innerHTML = selectOptions(networkOptions(e.target.value), null);
+      if (e.target.id === 'pm-currency') {
+        var network = ui.$('#pm-network', m.el);
+        network.innerHTML = selectOptions(networkOptions(e.target.value), null);
+      }
+      if (e.target.id === 'pm-currency' || e.target.id === 'pm-network') {
+        var addr = ui.$('#pm-address', m.el);
+        if (addr) addr.dataset.sample = addressSample(ui.$('#pm-network', m.el).value);
+      }
     });
 
     m.el.addEventListener('submit', function (e) {
@@ -451,6 +466,7 @@
     m.el.addEventListener('click', function (e) {
       if (!e.target.closest('[data-act="confirm-remove"]')) return;
       P.removeMethod(state, id);
+      touch();
       m.close();
       render();
       ui.toast('Method removed');
@@ -487,6 +503,7 @@
     else if (act === 'remove') openRemove(b.dataset.id);
     else if (act === 'set-default') {
       P.setDefault(state, b.dataset.id);
+      touch();
       render();
       ui.toast('Default method updated');
       focusOn('#pay-methods-title');

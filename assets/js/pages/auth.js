@@ -157,9 +157,9 @@
       head('Log in or sign up', 'Use your email or a connected account. We’ll take you to the right place.') +
       slot() + social() + '<div class="auth__divider">or</div>' +
       '<form class="auth__fields" id="entry-form" novalidate>' +
-        ui.fieldHtml({ id: 'email', name: 'email', label: 'Email', type: 'email', value: S.email, placeholder: 'you@example.com', autocomplete: 'email', spellcheck: false }) +
+        ui.fieldHtml({ id: 'email', name: 'email', label: 'Email', type: 'email', value: S.email, placeholder: 'you@example.com', autocomplete: 'email', spellcheck: false, noSample: true }) +
         '<button type="submit" class="cf-btn cf-btn--primary cf-btn--block">Continue</button>' +
-      '</form>' + legal();
+      '</form>' + legal() + modeSwitch();
   }
   AFTER.entry = function () {
     if (ui.params.get('state') === 'logged-out' && !S.shownLoggedOut) {
@@ -173,7 +173,8 @@
 
     function submitEmail() {
       var v = email.value.trim();
-      if (!v) { ui.setError(email, 'Enter your email.'); email.focus(); return; }
+      if (!v && api.strict) { ui.setError(email, 'Enter your email.'); email.focus(); return; }
+      if (!v) { v = sampleEmail(); email.value = v; S.sampled = true; }   // nothing is required here: a sample takes its place
       if (api.strict && !ui.isEmail(v)) { ui.setError(email, 'Enter a valid email, like you@example.com.'); email.focus(); return; }
       alertIn(null);
       ui.withLoading(submit, function () { return api.identify(v, { demo: takeDemo('network') || takeDemo('rate-limit') }); }).then(function (res) {
@@ -185,12 +186,36 @@
       });
     }
     form.addEventListener('submit', function (e) { e.preventDefault(); submitEmail(); });
+    ui.$$('[data-entry-mode]', view).forEach(function (b) {
+      b.addEventListener('click', function () {
+        api.entryMode(b.dataset.entryMode);
+        ui.$$('[data-entry-mode]', view).forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+        ui.$('#proto-note', view).textContent = MODE_NOTES[b.dataset.entryMode];
+      });
+    });
 
     // The demo states that start on this screen
     if (demo === 'sso-cancelled') { /* shown when a provider button is pressed */ }
     if (demo === 'rate-limit') { demo = null; failedLookup({ error: 'rate_limited', retryIn: 45 }, submit, submitEmail); }
     if (demo === 'network') { demo = null; failedLookup({ error: 'network' }, submit, submitEmail); }
   };
+
+  /* Prototype switch: which flow to show. A reviewer picks Log in or Sign up here; an empty email is filled with a sample. */
+  var MODE_NOTES = {
+    signup: 'Any email creates a new account. Leave it empty and a sample email is used.',
+    login: 'Any email logs in to an existing account. Leave it empty and the demo account is used.'
+  };
+  function modeSwitch() {
+    var mode = api.entryMode();
+    function opt(id, label) { return '<button type="button" class="auth__proto-opt" data-entry-mode="' + id + '" aria-pressed="' + (mode === id) + '">' + label + '</button>'; }
+    return '<div class="auth__proto" role="group" aria-label="Prototype: choose the flow to show">' +
+      '<span class="auth__proto-label">Prototype · show</span><div class="auth__proto-seg">' + opt('signup', 'Sign up') + opt('login', 'Log in') + '</div>' +
+      '<p class="auth__proto-note" id="proto-note">' + (MODE_NOTES[mode] || 'A known email logs in; any other starts sign-up.') + '</p></div>';
+  }
+  function sampleEmail() {
+    if (api.entryMode() === 'login') return cfg.seedUsers[S.type === 'developer' ? 1 : 0].email;
+    return S.type === 'developer' ? 'new.dev@studio.dev' : 'new.user@example.com';
+  }
 
   function failedLookup(res, submit, retry) {
     if (res.error === 'rate_limited') {
@@ -365,7 +390,7 @@
         (S.type === 'personal' && referralsOn
           ? '<button type="button" class="cf-link" id="referral-open" style="align-self:flex-start;text-decoration:none"' + (refParam ? ' hidden' : '') + '>Have a referral code?</button>' +
             '<div class="cf-input" id="referral-field"' + (refParam ? '' : ' hidden') + '><label class="cf-input__label" for="referral">Referral code</label>' +
-              '<div class="cf-field"><input class="cf-field__input" id="referral" name="referral" placeholder="e.g. JORDAN24" autocomplete="off" value="' + esc((refParam || '').toUpperCase()) + '"></div>' +
+              '<div class="cf-field"><input class="cf-field__input" id="referral" name="referral" placeholder="e.g. JORDAN24" autocomplete="off" data-no-sample value="' + esc((refParam || '').toUpperCase()) + '"></div>' +
               '<div class="cf-input__helper">Optional. You can only add a code when you sign up.</div></div>'
           : '') +
         '<div class="cf-check-group"><label class="cf-check"><input class="cf-check__input" type="checkbox" id="terms" name="terms">' +
@@ -458,7 +483,7 @@
     var b = e.target.closest('[data-act]');
     if (!b) return;
     var act = b.dataset.act;
-    if (act === 'change-email') { S.provider = null; S.info = null; go('entry'); }
+    if (act === 'change-email') { S.provider = null; S.info = null; if (S.sampled) { S.email = ''; S.sampled = false; } go('entry'); }
     else if (act === 'change-type') go('type');
     else if (act === 'to-welcome') go('welcome');
     else if (act === 'different-account') { S.provider = null; S.email = ''; go('entry'); }

@@ -115,6 +115,17 @@
     api.kyc.onChange(render);
   }
 
+  /* ---------- Prototype shortcut: skip the wait for the team's review ----------
+     Wherever the account is shown as "in review", a small text button approves it. The real review is not part of the MVP. */
+  function approveButton() {
+    return '<button type="button" class="cf-link kyc-sim" data-kyc-approve>Approve (Prototype)</button>';
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-kyc-approve]')) return;
+    api.kyc.set('approved');
+    ui.toast('Approved (prototype). Everything is unlocked.');
+  });
+
   /** A card that says a page is locked until verification, with the way to unlock it (Apps, an app's page). */
   function lockedPageHtml(title, what) {
     var why = api.kyc.lockReason();
@@ -127,12 +138,13 @@
     return '<header class="cf-pagehead"><div class="cf-pagehead__row"><div class="cf-pagehead__titles"><h1 class="cf-pagehead__title">' + ui.esc(title) + '</h1></div></div></header>' +
       '<section class="cf-card" aria-labelledby="kyc-lock-title"><div class="cf-empty"><span class="cf-tile__chip"><cf-icon name="lock" size="24"></cf-icon></span>' +
       '<h2 class="cf-empty__title" id="kyc-lock-title">' + ui.esc(title) + ' unlock after verification</h2><p class="cf-empty__desc">' + ui.esc(text) + '</p>' +
-      '<a class="cf-btn cf-btn--primary" href="settings.html#' + (why === 'agreement' ? 'agreements' : 'verification') + '">' + cta + '</a></div></section>';
+      '<a class="cf-btn cf-btn--primary" href="settings.html#' + (why === 'agreement' ? 'agreements' : 'verification') + '">' + cta + '</a>' +
+      (status === 'in_review' ? approveButton() : '') + '</div></section>';
   }
 
-  Cashful.kyc = { mountAlert: mountAlert, mountReminder: mountReminder, lockedPageHtml: lockedPageHtml };
+  Cashful.kyc = { mountAlert: mountAlert, mountReminder: mountReminder, lockedPageHtml: lockedPageHtml, approveButton: approveButton };
 
   // Developer pages only; Settings and the Verification page are where it is finished
   var page = document.body.dataset.page;
-  if (Cashful.app && Cashful.app.account === 'developer' && page !== 'settings' && page !== 'kyc') mountReminder();
+  if (Cashful.app && Cashful.app.account === 'developer' && page !== 'settings' && page !== 'kyc' && page !== 'developer-verification') mountReminder();
 })();

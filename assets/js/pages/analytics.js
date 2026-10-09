@@ -171,7 +171,7 @@
       changes_requested: ['Your verification needs one more thing', 'Update your information so we can finish the review. Analytics stays empty until you are approved.', 'Update information'],
       rejected: ['Your verification wasn’t approved', 'Analytics stays empty for now. See why and what you can do next.', 'See details']
     }[status];
-    return emptyCard(status === 'in_review' ? 'clock' : 'lock', copy[0], copy[1], '<a href="settings.html#verification" class="cf-btn cf-btn--primary">' + esc(copy[2]) + '</a>');
+    return emptyCard(status === 'in_review' ? 'clock' : 'lock', copy[0], copy[1], '<a href="settings.html#verification" class="cf-btn cf-btn--primary">' + esc(copy[2]) + '</a>' + (status === 'in_review' ? Cashful.kyc.approveButton() : ''));
   }
 
   function stateNoApps() {

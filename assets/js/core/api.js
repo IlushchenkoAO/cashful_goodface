@@ -107,9 +107,9 @@
       lookupLog.push(now);
       var u = store.get().users[email];
       // Prototype only: db.demo.entryMode decides what any typed email is, so log in can be shown as well as sign up.
-      //   'auto' (default) a known email logs in and any other starts sign-up; 'login' every email is an existing
-      //   account; 'signup' every email is new. Set from the Prototype panel, or with ?entry=login|signup|auto.
-      var mode = (store.get().demo || {}).entryMode || 'auto';
+      //   'signup' (default) every email is new; 'login' every email is an existing account; 'auto' a known email logs in
+      //   and any other starts sign-up. Set with the switch on the entry screen, the Prototype panel, or ?entry=.
+      var mode = (store.get().demo || {}).entryMode || 'signup';
       if (mode === 'login') return { ok: true, exists: true, hasPassword: true, providers: u && u.sso ? Object.keys(u.sso).filter(function (k) { return u.sso[k]; }) : [] };
       if (mode === 'signup') return { ok: true, exists: false, hasPassword: false, providers: [] };
       return {
@@ -124,7 +124,7 @@
   /** The Prototype panel's switch for what an email on the entry screen is (see api.identify). */
   api.entryMode = function (mode) {
     if (mode) store.update(function (db) { db.demo = db.demo || {}; db.demo.entryMode = mode; });
-    return (store.get().demo || {}).entryMode || 'auto';
+    return (store.get().demo || {}).entryMode || 'signup';
   };
 
   /**

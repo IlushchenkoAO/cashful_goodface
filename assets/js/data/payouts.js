@@ -153,9 +153,16 @@
       id: nextPayoutId(state), date: Date.now(), amount: amountCents, fee: fee, receive: amountCents - fee,
       methodId: m.id, method: info, status: 'Requested', reason: null
     };
+    var first = state.payouts.length === 0;
     state.payouts.unshift(payout);
     state.balance.available -= amountCents;
     state.balance.pending += amountCents;
+    // Prototype: the first withdrawal also fills the history with one payout in every other state
+    // (Processing, Paid, Failed, Rejected), so the whole table can be shown.
+    if (first) {
+      state.payouts = state.payouts.concat(demoHistory());
+      state.balance.paid = totalPaid(state.payouts);
+    }
     return payout;
   }
 
@@ -198,13 +205,23 @@
     });
   }
 
+  /** One payout in every state a payout can be in: Processing, Paid, Failed and Rejected. */
+  function demoHistory() {
+    var methods = seedMethods();
+    var rows = seedPayouts(methods);
+    var processing = { id: 'PO-100471', date: Date.now() - 2 * DAY, amount: toCents(40), fee: feeFor('wise', toCents(40)), receive: toCents(40) - feeFor('wise', toCents(40)),
+      methodId: null, method: describe(methods[1]), status: 'Processing', reason: null };
+    return [processing].concat(rows);
+  }
+
   function totalPaid(payouts) {
     return payouts.filter(function (p) { return p.status === 'Paid'; })
       .reduce(function (sum, p) { return sum + p.amount; }, 0);
   }
 
   var SCENARIOS = [
-    { id: 'default', label: 'Default (history has Paid, Failed, Rejected)' },
+    { id: 'default', label: 'Default (nothing yet: no methods, no history)' },
+    { id: 'full', label: 'Full (three methods, every payout state)' },
     { id: 'no-methods', label: 'No payout methods' },
     { id: 'below-minimum', label: 'Balance below the minimum' },
     { id: 'in-progress', label: 'Payout in progress' },
@@ -212,9 +229,19 @@
     { id: 'no-earnings', label: 'No earnings yet (zero balance)' }
   ];
 
-  function createState(name) {
+  /**
+   * The balance follows what was earned: a Personal account has money once a device is connected, a Developer once an
+   * app is Active. `earned` is { available, pending, key } in cents (see earnedFor); nothing earned is zero.
+   * The default state has no payout methods and an empty history: the person adds a method, and the first withdrawal
+   * fills the history. The other scenarios start from a full set of methods and payouts.
+   */
+  function createState(name, earned) {
+    var e = earned || { available: 0, pending: 0, key: 'none' };
     var methods = seedMethods();
     var payouts = seedPayouts(methods);
+    if (!name || name === 'default') {
+      return { balance: { available: e.available, pending: e.pending, paid: 0 }, methods: [], payouts: [], earnedKey: e.key, _virtual: true };
+    }
     var state = { balance: { available: toCents(128.40), pending: toCents(14.60), paid: 0 }, methods: methods, payouts: payouts };
 
     if (name === 'no-methods') { state.methods = []; state.payouts = []; }
@@ -235,28 +262,51 @@
     return state;
   }
 
+  /** What an account has earned so far: Personal by how far the devices have come, Developer by Active apps. */
+  var PEER_EARNED = { new: [0, 0], day1: [0.62, 0.48], active: [38.2, 6.35], payout: [128.4, 14.6] };
+  function earnedFor(user, account) {
+    var pair = [0, 0], key = 'none';
+    if (user && account === 'developer') {
+      var apps = Cashful.apps ? Cashful.apps.all() : [];
+      if (apps.some(function (a) { return a.status === 'active'; })) { pair = [128.4, 14.6]; key = 'apps'; }
+    } else if (user) {
+      key = user.peerStage || 'new';
+      pair = PEER_EARNED[key] || [0, 0];
+    }
+    return { available: toCents(pair[0]), pending: toCents(pair[1]), key: key };
+  }
+
   /* ---------- Shared state ----------
      The Payouts state lives in the prototype store, so other pages (Settings → delete account) read the same
      balance and the same payout in progress. A page that is opened with ?state= starts that scenario afresh. */
 
-  function saveState(state) {
-    Cashful.store.update(function (db) { db.demo = db.demo || {}; db.demo.payouts = state; });
+  // Each account type has its own payouts (a Personal and a Developer account don't share a balance or methods)
+  function saveState(state, account) {
+    var copy = JSON.parse(JSON.stringify(state));
+    delete copy._virtual;
+    Cashful.store.update(function (db) { db.demo = db.demo || {}; db.demo.payoutsBy = db.demo.payoutsBy || {}; db.demo.payoutsBy[account || 'personal'] = copy; });
   }
 
   /** `scenarioName` (from ?state=) starts a scenario; without it the saved state continues. */
-  function loadState(scenarioName) {
+  function loadState(scenarioName, earned, account) {
     if (scenarioName && SCENARIOS.some(function (s) { return s.id === scenarioName; })) {
-      var fresh = createState(scenarioName);
-      saveState(fresh);
+      var fresh = createState(scenarioName, earned);
+      if (!fresh._virtual) saveState(fresh, account);
       return fresh;
     }
     var saved = Cashful.store.get().demo;
-    return (saved && saved.payouts) || createState('default');
+    var state = saved && saved.payoutsBy && saved.payoutsBy[account || 'personal'];
+    if (!state) return createState('default', earned);
+    // Nothing was withdrawn yet: the balance still follows what was earned (a device was connected since)
+    if (state.earnedKey && earned && state.earnedKey !== earned.key && !state.payouts.length) {
+      state.balance.available = earned.available; state.balance.pending = earned.pending; state.earnedKey = earned.key;
+    }
+    return state;
   }
 
   Cashful.payouts = {
     config: cfg,
-    loadState: loadState, saveState: saveState,
+    loadState: loadState, saveState: saveState, earnedFor: earnedFor,
     TYPES: TYPES, TYPE_ORDER: TYPE_ORDER, STATUSES: STATUSES, STATUS_TONE: STATUS_TONE, PERIODS: PERIODS, SCENARIOS: SCENARIOS,
     money: money, date: date, toCents: toCents, describe: describe,
     feeFor: feeFor, feeLabel: feeLabel, feeText: feeText,

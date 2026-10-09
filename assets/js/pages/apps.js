@@ -144,12 +144,14 @@
     return '<a class="cf-btn cf-btn--secondary cf-btn--sm" href="analytics.html?app=' + id + '&amp;period=30d">View analytics</a>';
   }
 
+  var freshId = null;   // the app just created: its row is highlighted for a moment
+
   function row(a) {
     var href = 'app.html?id=' + encodeURIComponent(a.id);
-    return '<tr class="is-clickable" data-href="' + href + '">' +
+    return '<tr class="is-clickable' + (a.id === freshId ? ' is-fresh' : '') + '" data-href="' + href + '">' +
       '<td><a class="apps-name" href="' + href + '">' + esc(a.name) + '</a></td>' +
       '<td>' + esc(A.platformLabel(a)) + '</td><td>' + esc(a.type) + '</td>' +
-      '<td>' + A.badge(a) + '</td>' +
+      '<td>' + A.statusControl(a) + '</td>' +
       '<td><span class="apps-id"><code class="cf-mono" title="' + esc(a.id) + '">' + esc(shortId(a.id)) + '</code>' +
         '<button type="button" class="cf-btn cf-btn--ghost cf-btn--sm" data-copy-id="' + esc(a.id) + '" aria-label="Copy App ID of ' + esc(a.name) + '">' + icon('copy', 16) + '<span>Copy</span></button></span></td>' +
       '<td>' + fmt.date(a.updatedAt) + '</td>' +
@@ -205,7 +207,9 @@
           '<div class="cf-pagination__pages"><button type="button" class="cf-btn cf-btn--secondary cf-btn--sm" data-pager="prev"' + (st.page === 1 ? ' disabled' : '') + '>' + icon('chevron-left', 16) + '<span>Previous</span></button>' +
           '<span class="t-caption">Page ' + st.page + ' of ' + pages + '</span>' +
           '<button type="button" class="cf-btn cf-btn--secondary cf-btn--sm" data-pager="next"' + (st.page === pages ? ' disabled' : '') + '><span>Next</span>' + icon('chevron-right', 16) + '</button></div></nav>'
-        : '') + '</section>';
+        : '') + '</section>' +
+      // Prototype shortcut: approve every app that is waiting for the team's review
+      (A.counts(list).in_review ? '<div class="apps-sim"><button type="button" class="cf-link kyc-sim" data-act="approve-all">Approve all apps in review (Prototype)</button></div>' : '');
   }
 
   /* ---------- Create app ---------- */
@@ -224,15 +228,15 @@
       title: 'Create app',
       width: 520,
       body: '<form class="apps-form" id="create-form" novalidate>' +
-        ui.fieldHtml({ id: 'ap-name', name: 'name', label: 'Name', maxlength: cfg.nameMaxLength, autocomplete: 'off', autofocus: true, helper: 'Up to ' + cfg.nameMaxLength + ' characters.' }) +
+        ui.fieldHtml({ id: 'ap-name', name: 'name', label: 'Name', maxlength: cfg.nameMaxLength, autocomplete: 'off', autofocus: true, sample: 'My new app', helper: 'Up to ' + cfg.nameMaxLength + ' characters.' }) +
         ui.selectHtml({ id: 'ap-type', name: 'type', label: 'Type', options: [{ value: '', label: 'Select a type' }].concat(cfg.types), value: '' }) +
         '<div class="cf-input"><label class="cf-input__label" for="ap-desc">Description</label>' +
-          '<div class="cf-field cf-field--area"><textarea class="cf-field__input" id="ap-desc" name="description" rows="3" maxlength="' + count + '" aria-describedby="ap-count"></textarea></div>' +
+          '<div class="cf-field cf-field--area"><textarea class="cf-field__input" id="ap-desc" name="description" rows="3" data-sample="A short description of my app." maxlength="' + count + '" aria-describedby="ap-count"></textarea></div>' +
           '<div class="cf-input__helper"></div><div class="apps-count" id="ap-count">0 / ' + count + '</div></div>' +
         ui.selectHtml({ id: 'ap-platform', name: 'platform', label: 'Platform', options: [{ value: '', label: 'Select a platform' }].concat(platformOptions()), value: '' }) +
       '</form>',
       footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button>' +
-        '<button type="submit" form="create-form" class="cf-btn cf-btn--primary" id="ap-submit" disabled>Create app</button>',
+        '<button type="submit" form="create-form" class="cf-btn cf-btn--primary" id="ap-submit">Create app</button>',
       onClose: function () {
         createModal = null;
         if (st.create) { st.create = false; history.replaceState(null, '', build(st)); }
@@ -246,17 +250,13 @@
     function errors() {
       var v = { name: form.elements.name.value.trim(), type: form.elements.type.value, platform: form.elements.platform.value };
       var e = {};
-      if (!v.name) e.name = 'Enter a name for your app.';
-      else if (v.name.length > cfg.nameMaxLength) e.name = 'Use at most ' + cfg.nameMaxLength + ' characters.';
-      if (!v.type) e.type = 'Choose a type.';
-      if (!v.platform) e.platform = 'Choose a platform.';
+      if (v.name.length > cfg.nameMaxLength) e.name = 'Use at most ' + cfg.nameMaxLength + ' characters.';
       return e;
     }
     function sync() {
       var e = errors();
       ['name', 'type', 'platform'].forEach(function (k) { ui.setError(form.elements[k], touched[k] && e[k] ? e[k] : ''); });
       ui.$('#ap-count', m.el).textContent = form.elements.description.value.length + ' / ' + count;
-      submit.disabled = Object.keys(e).length > 0;
     }
     form.addEventListener('input', sync);
     form.addEventListener('change', sync);
@@ -266,11 +266,16 @@
       if (Object.keys(errors()).length) return;
       var app = A.create({ name: form.elements.name.value.trim(), type: form.elements.type.value, description: form.elements.description.value.trim(), platform: form.elements.platform.value });
       track('app_created', { type: app.type, platform: form.elements.platform.value });
-      Cashful.store.flash('appToast', 'App created');
-      Cashful.store.flash('appHighlight', app.id);
       createModal = null;
       m.close();
-      ui.go('app.html?id=' + encodeURIComponent(app.id));
+      // Back on the list, where the new Draft stands out; the Draft's page explains what to add next
+      freshId = app.id;
+      st.status = 'all'; st.q = ''; st.page = 1;
+      renderControls(); renderBody();
+      ui.toast('App created. Open it to add the link and a screenshot.');
+      var again = ui.$('tr.is-fresh a.apps-name', root);
+      if (again) again.focus();
+      setTimeout(function () { freshId = null; renderBody(); }, 4500);
     });
   }
 
@@ -284,6 +289,7 @@
       if (act.dataset.act === 'create') openCreate();
       else if (act.dataset.act === 'clear') { go({ status: 'all', q: '', page: 1 }); renderControls(); }
       else if (act.dataset.act === 'attention') go({ status: 'changes_requested', page: 1 });
+      else if (act.dataset.act === 'approve-all') { var n = A.approveAll(); ui.toast(n + (n === 1 ? ' app approved' : ' apps approved') + '. They are Active and show in Analytics.'); }
       return;
     }
     if (e.target.closest('#apps-create')) { openCreate(); return; }
@@ -309,7 +315,15 @@
 
     // The whole row opens the app; links and buttons inside it do their own thing
     var tr = e.target.closest('tr[data-href]');
-    if (tr && !e.target.closest('a, button')) ui.go(tr.dataset.href);
+    if (tr && !e.target.closest('a, button, select, label')) ui.go(tr.dataset.href);
+  });
+
+  // Prototype: the dropdown on an In review badge picks the review result
+  root.addEventListener('change', function (e) {
+    var sel = e.target.closest('[data-review-result]');
+    if (!sel || sel.value === 'in_review') return;
+    A.applyReview(sel.dataset.reviewResult, sel.value);
+    ui.toast(sel.value === 'active' ? 'App approved. It is now Active and shows in Analytics.' : 'Changes requested. Open the app to see the comments.');
   });
 
   // A URL with unknown values is tidied to what is actually shown

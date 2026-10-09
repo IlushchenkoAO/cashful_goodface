@@ -1,5 +1,5 @@
 /* Settings — one route, content by account type. Stacked cards that save on their own.
-   Personal:  Profile · Security (password, two-factor) · Notifications · Account type · Legal · Delete account.
+   Personal:  Profile · Security (password, two-factor) · Verification · Notifications · Legal · Delete account.
    Developer: Verification · Business details · Agreements · Profile · Security · Notifications · Account type ·
               Close account, with a sticky anchor navigation (#verification, #business, …).
    Profile, Security and Notifications are the same components for both: name, photo, email change, 2FA and the
@@ -458,44 +458,6 @@
     });
   }
 
-  /* ---------- Account type ---------- */
-
-  /** 'none' (not started) · 'draft' (setup begun, not submitted) · 'submitted' (in review, approved or needs action) */
-  function developerState() {
-    var u = Cashful.app.user;
-    var dev = u.accounts.indexOf('developer') > -1 ? u.dev : null;
-    if (!dev) return 'none';
-    if (dev.kycStatus === 'not_started') return dev.started ? 'draft' : 'none';
-    return 'submitted';
-  }
-
-  var ACCOUNT_TYPE = {
-    none: { text: 'Monetize your own app with the Cashful SDK. You keep one login and switch between accounts in the sidebar. Your personal earnings aren’t affected.', label: 'Create developer account', tone: 'secondary' },
-    draft: { text: 'You started setting up a Developer account.', label: 'Continue setup', tone: 'primary' },
-    submitted: { text: 'You have a developer account on this login. Switch to manage your apps and developer earnings.', label: 'Switch to Developer', tone: 'primary' }
-  };
-
-  function renderAccountType() {
-    var s = developerState();
-    var t = ACCOUNT_TYPE[s];
-    body('account-type').innerHTML = '<div class="set-row">' +
-      '<span class="set-row__icon">' + icon('code') + '</span>' +
-      '<div class="set-row__text"><h3 class="set-sub">Developer account</h3><p class="t-muted">' + esc(t.text) + '</p></div>' +
-      '<button type="button" class="cf-btn cf-btn--' + t.tone + '" data-act="account-type">' + t.label + '</button></div>';
-
-    ui.$('[data-act]', body('account-type')).addEventListener('click', function () {
-      if (s === 'none') {
-        // Adds the developer account to this login and opens the onboarding
-        api.addDeveloperAccount().then(function (res) { ui.go(res.redirect); });
-      } else if (s === 'draft') {
-        api.switchAccount('developer');
-        ui.go('developer-verification.html?resume=1');
-      } else {
-        ui.go(api.switchAccount('developer'));
-      }
-    });
-  }
-
   /* ---------- Legal ---------- */
 
   function renderLegal() {
@@ -519,7 +481,7 @@
 
   function openDelete() {
     var d = c.deletion;
-    var payouts = P.loadState(null);
+    var payouts = P.loadState(null, P.earnedFor(user, account), account);
     var blocked = d.blockedWhenPayoutInProgress && !!P.inProgress(payouts);
     var total = payouts.balance.available + payouts.balance.pending;
     var warn = total > fmt.toCents(d.warnWhenBalanceAbove);
@@ -583,9 +545,15 @@
     body('verification').innerHTML =
       '<div class="set-row"><div class="set-row__text"><h3 class="set-sub">Status <span class="cf-badge cf-badge--' + m[0] + '"><span class="cf-badge__dot"></span>' + m[1] + '</span></h3><p class="t-muted">' + esc(text) + '</p></div>' +
         (status === 'not_started' ? '<a class="cf-btn cf-btn--primary" href="kyc.html" data-act="peer-kyc-start">Start verification</a>' : '') + '</div>' +
+      (status === 'in_review' ? '<div><button type="button" class="cf-link kyc-sim" data-peer-approve>Approve (Prototype)</button></div>' : '') +
       (status === 'approved' ? '' : ui.alertHtml({ tone: 'info', title: 'Who sees your documents', text: 'Our verification partner collects your ID. Cashful only receives the result. We never sell this data.' })) +
       '<div class="set-unlocks"><h3 class="set-sub">What this unlocks:</h3><ul class="set-unlocks__list"><li>' + icon(status === 'approved' ? 'check-circle' : 'lock', 16) + '<span>Withdrawals' + (status === 'approved' ? ' — unlocked' : '') + '</span></li></ul></div>';
   }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-peer-approve]')) return;
+    api.peerKyc.set('approved');
+    ui.toast('Verified (prototype). You can withdraw.');
+  });
   window.addEventListener('cashful:peer-kyc', function () { if (!isDev && ui.$('[data-body="verification"]', root)) renderPeerVerification(); });
 
   /* ---------- Developer: shared bits ---------- */
@@ -614,13 +582,14 @@
     var stages = [
       { label: L.details, st: status === 'changes_requested' ? 'attention' : status === 'not_started' ? (devNow().started ? 'done' : 'todo') : 'done' },
       { label: L.agreements, st: api.kyc.signed('developer-agreement') ? 'done' : 'todo' },
-      { label: L.review, st: status === 'in_review' ? 'current' : status === 'approved' ? 'done' : status === 'rejected' ? 'failed' : 'todo' },
+      { label: L.review, st: status === 'in_review' ? 'current' : status === 'approved' ? 'done' : status === 'rejected' ? 'failed' : 'todo', approvable: status === 'in_review' },
       { label: L.approved, st: status === 'approved' ? 'done' : 'todo' }
     ];
     return '<ol class="set-stages" aria-label="Verification progress">' + stages.map(function (s, i) {
       var mark = s.st === 'done' ? icon('check', 14) : (s.st === 'attention' || s.st === 'failed' ? '!' : String(i + 1));
       return '<li class="set-stage is-' + s.st + '"><span class="set-stage__mark" aria-hidden="true">' + mark + '</span>' +
-        '<span class="set-stage__label">' + esc(s.label) + '</span><span class="set-stage__state">' + STAGE_STATE[s.st] + '</span></li>';
+        '<span class="set-stage__label">' + esc(s.label) + '</span><span class="set-stage__state">' + STAGE_STATE[s.st] + '</span>' +
+        (s.approvable ? Cashful.kyc.approveButton() : '') + '</li>';
     }).join('') + '</ol>';
   }
 
@@ -780,23 +749,22 @@
         '<label class="cf-check"><input class="cf-check__input" type="checkbox" name="agree">' +
           '<span class="cf-checkbox__box"><cf-icon name="check" size="14" stroke-width="2.75"></cf-icon></span>' +
           '<span class="cf-check__label">I have read and agree to the ' + esc(a.title) + '</span></label>' +
-        ui.fieldHtml({ id: 'sign-name', name: 'name', label: 'Full name', autocomplete: 'name', helper: 'Type your full name to sign.' }) + '</form>',
+        ui.fieldHtml({ id: 'sign-name', name: 'name', label: 'Full name', autocomplete: 'name', sample: 'Alex Morgan', helper: 'Type your full name to sign.' }) + '</form>',
       footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button>' +
-        '<button type="submit" form="sign-form" class="cf-btn cf-btn--primary" id="sign-go" disabled>Sign agreement</button>'
+        '<button type="submit" form="sign-form" class="cf-btn cf-btn--primary" id="sign-go">Sign agreement</button>'
     });
     var form = ui.$('#sign-form', m.el);
     var go = ui.$('#sign-go', m.el);
-    function valid() { return form.elements.agree.checked && form.elements.name.value.trim().length >= 2; }
-    function sync() { go.disabled = !valid(); }
-    form.addEventListener('input', sync);
-    form.addEventListener('change', sync);
+    // Nothing is required in the prototype: an empty name takes a sample and the box is ticked for the person
+    function valid() { return true; }
+    function sync() { /* the button is always available */ }
     form.elements.name.addEventListener('blur', function () {
       var v = form.elements.name.value.trim();
       ui.setError(form.elements.name, v && v.length < 2 ? 'Enter your full name (at least 2 characters).' : '');
     });
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      if (!valid()) return;
+      form.elements.agree.checked = true;
       var name = form.elements.name.value.trim();
       ui.withLoading(go, function () { return later(500); }).then(function () {
         api.kyc.sign(id, name);   // the typed name is stored, never logged
@@ -928,7 +896,6 @@
         card('security', 'Security', 'Keep your account and your earnings safe.') +
         card('verification', 'Verification', 'Needed only when you withdraw money.') +
         card('notifications', 'Notifications', 'Choose which emails you get.') +
-        card('account-type', 'Account type') +
         card('legal', 'Legal') +
         card('delete', 'Delete account', '', 'set-danger') +
       '</div>';
@@ -942,7 +909,6 @@
     renderPeerVerification();
     if (Cashful.store.takeFlash('kycDone')) ui.toast('Verification complete. You can withdraw.');
     renderNotifications();
-    renderAccountType();
     renderLegal();
     renderDelete();
   }
@@ -997,6 +963,6 @@
   else if (presetId === '2fa-setup') openTfaSetup();
   else if (presetId === '2fa-wrong-code') openTfaSetup({ wrongCode: true });
   else if (presetId === 'delete-blocked') { setPayouts('in-progress'); openDelete(); }
-  else if (presetId === 'delete-balance') { setPayouts('default'); openDelete(); }
-  else if (presetId === 'delete-zero') { setPayouts('default', function (s) { s.balance.available = 0; s.balance.pending = 0; }); openDelete(); }
+  else if (presetId === 'delete-balance') { setPayouts('full'); openDelete(); }
+  else if (presetId === 'delete-zero') { setPayouts('full', function (s) { s.balance.available = 0; s.balance.pending = 0; }); openDelete(); }
 })();

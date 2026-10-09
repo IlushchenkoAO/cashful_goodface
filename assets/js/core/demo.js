@@ -43,7 +43,7 @@
   /** Log in or sign up? The entry screen decides from the email; this forces one, to show either flow on purpose. */
   function entryControl() {
     var mode = Cashful.api.entryMode();
-    var opts = [['auto', 'By the email (default)'], ['login', 'Always an existing account (log in)'], ['signup', 'Always a new account (sign up)']];
+    var opts = [['signup', 'Always a new account (sign up)'], ['login', 'Always an existing account (log in)'], ['auto', 'By the email (known = log in)']];
     return '<div class="cf-input demo__field"><label class="cf-input__label" for="demo-entry">Any typed email is…</label>' +
       '<div class="cf-field cf-field--select"><select class="cf-field__input" id="demo-entry">' +
       opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === mode ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +

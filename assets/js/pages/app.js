@@ -1,7 +1,8 @@
 /* Developer App details (app.html?id=<UUID>). The whole Apps area waits for an approved verification (a locked page explains it until then).
+   Nothing is required to send an app; a Draft explains what the review looks for. Sending goes back to the list.
    Statuses: draft and changes_requested are editable; in_review and active are read-only. Delete is for Drafts only.
    Apps come from the shared store (data/apps.js). The review itself is not part of the MVP: the dev-only block in
-   pages/app-review-sim.js approves or requests changes. */
+   the status dropdown on an In review badge (also in the list) picks the review result. */
 (function () {
   if (!Cashful.app) return;
   var ui = Cashful.ui;
@@ -54,21 +55,12 @@
     try { var u = new URL(v); return u.protocol === 'http:' || u.protocol === 'https:'; } catch (e) { return false; }
   }
 
-  /** Field problems for what's typed. `strict` also reports what is still missing (needed to submit). */
+  /** Field problems for what's typed. Nothing is required: only what is typed has to make sense. */
   function problems(strict) {
     var e = {};
-    if (!d.name.trim()) e.name = 'Enter a name for your app.';
-    else if (d.name.length > cfg.nameMaxLength) e.name = 'Use at most ' + cfg.nameMaxLength + ' characters.';
-    if (!d.type) e.type = 'Choose a type.';
-    if (!d.platform) e.platform = 'Choose a platform.';
+    if (d.name.length > cfg.nameMaxLength) e.name = 'Use at most ' + cfg.nameMaxLength + ' characters.';
     if (d.description.length > cfg.descriptionMaxLength) e.description = 'Use at most ' + cfg.descriptionMaxLength + ' characters.';
     if (d.appLink && !validUrl(d.appLink)) e.appLink = 'Enter a link that starts with http:// or https://.';
-    if (strict) {
-      if (!d.description.trim()) e.description = 'Add a short description.';
-      if (!d.appLink) e.appLink = 'Add the link to your app (store page or website).';
-      else if (!validUrl(d.appLink)) e.appLink = 'Enter a link that starts with http:// or https://.';
-      if (!d.screenshot) e.screenshot = 'Upload a screenshot.';
-    }
     return e;
   }
 
@@ -113,10 +105,9 @@
           '<span>' + esc(it.label) + '</span><span class="sr-only">' + (it.ok ? ' — done' : ' — missing') + '</span></li>';
       }).join('');
     }
-    var submit = ui.$('#app-submit', root);
-    if (submit) submit.disabled = items.some(function (it) { return !it.ok; });
+    // Nothing blocks sending the app: the list above only shows what the review team will look for
     var ready = ui.$('#app-ready', root);
-    if (ready) ready.textContent = items.some(function (it) { return !it.ok; }) ? '' : 'Ready to submit.';
+    if (ready) ready.textContent = items.some(function (it) { return !it.ok; }) ? '' : 'Everything is in place.';
   }
 
   /* ---------- Sections ---------- */
@@ -124,7 +115,7 @@
   function headerHtml() {
     return '<div class="sr-only" role="status" aria-live="polite" id="app-live"></div>' +
       '<div class="app-head"><a href="apps.html" class="cf-pagehead__back">' + icon('chevron-left', 16) + '<span>Apps</span></a>' +
-      '<div class="app-head__row"><h1 class="cf-pagehead__title">' + esc(app.name) + '</h1>' + A.badge(app) + '</div>' +
+      '<div class="app-head__row"><h1 class="cf-pagehead__title">' + esc(app.name) + '</h1>' + A.statusControl(app) + '</div>' +
       '<div class="app-head__id"><span class="cf-input__label" id="app-id-label">App ID</span><div class="cf-copy"><span class="cf-copy__value cf-mono" aria-labelledby="app-id-label">' + esc(app.id) + '</span>' +
         '<button type="button" class="cf-btn cf-btn--secondary cf-btn--sm" data-copy-id>' + icon('copy', 16) + '<span>Copy</span></button></div></div></div>';
   }
@@ -139,7 +130,7 @@
     if (app.status === 'changes_requested' && fb) {
       html += '<div class="app-feedback" id="feedback" tabindex="-1"><div class="app-feedback__head"><strong>' + esc(fb.reviewer || cfg.reviewerFallback) + '</strong>' +
         '<time>' + fmt.date(fb.at) + '</time></div><p>' + esc(fb.comment || '') + '</p>' +
-        '<button type="button" class="cf-btn cf-btn--primary" data-act="edit">Edit and resubmit</button></div>';
+        '<button type="button" class="cf-btn cf-btn--primary" data-act="edit">Fix and resubmit</button></div>';
     }
     if (app.status === 'active') {
       html += '<div class="app-links"><a class="cf-btn cf-btn--secondary" href="analytics.html?app=' + encodeURIComponent(app.id) + '&amp;period=30d">View analytics</a>' +
@@ -179,14 +170,15 @@
     var resubmit = app.status === 'changes_requested';
     return '<section class="cf-card' + (highlight ? ' is-highlight' : '') + '" id="app-review" aria-labelledby="app-review-title">' +
       '<h2 class="cf-card__title" id="app-review-title">Review submission</h2>' +
-      (highlight ? '<p class="app-next" role="status">' + icon('arrow-right', 16) + 'Next step: Add your app link and a screenshot</p>' : '') +
+      (resubmit ? '' : '<div class="app-before"><strong>' + esc(cfg.beforeSubmit.title) + '</strong><ol>' + cfg.beforeSubmit.steps.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ol>' +
+        '<a href="sdk.html?app=' + encodeURIComponent(app.id) + '" class="cf-btn cf-btn--secondary cf-btn--sm"><span>Open the SDK page</span>' + icon('arrow-right', 16) + '</a></div>') +
       '<div class="apps-form">' +
-        ui.fieldHtml({ id: 'app-link', name: 'appLink', label: 'App link', type: 'url', value: d.appLink, placeholder: 'https://', autocomplete: 'off', spellcheck: false, helper: 'The store page or the website of your app.' }) +
+        ui.fieldHtml({ id: 'app-link', name: 'appLink', label: 'App link', type: 'url', value: d.appLink, placeholder: 'https://', autocomplete: 'off', spellcheck: false, helper: 'The store page or the website of your app, with the SDK integrated.' }) +
         '<div class="cf-input"><span class="cf-input__label" id="app-shot-label">Screenshot</span><div id="app-shot" aria-labelledby="app-shot-label"></div></div>' +
       '</div>' +
-      '<div class="app-submit"><div class="app-submit__col"><button type="button" class="cf-btn cf-btn--primary" id="app-submit" data-act="submit" aria-describedby="app-checklist" disabled>' + (resubmit ? 'Resubmit for review' : 'Submit for review') + '</button>' +
+      '<div class="app-submit"><div class="app-submit__col"><button type="button" class="cf-btn cf-btn--primary" id="app-submit" data-act="submit" aria-describedby="app-checklist">' + (resubmit ? 'Resubmit for review' : 'Submit for review') + '</button>' +
         '<span class="t-caption app-ready" id="app-ready" role="status"></span></div>' +
-        '<ul class="app-checklist" id="app-checklist" aria-label="What is needed to submit"></ul></div>' +
+        '<ul class="app-checklist" id="app-checklist" aria-label="What the review team looks for"></ul></div>' +
     '</section>';
   }
 
@@ -280,7 +272,7 @@
   }
 
   function submit() {
-    var e = problems(true);
+    var e = problems(false);
     showErrors(e);
     if (Object.keys(e).length) { var bad = ui.$('.cf-input.is-error .cf-field__input', root); if (bad) bad.focus(); return; }
     var resubmit = app.status === 'changes_requested';
@@ -289,10 +281,9 @@
     app = A.submit(id);
     selfWrite = false;
     track('app_submitted_for_review', { app: id, resubmit: resubmit });
-    ui.toast(resubmit ? 'Resubmitted for review' : 'Submitted for review');
-    renderPage();
-    var h = ui.$('.cf-alert', root);
-    if (h) { h.setAttribute('tabindex', '-1'); h.focus(); }
+    // Back to the list, where the badge now says In review; a short notice says it went through
+    Cashful.store.flash('appToast', resubmit ? 'Sent for review again. You’ll see the result here.' : 'Sent for review. You’ll see the result here.');
+    ui.go('apps.html');
   }
 
   function confirmDelete() {
@@ -322,6 +313,12 @@
   });
   root.addEventListener('change', function (e) {
     var t = e.target;
+    if (t.matches && t.matches('[data-review-result]')) {
+      if (t.value === 'in_review') return;
+      A.applyReview(id, t.value);   // the page re-draws from the store event
+      ui.toast(t.value === 'active' ? 'App approved. It is now Active and shows in Analytics.' : 'Changes requested. The comments are below.');
+      return;
+    }
     if (t.name && t.name in d && t.tagName === 'SELECT') { d[t.name] = t.value; updateDerived(); }
   });
 

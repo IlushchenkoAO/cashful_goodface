@@ -11,24 +11,24 @@
 }
 .cf-nav:focus-visible, .cf-tab:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
 
-/* Sidebar: "Become a developer" prompt (shown while only one account exists) */
+/* Sidebar: the offer to add the other account. An accent card at the bottom, above the profile card. */
 .sb-prompt {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   padding: 12px;
-  border: 1px dashed var(--border-strong);
   border-radius: var(--radius-md);
-  color: var(--text-primary);
-  font-weight: 500;
-  text-decoration: none;
+  background: var(--purple-500);
+  color: var(--neutral-50);
 }
-.sb-prompt:hover { background: var(--bg-hover); color: var(--text-primary); }
-.sb-prompt__icon { flex: none; width: 32px; height: 32px; border-radius: var(--radius-sm); background: var(--bg-brand-muted); color: var(--icon-brand); display: flex; align-items: center; justify-content: center; }
-.sb-prompt__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.sb-prompt__title { font: 600 14px/20px var(--font-text); }
-.sb-prompt__desc { font: 500 12px/18px var(--font-text); color: var(--text-secondary); }
-.sb-prompt__chevron { flex: none; color: var(--icon-secondary); }
+.sb-prompt__icon { width: 32px; height: 32px; border-radius: var(--radius-sm); background: rgba(255, 255, 255, .18); color: #fff; display: flex; align-items: center; justify-content: center; }
+.sb-prompt__text { min-width: 0; display: flex; flex-direction: column; }
+.sb-prompt__title { font: 700 14px/20px var(--font-text); }
+.sb-prompt__desc { font: 500 12px/18px var(--font-text); opacity: .9; }
+.sb-prompt__cta { grid-column: 1 / -1; height: 32px; padding: 0 12px; border: 0; border-radius: var(--radius-sm); background: #fff; color: var(--purple-500); font: 700 13px/20px var(--font-text); cursor: pointer; }
+.sb-prompt__cta:hover { background: var(--neutral-50); }
+.sb-prompt__cta:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
 .cf-usercard__logout { display: flex; padding: 6px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--icon-secondary); cursor: pointer; }
 .cf-usercard__logout:hover { background: var(--bg-hover); color: var(--text-primary); }
@@ -221,3 +221,7 @@
 }
 @media (prefers-reduced-motion: reduce) { .kyc-alert { transition: none; } }
 .kyc-actions { display: flex; flex-wrap: wrap; gap: var(--space-8); justify-content: flex-end; }
+
+/* The prototype's "Approve (Prototype)" shortcut: a small text button, easy to find, clearly not product UI */
+.kyc-sim { font: 600 13px/20px var(--font-text); text-decoration: underline; text-underline-offset: 2px; color: var(--text-brand); background: none; border: 0; padding: 4px 0; cursor: pointer; align-self: center; }
+.kyc-sim:focus-visible { outline: 2px solid var(--border-focus, var(--icon-brand)); outline-offset: 2px; border-radius: 4px; }

@@ -43,9 +43,9 @@
 
   var PROMPTS = {
     // shown to a personal-only login
-    personal: { action: 'add-developer', icon: 'code', title: 'Become a developer', desc: 'Monetize your app with the SDK' },
+    personal: { action: 'add-developer', icon: 'code', title: 'Become a developer', desc: 'Monetize your app with the SDK', cta: 'Add developer account' },
     // shown to a developer-only login
-    developer: { action: 'add-personal', icon: 'smartphone', title: 'Earn from your devices', desc: 'Add a personal account' }
+    developer: { action: 'add-personal', icon: 'smartphone', title: 'Earn from your devices', desc: 'Add a personal account', cta: 'Add personal account' }
   };
 
   function initials(name) {
@@ -93,12 +93,13 @@
       }).join('') + '</div>';
   }
 
+  /** The second account is offered at the bottom of the sidebar, above the profile card: an accent card with a small button. */
   function prompt() {
     var p = PROMPTS[account];
-    return '<a class="sb-prompt" href="#" data-account-action="' + p.action + '">' +
+    return '<div class="sb-prompt" role="group" aria-label="' + esc(p.title) + '">' +
       '<span class="sb-prompt__icon"><cf-icon name="' + p.icon + '" size="18"></cf-icon></span>' +
       '<span class="sb-prompt__text"><span class="sb-prompt__title">' + p.title + '</span><span class="sb-prompt__desc">' + p.desc + '</span></span>' +
-      '<span class="sb-prompt__chevron"><cf-icon name="chevron-right" size="16"></cf-icon></span></a>';
+      '<button type="button" class="sb-prompt__cta" data-account-action="' + p.action + '">' + p.cta + '</button></div>';
   }
 
   function renderSidebar(el) {
@@ -107,9 +108,10 @@
     var home = api.homeFor(user, account);
     el.innerHTML =
       '<div class="cf-sidebar__logo"><a href="' + home + '" aria-label="Cashful — home"><cf-logo height="26"></cf-logo></a></div>' +
-      (user.accounts.length > 1 ? switcher() : prompt()) +
+      (user.accounts.length > 1 ? switcher() : '') +
       '<nav class="cf-sidebar__menu" aria-label="Main">' + MENUS[account].map(function (n) { return navItem(n, active); }).join('') + '</nav>' +
       '<div class="cf-sidebar__spacer"></div>' +
+      (user.accounts.length > 1 ? '' : prompt()) +
       '<div class="cf-usercard">' +
         '<span class="cf-avatar" data-user-avatar>' + avatarContent(user) + '</span>' +
         '<div class="cf-usercard__info"><div class="cf-usercard__name">' + esc(name) + '</div><div class="cf-usercard__email">' + esc(user.email) + '</div></div>' +

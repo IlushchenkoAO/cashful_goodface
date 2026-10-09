@@ -199,6 +199,29 @@ window.Cashful = window.Cashful || {};
       write(apps);
       return clone(app);
     },
+    /**
+     * The status badge of an app that is In review turns into a dropdown: the prototype's way to choose the review
+     * result (Active, or Changes requested with a sample comment). Everything else keeps a plain badge.
+     */
+    statusControl: function (a) {
+      if (a.status !== 'in_review') return Apps.badge(a);
+      return '<span class="status-select"><label class="sr-only" for="rs-' + a.id + '">Review result (prototype)</label>' +
+        '<select class="status-select__input" id="rs-' + a.id + '" data-review-result="' + a.id + '" title="Prototype: choose the review result">' +
+        '<option value="in_review" selected>In review</option><option value="active">Active</option><option value="changes_requested">Changes requested</option></select>' +
+        '<cf-icon name="chevron-down" size="14"></cf-icon></span>';
+    },
+    /** Applies the result chosen in that dropdown. Active gets mock traffic, so the app shows in Analytics. */
+    applyReview: function (id, value) {
+      if (value === 'active') return Apps.setStatus(id, 'active', { data: true });
+      if (value === 'changes_requested') return Apps.setStatus(id, 'changes_requested', { comment: Cashful.appsConfig.sampleFeedback });
+      return null;
+    },
+    /** The prototype's "approve everything": every app that is In review becomes Active (with data). */
+    approveAll: function () {
+      var ids = read().filter(function (a) { return a.status === 'in_review'; }).map(function (a) { return a.id; });
+      ids.forEach(function (id) { Apps.setStatus(id, 'active', { data: true }); });
+      return ids.length;
+    },
     /** Only Drafts can be deleted. */
     remove: function (id) {
       var apps = read();

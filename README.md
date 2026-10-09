@@ -159,8 +159,9 @@ and a direct visit shows a locked page with the way to unlock it. A Personal acc
 - **Rules:** Draft and Changes requested are editable; In review and Active are read-only; only a Draft can be
   deleted. Draft → In review (submit), In review → Active or Changes requested (review), Changes requested → In review.
 - **List URL:** `?status=&q=&sort=updated|name|status&page=&create=1`.
-- **Review simulation (dev only):** on an In review app, `pages/app-review-sim.js` adds "Approve" and "Request
-  changes". A newly approved app has no analytics: Analytics shows its "Active app, no data yet" state.
+- **Review result (prototype):** the status badge of an app that is In review is a dropdown (in the list and on the app's
+  page): Active, or Changes requested with a sample comment. An approved app gets mock traffic, so it appears in Analytics.
+  "Approve all apps in review (Prototype)" under the list approves every app waiting for review.
 - **Demo control:** "Apps data" (Default, No apps, Only Drafts, Only Active; `?data=`) next to "KYC status".
 - **Components:** new `ui.timeline`, `Cashful.controls.fileDropzone`, `Cashful.apps.badge` (status badge); reused:
   segmented control, dropdown, modal, cards, table, `ui.copyText`, `ui.alertHtml`, `track()`.
@@ -228,8 +229,12 @@ sidebar stays on the page). It is not in the design file, so it is built from th
   (fixed or percent) and arrival time per method, crypto currencies and their networks.
 - **Mock data and rules:** `assets/js/data/payouts.js` (money in cents, fees, masking, validation, seeds).
   State is in memory; a reload restores the scenario from `?state=`.
-- **States:** `?state=default|no-methods|below-minimum|in-progress|empty-history`. The default history already
-  holds Paid, Failed and Rejected rows. A Developer account is locked until its KYC is approved.
+- **States:** `?state=default|full|no-methods|below-minimum|in-progress|empty-history|no-earnings`. **Default is empty:** the
+  balance follows what was earned (a Personal account has money once a device is connected, a Developer once an app is
+  Active), there are no payout methods and no history. The person adds a method by hand; the first withdrawal fills the
+  history with a payout in every state (Requested, Processing, Paid, Failed, Rejected). `full` is the old set: three methods
+  and history. A Personal account that is not verified yet sees a badge: identity verification is needed for the first
+  withdrawal. A Developer account is locked until its KYC is approved. Each account type keeps its own payouts.
 - **Demo control:** the "Demo · payouts" button (`pages/page-demo.js`) switches the account type and the state.
   The same control sits on the Referrals page. Remove its script tag from the page to hide it.
 - **Dialogs:** `ui.modal` now traps Tab focus and has `update()` for multi-step dialogs, so every dialog in the
@@ -267,7 +272,7 @@ design file, so it is built from the existing components.
 
 `settings.html` serves both account types (`data-account="auto"`): Personal sees the stack below, Developer sees
 the Developer Settings described in the next section. It is not in the design file, so it is built from the existing components. Six stacked cards, and the ones
-with a form save on their own: Profile, Security (password and two-factor), Notifications, Account type, Legal,
+with a form save on their own: Profile, Security (password and two-factor), Verification, Notifications, Legal,
 Delete account.
 
 - **Business values:** `assets/js/data/settings.config.js` is the only file the client edits (support email,
@@ -284,9 +289,8 @@ Delete account.
   are in `settings.config.js` (`avatar`), and the error texts are generated from them. A chosen image is
   centre-cropped to a square and shown as a preview; it is applied with the Save button like the other fields
   and stored as a data URL on the login. The user card in the sidebar shows the same photo (or the initials).
-- **Account type:** three states from the developer account of the login. Not started: "Create developer
-  account" adds the account and opens the onboarding. In progress: "Continue setup" with "You started setting up
-  a Developer account." Submitted: "Switch to Developer". The demo control switches between them.
+- **No Account type card:** adding the Developer account is done with the card at the bottom of the sidebar (accent purple, above
+  the profile card, with a small button), or with the account switcher once both accounts exist.
 - **Presets:** `?state=default|profile-dirty|avatar-none|avatar-set|avatar-preview|avatar-invalid|avatar-too-large|email-pending|password-error|password-success|2fa-setup|2fa-wrong-code|2fa-on|2fa-hidden|notifications-on|notifications-off|delete-blocked|delete-balance|delete-zero`.
 
 ### Settings (Developer)
@@ -357,18 +361,27 @@ details edits, and the signature shows in Settings → Agreements.
   color pickers with hex fields), a contrast check (4.5 : 1, shown in words, not only color) and Reset. The downloaded template
   follows the chosen colors. The choice is kept in this browser only. Presets: `consent.themes` in `sdk.config.js`.
 
+### Prototype: nothing is required
+
+The prototype is sent to people who review it, so nothing blocks them. An empty field gets a sample value when its form is
+sent (`ui.sampleFor`, with `data-sample` for the cases that need a particular value; `data-no-sample` leaves a field alone,
+like a referral code). On the entry screen an empty email becomes a sample email. The developer sign-up details come filled with
+sample values. Creating an app needs nothing, and neither do the link and the screenshot when sending it for review.
+
 ### Prototype: a new developer starts empty
 
 A developer who signs up (or a Personal login that adds a Developer account) starts with **no apps**: the Apps list, Analytics
 and the SDK page are empty. Payouts show zero until an app is Active. Add an app on the Apps page (after verification), open it,
-and use the dev-only **Simulate status** block on its page: Draft, In review, Changes requested, Active with data or Active with no
-data yet. "Active, with data" gives the app mock traffic, so it appears in Analytics.
+(a Draft explains what to add first: integrate the SDK, then add the link and a screenshot of it). Sending an app goes back to the
+list with a short notice. The badge of an app that is In review is a dropdown to pick the result; Active gives it mock traffic,
+so it shows in Analytics. Changes requested shows the comments and a button to fix and resubmit (back to the list again).
+Wherever the account itself is in review, a small "Approve (Prototype)" button skips the wait.
+### Prototype: log in or sign up
 
-### Prototype: log in or sign up, on purpose
-
-The entry screen decides from the email (a known one logs in, any other starts sign-up). To show **log in** with any email, open
-the **Prototype** panel on `auth.html` and set "Any typed email is…" to "Always an existing account", or open
-`auth.html?entry=login`. `?entry=signup` shows sign-up for any email, `?entry=auto` goes back to the default.
+The entry screen has a small switch at the bottom, "Prototype · show: Sign up | Log in". **Sign up** (the default): any email
+creates a new account. **Log in**: any email is an existing account. Either way, leaving the email empty uses a sample. The same
+switch is in the Prototype panel (with a third option, "by the email": a known email logs in, any other signs up) and in the
+URL: `auth.html?entry=login|signup|auto`.
 
 ### Auth and onboarding brief
 

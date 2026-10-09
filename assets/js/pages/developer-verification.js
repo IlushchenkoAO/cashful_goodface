@@ -1,7 +1,8 @@
 /* Developer sign-up details and KYC — six steps, progress saved after each one. A new developer lands here right
    after the account is created (or right after the email is verified).
    type → details (company | independent) → apps → agreements → kyc → review
-   Every field without an "Optional" note is required. The KYC step can be skipped: "Complete verification later"
+   Nothing is required: the fields come filled with sample values (edit them or just continue), so a reviewer can click
+   through. The KYC step can be skipped: "Complete verification later"
    leaves the status Not started (In progress) and the dashboard reminds the developer. The details are also saved as
    dev.business, the same record Settings → Business details edits.
    #step opens a step directly; ?resume=1 shows "Welcome back" (DevOnbResume).
@@ -73,19 +74,27 @@
     return out;
   }
 
-  /** Every field without an "Optional" note is required (any text passes), the numbers must be whole numbers. */
+  /** Sample answers, in the fields until the person types their own. Nothing here is required. */
+  var SAMPLES = {
+    company: 'Studio Apps LLC', regno: '12-3456789', street: '500 Market Street', city: 'San Francisco', region: 'California', zip: '94105',
+    website: 'studio.dev', firstName: 'Alex', lastName: 'Morgan', count: '3', installs: '120000', signature: 'Alex Morgan'
+  };
+  function prefill(form) {
+    Array.prototype.forEach.call(form.elements, function (el) {
+      if (el.name in SAMPLES && el.tagName === 'INPUT' && el.type === 'text' && !el.value.trim()) el.value = SAMPLES[el.name];
+    });
+  }
+
+  /** The numbers have to be whole numbers when something is typed in them; everything else may be left as it is. */
   function validate(form) {
     var ok = true;
     ui.$$('.cf-field__input', form).forEach(function (el) {
-      var helper = ui.$('.cf-input__helper', el.closest('.cf-input'));
-      if (helper && /optional/i.test(helper.textContent)) return;
-      if (!el.value.trim()) { ui.setError(el, 'Fill in this field.'); ok = false; }
-      else if ((el.name === 'count' || el.name === 'installs') && !/^\d+$/.test(el.value.trim().replace(/[,\s]/g, ''))) {
+      if ((el.name === 'count' || el.name === 'installs') && el.value.trim() && !/^\d+$/.test(el.value.trim().replace(/[,\s]/g, ''))) {
         ui.setError(el, 'Enter a whole number, 0 or more.'); ok = false;
       }
     });
     var agree = form.elements.agree;
-    if (agree && !agree.checked) { ui.setError(agree, 'Agree to the documents to sign.'); ok = false; }
+    if (api.strict && agree && !agree.checked) { ui.setError(agree, 'Agree to the documents to sign.'); ok = false; }
     if (!ok) { var bad = ui.$('.is-error input, .is-error select', form); if (bad) bad.focus(); }
     return ok;
   }
@@ -132,7 +141,7 @@
     if (STEPS.indexOf(step) < 0) step = 'type';
     var view = viewFor(step);
     var form = ui.$('[data-view="' + view + '"]');
-    if (form.tagName === 'FORM') restore(form);
+    if (form.tagName === 'FORM') { restore(form); prefill(form); }
 
     // Copy that depends on earlier answers
     var signing = dev.kind === 'indie'
@@ -239,6 +248,9 @@
   if (dev.kycStatus === 'changes_requested') {
     insertAlert('kyc', { tone: 'error', title: 'We need a clearer photo of your ID', text: 'The photo was too blurry to confirm your identity. Upload it again, it takes about 2 minutes.' });
   }
+
+  // Approved from the review screen (the prototype shortcut): on to the dashboard
+  api.kyc.onChange(function (status) { if (status === 'approved') ui.go('analytics.html'); });
 
   history.replaceState(null, '', location.pathname + location.search + '#' + start);
   show(start);
