@@ -204,15 +204,19 @@ window.Cashful = window.Cashful || {};
      * result (Active, or Changes requested with a sample comment). Everything else keeps a plain badge.
      */
     statusControl: function (a) {
-      if (a.status !== 'in_review') return Apps.badge(a);
-      return '<span class="status-select"><label class="sr-only" for="rs-' + a.id + '">Review result (prototype)</label>' +
+      if (a.status !== 'in_review' && a.status !== 'active') return Apps.badge(a);
+      var opts = [['in_review', 'In review'], ['active', 'Active'], ['changes_requested', 'Changes requested']];
+      return '<span class="status-select status-select--' + a.status + '"><label class="sr-only" for="rs-' + a.id + '">Review result (prototype)</label>' +
         '<select class="status-select__input" id="rs-' + a.id + '" data-review-result="' + a.id + '" title="Prototype: choose the review result">' +
-        '<option value="in_review" selected>In review</option><option value="active">Active</option><option value="changes_requested">Changes requested</option></select>' +
-        '<cf-icon name="chevron-down" size="14"></cf-icon></span>';
+        opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === a.status ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+        '</select><cf-icon name="chevron-down" size="14"></cf-icon></span>';
     },
-    /** Applies the result chosen in that dropdown. Active gets mock traffic, so the app shows in Analytics. */
+    /** Applies the result chosen in that dropdown: Active (with mock traffic, so it shows in Analytics), back In review, or Changes requested. */
     applyReview: function (id, value) {
+      var a = Apps.get(id);
+      if (!a || a.status === value) return null;
       if (value === 'active') return Apps.setStatus(id, 'active', { data: true });
+      if (value === 'in_review') return Apps.setStatus(id, 'in_review');
       if (value === 'changes_requested') return Apps.setStatus(id, 'changes_requested', { comment: Cashful.appsConfig.sampleFeedback });
       return null;
     },

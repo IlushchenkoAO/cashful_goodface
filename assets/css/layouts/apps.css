@@ -71,3 +71,5 @@ tr.is-clickable { cursor: pointer; }
 .status-select__input { appearance: none; -webkit-appearance: none; height: 24px; padding: 0 24px 0 10px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--bg-warning-subtle); color: var(--text-warning); font: 600 12px/22px var(--font-text); cursor: pointer; }
 .status-select__input:focus-visible { outline: 2px solid var(--border-focus, var(--icon-brand)); outline-offset: 2px; }
 .status-select cf-icon { position: absolute; right: 7px; pointer-events: none; color: var(--text-warning); }
+.status-select--active .status-select__input { background: var(--bg-success-subtle); color: var(--text-success); }
+.status-select--active cf-icon { color: var(--text-success); }

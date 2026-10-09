@@ -321,9 +321,9 @@
   // Prototype: the dropdown on an In review badge picks the review result
   root.addEventListener('change', function (e) {
     var sel = e.target.closest('[data-review-result]');
-    if (!sel || sel.value === 'in_review') return;
+    if (!sel) return;
     A.applyReview(sel.dataset.reviewResult, sel.value);
-    ui.toast(sel.value === 'active' ? 'App approved. It is now Active and shows in Analytics.' : 'Changes requested. Open the app to see the comments.');
+    ui.toast(sel.value === 'active' ? 'App approved. It is now Active and shows in Analytics.' : sel.value === 'in_review' ? 'Back in review.' : 'Changes requested. Open the app to see the comments.');
   });
 
   // A URL with unknown values is tidied to what is actually shown

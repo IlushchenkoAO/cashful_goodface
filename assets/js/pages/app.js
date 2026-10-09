@@ -2,7 +2,7 @@
    Nothing is required to send an app; a Draft explains what the review looks for. Sending goes back to the list.
    Statuses: draft and changes_requested are editable; in_review and active are read-only. Delete is for Drafts only.
    Apps come from the shared store (data/apps.js). The review itself is not part of the MVP: the dev-only block in
-   the status dropdown on an In review badge (also in the list) picks the review result. */
+   the status dropdown on an In review or Active badge (also in the list) picks the review result. */
 (function () {
   if (!Cashful.app) return;
   var ui = Cashful.ui;
@@ -314,9 +314,8 @@
   root.addEventListener('change', function (e) {
     var t = e.target;
     if (t.matches && t.matches('[data-review-result]')) {
-      if (t.value === 'in_review') return;
       A.applyReview(id, t.value);   // the page re-draws from the store event
-      ui.toast(t.value === 'active' ? 'App approved. It is now Active and shows in Analytics.' : 'Changes requested. The comments are below.');
+      ui.toast(t.value === 'active' ? 'App approved. It is now Active and shows in Analytics.' : t.value === 'in_review' ? 'Back in review.' : 'Changes requested. The comments are below.');
       return;
     }
     if (t.name && t.name in d && t.tagName === 'SELECT') { d[t.name] = t.value; updateDerived(); }

@@ -161,9 +161,7 @@
       var extra = '';
       if (s.id === 'test') {
         extra = '<div class="sdk-step__links">' + (api.kyc.featuresUnlocked()
-          ? (app && Cashful.apps.isEditable(app)
-              ? '<button type="button" class="cf-btn cf-btn--primary cf-btn--sm" data-submit-app="' + esc(app.id) + '">Submit for review</button>'
-              : '<a href="' + (app ? 'app.html?id=' + encodeURIComponent(app.id) : 'apps.html') + '" class="cf-btn cf-btn--secondary cf-btn--sm">' + (app ? 'Open the app' : 'Go to Apps') + '</a>')
+          ? '<a href="' + (app ? 'app.html?id=' + encodeURIComponent(app.id) : 'apps.html') + '" class="cf-btn cf-btn--secondary cf-btn--sm">' + (app && !Cashful.apps.isEditable(app) ? 'Open the app' : 'Submit for review') + '</a>'
           : '<button type="button" class="cf-btn cf-btn--secondary cf-btn--sm" data-locked aria-disabled="true" aria-describedby="sdk-submit-hint">' + icon('lock', 16) + '<span>Submit for review</span></button>' + lockedHint('sdk-submit-hint')) +
           (app && Cashful.apps.isActive(app) ? '<a href="analytics.html?app=' + esc(app.id) + '" class="cf-btn cf-btn--ghost cf-btn--sm"><span>View analytics</span>' + icon('arrow-right', 16) + '</a>' : '') + '</div>';
       }
@@ -352,18 +350,6 @@
     }
 
     if (e.target.closest('[data-locked]')) { announce(lockText() + '.'); return; }
-
-    // Step 4: sends the app for review and goes to the list, where its status now reads In review
-    var sendApp = e.target.closest('[data-submit-app]');
-    if (sendApp) {
-      var sent = Cashful.apps.submit(sendApp.dataset.submitApp);
-      if (sent) {
-        track('app_submitted_for_review', { app: sent.id, resubmit: false, from: 'sdk' });
-        Cashful.store.flash('appToast', 'Sent for review. You’ll see the result here.');
-        ui.go('apps.html');
-      }
-      return;
-    }
 
     var tpl = e.target.closest('#sdk-template');
     if (tpl) {
