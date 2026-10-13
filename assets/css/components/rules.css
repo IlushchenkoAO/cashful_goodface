@@ -1,0 +1,22 @@
+/* The SDK rules a developer agrees to: three rows, each with a small drawing. */
+.rules { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-12); }
+.rules__item { display: flex; align-items: center; gap: var(--space-16); padding: var(--space-12); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-surface); }
+.rules__art { flex: none; width: 132px; height: 76px; border-radius: var(--radius-sm); background: var(--bg-brand-muted); display: flex; align-items: center; justify-content: center; color: var(--icon-brand); }
+.rules__text { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.rules__title { display: flex; align-items: center; gap: var(--space-8); font: 600 15px/22px var(--font-text); }
+.rules__num { flex: none; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-brand); color: var(--text-on-brand, #fff); font: 700 12px/1 var(--font-text); }
+.rules__desc { font: 500 14px/20px var(--font-text); color: var(--text-secondary); }
+/* drawings */
+.rules__dialog { display: flex; flex-direction: column; gap: 6px; width: 96px; padding: 10px; border-radius: 10px; background: var(--bg-surface); box-shadow: 0 2px 8px rgba(27, 27, 31, .12); }
+.rules__line { height: 6px; border-radius: 3px; background: var(--border-default); }
+.rules__line.is-short { width: 60%; }
+.rules__btn { align-self: flex-end; padding: 2px 10px; border-radius: 999px; background: var(--bg-brand); color: var(--text-on-brand, #fff); font: 700 10px/16px var(--font-text); }
+.rules__row { display: flex; align-items: center; gap: 8px; }
+.rules__label { font: 600 11px/16px var(--font-text); color: var(--text-primary); }
+.rules__toggle { position: relative; width: 28px; height: 16px; border-radius: 999px; background: var(--border-default); }
+.rules__toggle.is-on { background: var(--bg-brand); }
+.rules__knob { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; }
+.rules__toggle.is-on .rules__knob { left: 14px; }
+.rules__app { width: 28px; height: 28px; border-radius: 8px; background: var(--bg-brand); }
+.rules__app.is-gone { background: transparent; border: 2px dashed var(--border-default); }
+.rules + .auth__note, .rules + p { margin-top: var(--space-4); }

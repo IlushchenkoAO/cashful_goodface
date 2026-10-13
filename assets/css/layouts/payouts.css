@@ -68,3 +68,7 @@
 .pay-badge:hover { filter: brightness(.97); }
 .pay-badge__go { text-decoration: underline; text-underline-offset: 2px; }
 .pay-badge:focus-visible { outline: 2px solid var(--border-focus, var(--icon-brand)); outline-offset: 2px; }
+
+/* Confirm a payout by SMS */
+.sms-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: var(--space-8); margin-top: var(--space-8); }
+.sms-actions [data-act="resend"] { margin-right: auto; }

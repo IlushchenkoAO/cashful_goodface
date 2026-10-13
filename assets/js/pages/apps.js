@@ -233,7 +233,11 @@
         '<div class="cf-input"><label class="cf-input__label" for="ap-desc">Description</label>' +
           '<div class="cf-field cf-field--area"><textarea class="cf-field__input" id="ap-desc" name="description" rows="3" data-sample="A short description of my app." maxlength="' + count + '" aria-describedby="ap-count"></textarea></div>' +
           '<div class="cf-input__helper"></div><div class="apps-count" id="ap-count">0 / ' + count + '</div></div>' +
-        ui.selectHtml({ id: 'ap-platform', name: 'platform', label: 'Platform', options: [{ value: '', label: 'Select a platform' }].concat(platformOptions()), value: '' }) +
+        '<div class="cf-input" role="group" aria-labelledby="ap-platforms-label"><span class="cf-input__label" id="ap-platforms-label">Platforms</span>' +
+          '<div class="apps-platforms">' + platformOptions().map(function (n) {
+            return '<label class="cf-check"><input class="cf-check__input" type="checkbox" name="platforms" value="' + esc(n) + '">' +
+              '<span class="cf-checkbox__box"><cf-icon name="check" size="14" stroke-width="2.75"></cf-icon></span><span class="cf-check__label">' + esc(n) + '</span></label>';
+          }).join('') + '</div><div class="cf-input__helper">Choose every platform this app runs on.</div></div>' +
       '</form>',
       footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button>' +
         '<button type="submit" form="create-form" class="cf-btn cf-btn--primary" id="ap-submit">Create app</button>',
@@ -248,14 +252,14 @@
     var submit = ui.$('#ap-submit', m.el);
 
     function errors() {
-      var v = { name: form.elements.name.value.trim(), type: form.elements.type.value, platform: form.elements.platform.value };
+      var v = { name: form.elements.name.value.trim() };
       var e = {};
       if (v.name.length > cfg.nameMaxLength) e.name = 'Use at most ' + cfg.nameMaxLength + ' characters.';
       return e;
     }
     function sync() {
       var e = errors();
-      ['name', 'type', 'platform'].forEach(function (k) { ui.setError(form.elements[k], touched[k] && e[k] ? e[k] : ''); });
+      ['name'].forEach(function (k) { ui.setError(form.elements[k], touched[k] && e[k] ? e[k] : ''); });
       ui.$('#ap-count', m.el).textContent = form.elements.description.value.length + ' / ' + count;
     }
     form.addEventListener('input', sync);
@@ -264,15 +268,17 @@
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       if (Object.keys(errors()).length) return;
-      var app = A.create({ name: form.elements.name.value.trim(), type: form.elements.type.value, description: form.elements.description.value.trim(), platform: form.elements.platform.value });
-      track('app_created', { type: app.type, platform: form.elements.platform.value });
+      // Nothing is required: with no platform ticked, a sample one (Android) takes its place
+      var picked = ui.$$('input[name="platforms"]:checked', form).map(function (i) { return i.value; });
+      var app = A.create({ name: form.elements.name.value.trim(), type: form.elements.type.value, description: form.elements.description.value.trim(), platforms: picked.length ? picked : [platformOptions()[0]] });
+      track('app_created', { type: app.type, platforms: app.platforms.join(',') });
       createModal = null;
       m.close();
       // Back on the list, where the new Draft stands out; the Draft's page explains what to add next
       freshId = app.id;
       st.status = 'all'; st.q = ''; st.page = 1;
       renderControls(); renderBody();
-      ui.toast('App created. Open it to add the link and a screenshot.');
+      ui.toast('App created with its Application ID and Release ID. Open it to add the link and a screenshot.');
       var again = ui.$('tr.is-fresh a.apps-name', root);
       if (again) again.focus();
       setTimeout(function () { freshId = null; renderBody(); }, 4500);

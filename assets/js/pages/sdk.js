@@ -130,12 +130,15 @@
       appDd = null;
       return;
     }
-    el.innerHTML = '<h3 class="step__title" id="sdk-app-title">App ID</h3>' +
+    el.innerHTML = '<h3 class="step__title" id="sdk-app-title">App ID and Release ID</h3>' +
       '<p class="t-muted">Pick the app you are integrating.</p>' +
       '<div class="sdk-app"><div id="sdk-app-dd"></div>' +
         '<div class="sdk-app__id"><span class="cf-input__label" id="sdk-uuid-label">App ID</span>' +
           '<div class="cf-copy"><span class="cf-copy__value cf-mono" id="sdk-uuid" aria-labelledby="sdk-uuid-label">' + esc(st.app) + '</span>' +
-          '<button type="button" class="cf-btn cf-btn--secondary cf-btn--sm" data-copy-app>' + icon('copy', 16) + '<span>Copy</span></button></div></div></div>' +
+          '<button type="button" class="cf-btn cf-btn--secondary cf-btn--sm" data-copy-app>' + icon('copy', 16) + '<span>Copy</span></button></div></div>' +
+        '<div class="sdk-app__id"><span class="cf-input__label" id="sdk-release-label">Application Release ID</span>' +
+          '<div class="cf-copy"><span class="cf-copy__value cf-mono" id="sdk-release" aria-labelledby="sdk-release-label">' + esc(app ? app.releaseId : '') + '</span>' +
+          '<button type="button" class="cf-btn cf-btn--secondary cf-btn--sm" data-copy-release>' + icon('copy', 16) + '<span>Copy</span></button></div></div></div>' +
       '<div id="sdk-app-note"></div>';
     appDd = C.dropdown(ui.$('#sdk-app-dd', el), {
       label: 'App',
@@ -149,7 +152,7 @@
       }
     });
     ui.$('#sdk-app-note', el).innerHTML = app && !Cashful.apps.isActive(app)
-      ? '<p class="t-body sdk-note">' + icon('info', 16) + esc(T.appNotActiveNote) + '</p>' : '';
+      ? '<p class="t-body sdk-note">' + icon('info', 16) + esc(Cashful.appsConfig ? Cashful.appsConfig.installNote : T.appNotActiveNote) + '</p>' : '';
   }
 
   function renderSteps() {
@@ -157,7 +160,7 @@
     var app = appById(st.app);
     var items = cfg.steps.map(function (s, i) {
       var code = (cfg.snippets[p.id] || {})[s.id]
-        ? ui.codeBlock({ code: S.snippet(p.id, s.id, st.app), label: p.name + ' · ' + s.title, id: s.id }) : '';
+        ? ui.codeBlock({ code: S.snippet(p.id, s.id, st.app, app && app.releaseId), label: p.name + ' · ' + s.title, id: s.id }) : '';
       var extra = '';
       if (s.id === 'test') {
         extra = '<div class="sdk-step__links">' + (api.kyc.featuresUnlocked()
@@ -381,6 +384,18 @@
         track('sdk_app_id_copied', {});
         announce('App ID copied');
         ui.flashCopied(appCopy);
+      });
+      return;
+    }
+
+    var relCopy = e.target.closest('[data-copy-release]');
+    if (relCopy) {
+      var cur = appById(st.app);
+      ui.copyText(cur ? cur.releaseId : '').then(function (ok) {
+        if (!ok) { announce('Couldn’t copy the Release ID.'); return; }
+        track('sdk_release_id_copied', {});
+        announce('Release ID copied');
+        ui.flashCopied(relCopy);
       });
       return;
     }

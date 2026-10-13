@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Join a team · Cashful</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="assets/css/cashful.css">
+  <link rel="stylesheet" href="assets/css/layouts/auth.css">
+  <script src="assets/js/ds/svg-data.js" defer></script>
+  <script src="assets/js/ds/elements.js" defer></script>
+  <script src="assets/js/ds/ui.js" defer></script>
+  <script src="assets/js/core/config.js" defer></script>
+  <script src="assets/js/core/store.js" defer></script>
+  <script src="assets/js/core/api.js" defer></script>
+  <script src="assets/js/core/format.js" defer></script>
+  <script src="assets/js/pages/invite.js" defer></script>
+</head>
+<body data-page="invite">
+  <!-- An invitation to a Developer account. ?token=… is the invitation. Demo links (always valid again when opened):
+       invite.html?token=demo-new      the email has no Cashful account  → sign up, email locked
+       invite.html?token=demo-existing the email has an account          → sign in, then Accept invitation
+       invite.html?token=demo-expired  an invitation that ran out        → "This invitation is no longer valid"
+       A revoked or accepted invitation shows the same invalid screen. -->
+  <div class="auth">
+    <aside class="auth__aside auth__aside--purple">
+      <cf-logo version="white" height="28"></cf-logo>
+      <div class="auth__shape"><cf-brand-shape shape="pair" size="220" color="var(--yellow-500)"></cf-brand-shape></div>
+      <div class="auth__pitch">
+        <cf-mascot character="c" size="104"></cf-mascot>
+        <h2 class="auth__pitch-title">Work on an app account together</h2>
+        <p class="auth__pitch-text">Admins and Members see the account’s analytics and apps. Payouts and company details stay with the people who run the account.</p>
+      </div>
+      <div class="auth__trust"><cf-icon name="shield" size="20"></cf-icon><span>Built by the team behind Byteful</span></div>
+    </aside>
+
+    <main class="auth__main">
+      <div class="auth__topbar"><span></span></div>
+      <div class="auth__center">
+        <div class="auth__form" id="auth-view"></div>
+      </div>
+      <footer class="auth__footer"><span>© 2026 Cashful</span><a href="#">Terms</a><a href="#">Privacy</a></footer>
+    </main>
+  </div>
+</body>
+</html>

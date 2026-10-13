@@ -55,9 +55,9 @@
   }
 
   /** The snippet with the App ID filled in (or the placeholder when there is no app). */
-  function snippet(platformId, step, appId) {
+  function snippet(platformId, step, appId, releaseId) {
     var s = (cfg.snippets[platformId] || {})[step] || '';
-    return s.split('{APP_UUID}').join(appId || cfg.appIdPlaceholder);
+    return s.split('{APP_UUID}').join(appId || cfg.appIdPlaceholder).split('{RELEASE_UUID}').join(releaseId || cfg.releaseIdPlaceholder);
   }
 
   function sdkFile(platform) {

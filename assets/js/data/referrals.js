@@ -1,4 +1,6 @@
 /* Referrals — mock data, rules and the copy generated from referrals.config.js. No page rendering here.
+   The link, the code and the stats belong to the ACCOUNT in use, not to the person: the Personal account has its own and every
+   Developer account has its own (see accountKey).
    The chosen demo scenario is kept in the prototype store, so the Overview card, the navigation and the
    sign-up screen agree with the Referrals page. Money is in integer cents. */
 (function () {
@@ -7,8 +9,16 @@
   var store = Cashful.store;
   var DAY = 24 * 60 * 60 * 1000;
 
-  var CODE = 'ALEX24';
-  var LINK = 'https://cashful.com/r/' + CODE;
+  /** 'personal', or the id of the Developer account in use. */
+  function accountKey() { return Cashful.api && Cashful.api.accountKey ? Cashful.api.accountKey() : 'personal'; }
+  /** The code of an account: Personal has ALEX24, a Developer account takes its name ("Acme Apps LLC" → ACME24). */
+  function codeFor(key) {
+    if (!key || key === 'personal') return 'ALEX24';
+    var org = store.get().orgs && store.get().orgs[key];
+    var word = String((org && org.name) || key).split(/\s+/)[0].replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 6) || 'TEAM';
+    return word + '24';
+  }
+  function linkFor(key) { return 'https://cashful.com/r/' + codeFor(key); }
 
   var STATUS_TONE = { 'Signed up': 'neutral', 'Connected': 'brand', 'Qualified': 'success', 'Reward ended': 'neutral', 'Not counted': 'warning' };
   var REASONS = {
@@ -31,14 +41,24 @@
 
   /* ---------- Scenario and effective settings ---------- */
 
+  // What each account shows by default: Personal has a full set of referrals, a Developer account the one its seed says
+  function defaultScenario(key) {
+    if (!key || key === 'personal') return 'default';
+    var org = store.get().orgs && store.get().orgs[key];
+    return org && org.referralDefault === 'default' ? 'default' : 'empty';
+  }
+
   function scenario() {
+    var key = accountKey();
     var d = store.get().demo;
-    var id = d && d.referralState;
-    return SCENARIOS.some(function (s) { return s.id === id; }) ? id : 'default';
+    var id = d && d.referralBy && d.referralBy[key];
+    if (!id && key === 'personal') id = d && d.referralState;   // saved by an earlier version
+    return SCENARIOS.some(function (s) { return s.id === id; }) ? id : defaultScenario(key);
   }
 
   function setScenario(id) {
-    store.update(function (db) { db.demo = db.demo || {}; db.demo.referralState = id; });
+    var key = accountKey();
+    store.update(function (db) { db.demo = db.demo || {}; db.demo.referralBy = db.demo.referralBy || {}; db.demo.referralBy[key] = id; });
   }
 
   /** The config as the UI should see it: the demo states "Referrals off" and "Milestones off" overlay it. */
@@ -57,7 +77,7 @@
   if (fromUrl && SCENARIOS.some(function (s) { return s.id === fromUrl; })) {
     setScenario(fromUrl);
     // "No devices, no referrals" also puts the account in the no-devices stage of Overview
-    if (fromUrl === 'no-devices' && Cashful.api && Cashful.api.currentUser()) Cashful.api.setPeerStage('new');
+    if (fromUrl === 'no-devices' && Cashful.api && Cashful.api.currentUser() && accountKey() === 'personal') Cashful.api.setPeerStage('new');
   }
 
   /* ---------- Money and text helpers ---------- */
@@ -125,7 +145,7 @@
 
   function shareMessage(c) {
     c = c || settings();
-    return c.shareMessage.replace('{link}', LINK);
+    return c.shareMessage.replace('{link}', linkFor(accountKey()));
   }
 
   /* ---------- Seed data ---------- */
@@ -222,7 +242,7 @@
   };
 
   Cashful.referral = {
-    CODE: CODE, LINK: LINK, SCENARIOS: SCENARIOS, STATUS_TONE: STATUS_TONE, REASONS: REASONS,
+    get CODE() { return codeFor(accountKey()); }, get LINK() { return linkFor(accountKey()); }, codeFor: codeFor, linkFor: linkFor, SCENARIOS: SCENARIOS, STATUS_TONE: STATUS_TONE, REASONS: REASONS,
     scenario: scenario, setScenario: setScenario, settings: settings,
     dollars: dollars, months: months, days: days, percent: percent, maskEmail: maskEmail,
     TRUST: TRUST, summaryLine: summaryLine, steps: steps, rules: rules, statusHint: statusHint, shareMessage: shareMessage,

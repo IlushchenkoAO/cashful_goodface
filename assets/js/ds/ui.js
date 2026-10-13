@@ -90,6 +90,25 @@
                     spellcheck, autofocus, disabled, sample, noSample })
      sample: what an empty field gets when its form is submitted (see "Samples" below); noSample: leave it empty
      ui.selectHtml({ id, name, label, options, value, helper }) — options: strings or { value, label } */
+  /**
+   * The three rules every developer agrees to before an account is created (sign-up, and "Create developer account"):
+   * explicit opt-in, opt-out at any time, and removal with the app. Each has a small drawing. Used by auth.js and shell.js.
+   */
+  ui.sdkRulesHtml = function () {
+    var rules = [
+      { title: 'Every user opts in, explicitly', text: 'All users must provide explicit opt-in consent before the SDK does anything.',
+        art: '<span class="rules__dialog"><span class="rules__line"></span><span class="rules__line is-short"></span><span class="rules__btn">Allow</span></span>' },
+      { title: 'Every user can opt out at any time', text: 'All users must be able to opt out at any time from the application.',
+        art: '<span class="rules__row"><span class="rules__label">Sharing</span><span class="rules__toggle is-on"><span class="rules__knob"></span></span><cf-icon name="arrow-right" size="16"></cf-icon><span class="rules__toggle"><span class="rules__knob"></span></span></span>' },
+      { title: 'Uninstall removes the SDK', text: 'The application and the SDK must be removed from the device at uninstallation.',
+        art: '<span class="rules__row"><span class="rules__app"></span><cf-icon name="trash" size="18"></cf-icon><cf-icon name="arrow-right" size="16"></cf-icon><span class="rules__app is-gone"></span></span>' }
+    ];
+    return '<ol class="rules">' + rules.map(function (r, i) {
+      return '<li class="rules__item"><span class="rules__art" aria-hidden="true">' + r.art + '</span>' +
+        '<span class="rules__text"><span class="rules__title"><span class="rules__num">' + (i + 1) + '</span>' + r.title + '</span><span class="rules__desc">' + r.text + '</span></span></li>';
+    }).join('') + '</ol>';
+  };
+
   ui.selectOptions = function (options, value) {
     return options.map(function (opt) {
       if (typeof opt === 'string') opt = { value: opt, label: opt };

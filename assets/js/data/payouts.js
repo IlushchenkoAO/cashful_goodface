@@ -262,18 +262,54 @@
     return state;
   }
 
-  /** What an account has earned so far: Personal by how far the devices have come, Developer by Active apps. */
+  /**
+   * What an account has earned so far. `key` is 'personal' or a Developer account's id: Personal by how far the devices
+   * have come, a Developer account by whether it has an Active app. The demo panel can force "zero" or "positive"
+   * (account.demoBalance). The result's `key` changes when any of that changes.
+   */
   var PEER_EARNED = { new: [0, 0], day1: [52.4, 6.15], active: [86.2, 9.4], payout: [128.4, 14.6] };
-  function earnedFor(user, account) {
-    var pair = [0, 0], key = 'none';
-    if (user && account === 'developer') {
-      var apps = Cashful.apps ? Cashful.apps.all() : [];
-      if (apps.some(function (a) { return a.status === 'active'; })) { pair = [128.4, 14.6]; key = 'apps'; }
+  function earnedFor(user, key) {
+    var db = Cashful.store.get();
+    var pair = [0, 0], tag = 'none', forced = null;
+    if (key && key !== 'personal') {
+      var org = db.orgs && db.orgs[key];
+      if (org) {
+        forced = org.demoBalance || null;
+        if (Cashful.api.orgHasActiveApps(org)) { pair = [128.4, 14.6]; tag = 'apps'; }
+      }
     } else if (user) {
-      key = user.peerStage || 'new';
-      pair = PEER_EARNED[key] || [0, 0];
+      forced = user.demoBalance || null;
+      tag = user.peerStage || 'new';
+      pair = PEER_EARNED[tag] || [0, 0];
     }
-    return { available: toCents(pair[0]), pending: toCents(pair[1]), key: key };
+    if (forced === 'zero') { pair = [0, 0]; tag = 'demo-zero'; }
+    if (forced === 'positive') { pair = [128.4, 14.6]; tag = 'demo-positive'; }
+    return { available: toCents(pair[0]), pending: toCents(pair[1]), key: tag };
+  }
+
+  /** What an account holds, available plus pending, in cents: its saved payouts if it has any, else what it has earned. */
+  function balanceFor(user, key) {
+    var saved = Cashful.store.get().demo;
+    var st = saved && saved.payoutsBy && saved.payoutsBy[key || 'personal'];
+    if (st) return st.balance.available + st.balance.pending;
+    var e = earnedFor(user, key);
+    return e.available + e.pending;
+  }
+
+  /** Demo panel: force the balance of the account in use to zero or positive ('zero' | 'positive'). */
+  function setDemoBalance(kind) {
+    Cashful.store.update(function (db) {
+      var key = db.session.account === 'developer' && db.session.orgId ? db.session.orgId : 'personal';
+      var holder = key === 'personal' ? db.users[db.session.email] : db.orgs[key];
+      if (!holder) return;
+      holder.demoBalance = kind;
+      var st = db.demo && db.demo.payoutsBy && db.demo.payoutsBy[key];
+      if (st) {
+        // payouts already saved: the balance follows the switch (history and methods stay)
+        st.balance.available = kind === 'zero' ? 0 : toCents(128.4);
+        st.balance.pending = kind === 'zero' ? 0 : toCents(14.6);
+      }
+    });
   }
 
   /* ---------- Shared state ----------
@@ -306,7 +342,7 @@
 
   Cashful.payouts = {
     config: cfg,
-    loadState: loadState, saveState: saveState, earnedFor: earnedFor,
+    loadState: loadState, saveState: saveState, earnedFor: earnedFor, balanceFor: balanceFor, setDemoBalance: setDemoBalance,
     TYPES: TYPES, TYPE_ORDER: TYPE_ORDER, STATUSES: STATUSES, STATUS_TONE: STATUS_TONE, PERIODS: PERIODS, SCENARIOS: SCENARIOS,
     money: money, date: date, toCents: toCents, describe: describe,
     feeFor: feeFor, feeLabel: feeLabel, feeText: feeText,

@@ -7,6 +7,7 @@ Cashful.appsConfig = {
   pageSize: 10,
   nameMaxLength: 60,
   descriptionMaxLength: 500,
+  installNote: 'Please install the SDK with your Application ID and Release ID so we can collect telemetry on your installation. Once approved, your installation will become active and start earning.',
   types: ['Mobile app', 'Desktop app', 'Game', 'Utility', 'Other'],
   platformsSource: 'sdk.platforms',
   screenshot: {

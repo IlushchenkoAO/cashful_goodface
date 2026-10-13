@@ -17,26 +17,100 @@
   function normEmail(e) { return String(e || '').trim().toLowerCase(); }
   function token() { return Math.random().toString(36).slice(2, 10); }
 
+  /** The fields every Developer account starts with (KYC, onboarding answers). */
   function newDev() { return { kycStatus: 'not_started', started: false, step: 'type', kind: 'company', details: {}, apps: {} }; }
 
-  /** A login with one account of `type` ('personal' | 'developer'). */
+  /** A login. Everyone has a Personal account; Developer accounts are separate (orgs, below). */
   function newUser(email, type, extra) {
-    var u = Object.assign({
+    return Object.assign({
       email: email,
       name: email.split('@')[0],
-      accounts: [type],
+      accounts: ['personal'],
       verified: false,
-      twoFactor: false
+      twoFactor: false,
+      peerStage: 'new'   // a fresh Personal account has no devices yet
     }, extra);
-    if (type === 'personal' && !u.peerStage) u.peerStage = 'new';
-    if (type === 'developer' && !u.dev) u.dev = newDev();
-    return u;
   }
 
-  /** Where a signed-in user lands for an account (default: their first one): Overview for Personal, Apps for Developer. */
-  /** The profile a login opens in: the one used last, else the first. */
+  /* ---------- Developer accounts ("orgs") ----------
+     A user can own some and belong to others (Owner, Admin, Member). Each has its own KYC, apps, balance, payouts,
+     team and referral link. db.session.account is 'personal' or 'developer'; with 'developer', db.session.orgId says which. */
+
+  function orgsOf(db, email) {
+    return Object.keys(db.orgs || {}).map(function (id) { return db.orgs[id]; })
+      .filter(function (o) { return (o.members || []).some(function (m) { return m.email === email; }); })
+      .sort(function (x, y) { return (x.order || 1e13) - (y.order || 1e13) || (x.createdAt || 0) - (y.createdAt || 0); });
+  }
+  function memberOf(org, email) {
+    return org ? (org.members || []).filter(function (m) { return m.email === email; })[0] || null : null;
+  }
+  function activeOrg(db) { return db.session && db.session.orgId && db.orgs ? db.orgs[db.session.orgId] || null : null; }
+
+  /**
+   * Called by the store on every read: derives what is not stored. The accounts list of each user (Personal, plus
+   * Developer when they belong to an org), and, for the signed-in user, `dev`: the Developer account they are looking at.
+   * `dev` is not saved (it is not enumerable); changing it changes the org itself.
+   */
+  Cashful.bindDb = function (db) {
+    if (!db || !db.users) return db;
+    db.orgs = db.orgs || {};
+    db.invites = db.invites || {};
+    Object.keys(db.users).forEach(function (email) {
+      db.users[email].accounts = orgsOf(db, email).length ? ['personal', 'developer'] : ['personal'];
+    });
+    var s = db.session;
+    var user = s && db.users[s.email];
+    if (!user) return db;
+    if (s.account === 'developer') {
+      var orgs = orgsOf(db, s.email);
+      var cur = orgs.filter(function (o) { return o.id === s.orgId; })[0] || orgs[0];
+      if (cur) s.orgId = cur.id; else { s.account = 'personal'; s.orgId = null; }
+    } else s.orgId = null;
+    Object.defineProperty(user, 'dev', {
+      configurable: true, enumerable: false,
+      get: function () { return activeOrg(db) || undefined; },
+      set: function (v) { if (db.session && db.session.orgId) db.orgs[db.session.orgId] = v; }
+    });
+    return db;
+  };
+
+  /** A new Developer account owned by `ownerEmail`. `o.from`: another of their accounts, whose person and address details are copied. */
+  function createOrg(db, ownerEmail, o) {
+    o = o || {};
+    var owner = db.users[ownerEmail];
+    var id = 'org-' + token();
+    var ownerName = (owner && owner.name) || ownerEmail.split('@')[0];
+    var org = Object.assign(newDev(), {
+      id: id, name: o.name || 'New developer account', createdAt: Date.now(), appsSeed: 'none', appList: [], referralDefault: 'empty',
+      members: [{ email: ownerEmail, name: ownerName, role: 'owner', addedAt: Date.now() }]
+    });
+    if (o.from) {
+      var d = o.from.details || {}, keep = {};
+      ['firstName', 'lastName', 'country', 'street', 'city', 'region', 'zip', 'website'].forEach(function (k) { if (d[k]) keep[k] = d[k]; });
+      if (!keep.firstName && !keep.lastName) { var parts = ownerName.split(' '); keep.firstName = parts[0]; keep.lastName = parts.slice(1).join(' '); }
+      org.details = keep;
+      org.kind = o.from.kind || 'company';
+      org.prefilledFrom = o.from.name;
+    }
+    db.orgs[id] = org;
+    return org;
+  }
+
+  /** Adds a login. A Developer sign-up also gets a first Developer account, and opens in it. */
+  function addUser(db, email, type, extra) {
+    var u = db.users[email] = newUser(email, type, extra);
+    if (type === 'developer') {
+      var org = createOrg(db, email, { name: o_name(email, extra) });
+      u.lastAccount = 'developer';
+      u.lastOrgId = org.id;
+    }
+    return u;
+  }
+  function o_name(email, extra) { return ((extra && extra.name) || email.split('@')[0]) + '’s apps'; }
+
+  /** The profile a login opens in: the one used last (and its Developer account), else Personal. */
   function lastAccount(user) {
-    return user.lastAccount && user.accounts.indexOf(user.lastAccount) > -1 ? user.lastAccount : user.accounts[0];
+    return user.lastAccount && user.accounts.indexOf(user.lastAccount) > -1 ? user.lastAccount : 'personal';
   }
 
   function homeFor(user, account) {
@@ -44,14 +118,21 @@
     return account === 'personal' ? 'dashboard.html' : 'analytics.html';
   }
 
-  /** Where a developer starts: a brand-new one fills in the business details and meets the KYC step first. */
-  function devEntry(user) {
-    return user.dev && !user.dev.started && user.dev.kycStatus === 'not_started' ? 'developer-verification.html' : 'analytics.html';
+  /** Where a developer starts: a brand-new account fills in the business details and meets the KYC step first. */
+  function devEntry(db) {
+    var org = activeOrg(db);
+    return org && !org.started && org.kycStatus === 'not_started' ? 'developer-verification.html' : 'analytics.html';
   }
 
   function startSession(db, email, remember) {
     var user = db.users[email];
-    db.session = { email: email, remember: !!remember, at: Date.now(), account: user ? lastAccount(user) : 'personal' };
+    var account = 'personal', orgId = null;
+    if (user && user.lastAccount === 'developer') {
+      var orgs = orgsOf(db, email);
+      var o = orgs.filter(function (x) { return x.id === user.lastOrgId; })[0] || orgs[0];
+      if (o) { account = 'developer'; orgId = o.id; }
+    }
+    db.session = { email: email, remember: !!remember, at: Date.now(), account: account, orgId: orgId };
     db.challenge = null;
   }
 
@@ -142,20 +223,18 @@
       if (input.sso) {
         return store.update(function (db) {
           var p = {}; p[input.sso] = true;
-          db.users[email] = db.users[email] || newUser(email, input.type, {
+          if (!db.users[email]) addUser(db, email, input.type, {
             name: PROVIDER_NAMES[input.sso] || 'New user', verified: true, sso: p, referral: code ? code.toUpperCase() : null
           });
           if (input.country) db.users[email].country = input.country;
-          if (input.type === 'developer') db.apps = [];   // a new developer starts with no apps
           startSession(db, email, true);
-          return { ok: true, redirect: input.type === 'developer' ? devEntry(db.users[email]) : homeFor(db.users[email], input.type) };
+          return { ok: true, redirect: input.type === 'developer' ? devEntry(db) : 'dashboard.html' };
         });
       }
       store.update(function (db) {
         if (!db.users[email]) {
-          db.users[email] = newUser(email, input.type, { password: input.password, referral: code ? code.toUpperCase() : null });
+          addUser(db, email, input.type, { password: input.password, referral: code ? code.toUpperCase() : null });
           if (input.country) db.users[email].country = input.country;
-          if (input.type === 'developer') db.apps = [];   // a new developer starts with no apps
         }
         startPending(db, email, input.type);
       });
@@ -217,8 +296,8 @@
     var want = type === 'developer' ? 'developer' : type === 'personal' || type === 'peer' ? 'personal' : null;
     var user = api.currentUser();
     if (!want || !user) return Promise.resolve(null);
-    if (user.accounts.indexOf(want) > -1) return Promise.resolve(api.switchAccount(want));
-    return (want === 'developer' ? api.addDeveloperAccount() : api.addPersonalAccount()).then(function (res) { return res.redirect; });
+    if (want === 'personal' || user.accounts.indexOf('developer') > -1) return Promise.resolve(api.switchAccount(want));
+    return api.createDevAccount().then(function (res) { return res.redirect; });
   };
 
   /* ---------- Email verification ---------- */
@@ -236,7 +315,7 @@
         user.verified = true;
         db.pending = null;
         startSession(db, user.email, false);
-        return { ok: true, redirect: lastAccount(user) === 'developer' ? devEntry(user) : homeFor(user), justVerified: true };
+        return { ok: true, redirect: lastAccount(user) === 'developer' ? devEntry(db) : homeFor(user), justVerified: true };
       });
     });
   };
@@ -282,7 +361,7 @@
         var user = db.users[email];
         if (!strict && !user) {
           // Prototype: an unknown email is a returning personal user (Login → Login2FA as in the design)
-          user = db.users[email] = newUser(email, 'personal', { verified: true, twoFactor: true, peerStage: 'active' });
+          user = addUser(db, email, 'personal', { verified: true, twoFactor: true, peerStage: 'active' });
         }
         // Same answer for unknown email and wrong password — never reveal which accounts exist.
         if (strict && (!user || user.password !== input.password)) {
@@ -411,56 +490,99 @@
     });
   }
 
-  /** The account the person is looking at right now. */
+  /** The kind of account the person is looking at right now: 'personal' or 'developer'. */
   api.activeAccount = function () {
     var db = store.get();
-    var user = db.session && db.users[db.session.email];
-    if (!user) return null;
-    return user.accounts.indexOf(db.session.account) > -1 ? db.session.account : user.accounts[0];
+    return db.session && db.users[db.session.email] ? db.session.account : null;
+  };
+  /** The Developer account in use (an org), or null on the Personal account. */
+  api.activeOrg = function () { return activeOrg(store.get()); };
+  /** What data belongs to: 'personal', or the org's id. Payouts, referrals and apps are kept per this key. */
+  api.accountKey = function () {
+    var db = store.get();
+    return db.session && db.session.account === 'developer' && db.session.orgId ? db.session.orgId : 'personal';
+  };
+  /** The signed-in person's role in the Developer account in use: 'owner' | 'admin' | 'member', or null on Personal. */
+  api.role = function () {
+    var db = store.get();
+    var m = memberOf(activeOrg(db), db.session && db.session.email);
+    return m ? m.role : null;
+  };
+  /** Can the signed-in person do this in the account in use? (see Cashful.can in config.js) */
+  api.can = function (action) { return Cashful.can(api.role(), action); };
+
+  /** Everything the switcher lists: Personal first, then every Developer account with the person's role and its KYC status. */
+  api.accounts = function () {
+    var db = store.get();
+    var email = db.session && db.session.email;
+    if (!email) return [];
+    var list = [{ type: 'personal', id: 'personal', name: 'Personal', role: null, kycStatus: null }];
+    orgsOf(db, email).forEach(function (o) {
+      list.push({ type: 'developer', id: o.id, name: o.name, role: memberOf(o, email).role, kycStatus: o.kycStatus });
+    });
+    return list;
   };
 
-  /** Switcher in the sidebar. @returns the URL to open */
-  api.switchAccount = function (account) {
+  /** Switcher in the sidebar. @returns the URL to open (Overview for Personal, Analytics for a Developer account) */
+  api.switchAccount = function (account, orgId) {
     return withUser(function (user, db) {
-      if (user.accounts.indexOf(account) < 0) return null;
-      db.session.account = account;
-      user.lastAccount = account;   // the next login opens here
-      return homeFor(user, account);
+      if (account === 'personal') {
+        db.session.account = 'personal'; db.session.orgId = null;
+        user.lastAccount = 'personal';
+        return homeFor(user, 'personal');
+      }
+      var orgs = orgsOf(db, user.email);
+      var org = orgs.filter(function (o) { return o.id === orgId; })[0] || orgs.filter(function (o) { return o.id === user.lastOrgId; })[0] || orgs[0];
+      if (!org) return null;
+      db.session.account = 'developer'; db.session.orgId = org.id;
+      user.lastAccount = 'developer'; user.lastOrgId = org.id;
+      return homeFor(user, 'developer');
     });
   };
 
-  /** "Become a developer" — adds the second account without signing up again. */
-  api.addDeveloperAccount = function () {
+  /**
+   * "+ Create developer account": a new account owned by the person, opened at once (in the onboarding). When they already
+   * have one, their name, country and address are copied from it; each account is still verified separately.
+   */
+  api.createDevAccount = function () {
     return delay(null, 400).then(function () {
       return withUser(function (user, db) {
-        if (user.accounts.indexOf('developer') < 0) user.accounts.push('developer');
-        if (!user.dev) db.apps = [];   // a developer account that is new starts with no apps
-        user.dev = user.dev || newDev();
-        db.session.account = 'developer';
-        return { ok: true, redirect: devEntry(user) };
+        var mine = orgsOf(db, user.email);
+        var from = mine.filter(function (o) { return memberOf(o, user.email).role === 'owner' && o.details && Object.keys(o.details).length; })[0] || mine[0] || null;
+        var org = createOrg(db, user.email, { from: from });
+        db.session.account = 'developer'; db.session.orgId = org.id;
+        user.lastAccount = 'developer'; user.lastOrgId = org.id;
+        return { ok: true, redirect: 'developer-verification.html', orgId: org.id };
       });
     });
   };
+  api.addDeveloperAccount = api.createDevAccount;
 
-  /** "Earn from your devices" — adds a personal account (PersonalAdded). */
-  api.addPersonalAccount = function () {
-    return delay(null, 400).then(function () {
-      return withUser(function (user, db) {
-        if (user.accounts.indexOf('personal') < 0) {
-          user.accounts.push('personal');
-          user.peerStage = 'new';   // a fresh personal account has no devices yet
-        }
-        db.session.account = 'personal';
-        return { ok: true, redirect: 'dashboard.html' };
+  /** Billing information (who gets paid, and where) of the account in use: Personal is kept on the login, a Developer account on the account. */
+  api.billing = {
+    get: function () {
+      var db = store.get(), s = db.session;
+      if (!s) return null;
+      var holder = s.account === 'developer' && s.orgId ? db.orgs[s.orgId] : db.users[s.email];
+      return (holder && holder.billing) || null;
+    },
+    save: function (data) {
+      return store.update(function (db) {
+        var s = db.session;
+        var holder = s.account === 'developer' && s.orgId ? db.orgs[s.orgId] : db.users[s.email];
+        if (holder) holder.billing = data;
+        return data;
       });
-    });
+    }
   };
 
-  /** Merges fields into the developer account (business details, signatures…). */
+  /** Merges fields into the Developer account in use (business details, signatures…). */
   api.updateDev = function (patch) {
-    return withUser(function (user) {
-      user.dev = Object.assign(user.dev || newDev(), patch);
-      return user.dev;
+    return withUser(function (user, db) {
+      var org = activeOrg(db);
+      if (!org) return null;
+      Object.assign(org, patch);
+      return org;
     });
   };
 
@@ -480,7 +602,8 @@
   api.saveOnboarding = function (patch, nextStep) {
     return delay(null, 350).then(function () {
       return withUser(function (user) {
-        var dev = user.dev = user.dev || newDev();
+        var dev = user.dev;
+        if (!dev) return null;
         Object.keys(patch || {}).forEach(function (k) {
           dev[k] = (typeof patch[k] === 'object' && patch[k] && !Array.isArray(patch[k]))
             ? Object.assign({}, dev[k], patch[k]) : patch[k];
@@ -496,6 +619,7 @@
   api.submitKyc = function () {
     return delay(null, 1600).then(function () {
       return withUser(function (user) {
+        if (!user.dev) return null;
         user.dev.kycStatus = 'in_review';
         user.dev.step = 'review';
         return user.dev;
@@ -508,6 +632,8 @@
      account in the store (dev.kycStatus); a change is announced with the "cashful:kyc" event so open
      pages update without a reload. */
   api.kyc = {
+    /** What a status is called on screen. */
+    LABELS: { not_started: 'Not started', in_review: 'Pending', changes_requested: 'Changes requested', rejected: 'Rejected', approved: 'Verified' },
     STATUSES: ['not_started', 'in_review', 'changes_requested', 'rejected', 'approved'],
     status: function () {
       var u = api.currentUser();
@@ -516,7 +642,7 @@
     approved: function () { return api.kyc.status() === 'approved'; },
     set: function (status) {
       withUser(function (user) {
-        user.dev = user.dev || newDev();
+        if (!user.dev) return;
         user.dev.kycStatus = status;
         if (status !== 'not_started') user.dev.step = 'review';
         // The date shown as "Verified on …"
@@ -534,7 +660,7 @@
     signed: function (id) { return !!api.kyc.signature(id); },
     sign: function (id, name) {
       withUser(function (user) {
-        user.dev = user.dev || newDev();
+        if (!user.dev) return;
         user.dev.signatures = user.dev.signatures || {};
         user.dev.signatures[id] = { name: name, at: Date.now() };
       });
@@ -585,34 +711,257 @@
     }
   };
 
+  /* ---------- Team: members and invitations of a Developer account ----------
+     Members live in org.members (the Owner first). An invitation is db.invites[token] until it is accepted, revoked or expires. */
+
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  function inviteState(inv) {
+    if (!inv || inv.status !== 'pending') return 'invalid';
+    return Date.now() - inv.createdAt > Cashful.config.inviteValidDays * 864e5 ? 'invalid' : 'ok';
+  }
+  function ownerOf(org) { return (org.members || []).filter(function (m) { return m.role === 'owner'; })[0] || null; }
+  function pendingInvites(db, orgId) {
+    return Object.keys(db.invites || {}).map(function (k) { return db.invites[k]; })
+      .filter(function (i) { return i.orgId === orgId && i.status === 'pending'; })
+      .sort(function (x, y) { return y.createdAt - x.createdAt; });
+  }
+
+  api.team = {
+    /** The members table: the Owner first, then the other members, then the pending invitations. */
+    rows: function (orgId) {
+      var db = store.get(), org = db.orgs[orgId];
+      if (!org) return [];
+      var members = (org.members || []).slice().sort(function (x, y) { return (y.role === 'owner') - (x.role === 'owner') || x.addedAt - y.addedAt; })
+        .map(function (m) { return { kind: 'member', email: m.email, name: m.name, role: m.role, status: 'active', at: m.addedAt }; });
+      var invites = pendingInvites(db, orgId).map(function (i) { return { kind: 'invite', token: i.token, email: i.email, name: '', role: i.role, status: 'pending', at: i.createdAt }; });
+      return members.concat(invites);
+    },
+    /** @returns {ok:true, invite} | {ok:false, field:'email', error:'invalid'|'member'|'pending'} */
+    invite: function (orgId, email, role) {
+      email = normEmail(email);
+      if (!EMAIL_RE.test(email)) return { ok: false, field: 'email', error: 'invalid' };
+      return store.update(function (db) {
+        var org = db.orgs[orgId];
+        if (!org) return { ok: false, error: 'no_account' };
+        if (memberOf(org, email)) return { ok: false, field: 'email', error: 'member' };
+        if (pendingInvites(db, orgId).some(function (i) { return i.email === email; })) return { ok: false, field: 'email', error: 'pending' };
+        var inv = { token: 'inv-' + token(), orgId: orgId, email: email, role: role === 'admin' ? 'admin' : 'member', invitedBy: db.session.email, createdAt: Date.now(), status: 'pending' };
+        db.invites[inv.token] = inv;
+        return { ok: true, invite: inv };
+      });
+    },
+    /** A new invitation window, as if the email was sent again. */
+    resend: function (tokenId) {
+      return store.update(function (db) { var i = db.invites[tokenId]; if (!i || i.status !== 'pending') return false; i.createdAt = Date.now(); return true; });
+    },
+    revoke: function (tokenId) {
+      return store.update(function (db) { var i = db.invites[tokenId]; if (!i || i.status !== 'pending') return false; i.status = 'revoked'; return true; });
+    },
+    /** The Owner's role never changes. */
+    changeRole: function (orgId, email, role) {
+      return store.update(function (db) {
+        var m = memberOf(db.orgs[orgId], email);
+        if (!m || m.role === 'owner' || (role !== 'admin' && role !== 'member')) return false;
+        m.role = role;
+        return true;
+      });
+    },
+    /** The Owner cannot be removed. */
+    remove: function (orgId, email) {
+      return store.update(function (db) {
+        var org = db.orgs[orgId], m = memberOf(org, email);
+        if (!m || m.role === 'owner') return false;
+        org.members = org.members.filter(function (x) { return x.email !== email; });
+        return true;
+      });
+    },
+    /** The only Admin cannot leave while the Owner is inactive: nobody would be left to run the account. */
+    leaveBlock: function (orgId, email) {
+      var db = store.get(), org = db.orgs[orgId], m = memberOf(org, email);
+      if (!m) return 'not_member';
+      if (m.role === 'owner') return 'owner';
+      if (m.role === 'admin' && org.ownerInactive && (org.members || []).filter(function (x) { return x.role === 'admin'; }).length === 1) return 'last_admin';
+      return null;
+    },
+    /** @returns {ok:true} | {ok:false, error:'owner'|'last_admin'} */
+    leave: function (orgId) {
+      var email = api.currentUser() && api.currentUser().email;
+      var block = api.team.leaveBlock(orgId, email);
+      if (block) return { ok: false, error: block };
+      return store.update(function (db) {
+        var org = db.orgs[orgId];
+        org.members = org.members.filter(function (x) { return x.email !== email; });
+        var user = db.users[email];
+        if (db.session.orgId === orgId) { db.session.account = 'personal'; db.session.orgId = null; }
+        if (user && user.lastOrgId === orgId) { user.lastAccount = 'personal'; delete user.lastOrgId; }
+        return { ok: true };
+      });
+    },
+    /** The demo panel's invite links: these invitations are made again every time, so the flows can be shown over and over. */
+    ensureDemo: function (tokenId) {
+      var DEMO = {
+        'demo-new': { email: 'newcomer@example.com', role: 'member', age: 0 },
+        'demo-existing': { email: 'dev@studio.dev', role: 'admin', age: 0 },
+        'demo-expired': { email: 'late.joiner@example.com', role: 'member', age: 30 }
+      };
+      var d = DEMO[tokenId];
+      if (!d) return false;
+      store.update(function (db) {
+        var org = db.orgs.acme;
+        if (!org) return;
+        org.members = (org.members || []).filter(function (m) { return m.email !== d.email; });
+        if (tokenId === 'demo-new') delete db.users[d.email];
+        db.invites[tokenId] = { token: tokenId, orgId: 'acme', email: d.email, role: d.role, invitedBy: 'artem@goodface.agency', createdAt: Date.now() - d.age * 864e5, status: 'pending' };
+      });
+      return true;
+    },
+    /** What the invitation page shows: {state:'ok'|'invalid', invite, org, inviter, hasAccount} */
+    getInvite: function (tokenId) {
+      var db = store.get(), inv = db.invites[tokenId];
+      var org = inv ? db.orgs[inv.orgId] : null;
+      var state = org ? inviteState(inv) : 'invalid';
+      var inviter = inv ? db.users[inv.invitedBy] || memberOf(org, inv.invitedBy) : null;
+      return { state: state, invite: inv || null, org: org || null, inviter: inviter ? { name: inviter.name, email: inviter.email } : null, hasAccount: !!(inv && db.users[inv.email]) };
+    },
+    /** The signed-in person (whose email is the invitation's) joins and the account opens. */
+    accept: function (tokenId) {
+      return withUser(function (user, db) {
+        var inv = db.invites[tokenId], org = inv ? db.orgs[inv.orgId] : null;
+        if (!org || inviteState(inv) !== 'ok' || inv.email !== user.email) return { ok: false, error: 'invalid' };
+        if (!memberOf(org, user.email)) org.members.push({ email: user.email, name: user.name, role: inv.role, addedAt: Date.now() });
+        inv.status = 'accepted';
+        db.session.account = 'developer'; db.session.orgId = org.id;
+        user.lastAccount = 'developer'; user.lastOrgId = org.id;
+        return { ok: true, redirect: 'analytics.html', orgId: org.id };
+      });
+    }
+  };
+
+  /** Sign up from an invitation: the email is the invitation's (locked), a Personal account is created automatically, and the invited account opens. */
+  api.signUpFromInvite = function (tokenId, password) {
+    return delay(null, 500).then(function () {
+      return store.update(function (db) {
+        var inv = db.invites[tokenId], org = inv ? db.orgs[inv.orgId] : null;
+        if (!org || inviteState(inv) !== 'ok') return { ok: false, error: 'invalid' };
+        if (db.users[inv.email]) return { ok: false, error: 'has_account' };
+        var u = addUser(db, inv.email, 'personal', { password: password, verified: true });
+        startSession(db, inv.email, true);
+        org.members.push({ email: u.email, name: u.name, role: inv.role, addedAt: Date.now() });
+        inv.status = 'accepted';
+        db.session.account = 'developer'; db.session.orgId = org.id;
+        u.lastAccount = 'developer'; u.lastOrgId = org.id;
+        return { ok: true, redirect: 'analytics.html' };
+      });
+    });
+  };
+
+  /* ---------- Deleting accounts ---------- */
+
+  /** Does the account have an Active app? (what its balance comes from; the apps are stored on the account) */
+  api.orgHasActiveApps = function (org) {
+    return (org.appList || []).some(function (a) { return a.status === 'active'; }) || (!org.appList && ['acme', 'nine', 'default'].indexOf(org.appsSeed) > -1);
+  };
+
+  /** The Developer account the Owner is looking at is deleted for good; the person lands on Personal. Other accounts are not touched. */
+  api.deleteOrg = function (orgId) {
+    return withUser(function (user, db) {
+      var org = db.orgs[orgId];
+      var m = memberOf(org, user.email);
+      if (!org || !m || m.role !== 'owner') return { ok: false, error: 'not_owner' };
+      removeOrg(db, orgId);
+      if (db.session.orgId === orgId) { db.session.account = 'personal'; db.session.orgId = null; }
+      if (user.lastOrgId === orgId) { user.lastAccount = 'personal'; delete user.lastOrgId; }
+      return { ok: true };
+    });
+  };
+  function removeOrg(db, orgId) {
+    delete db.orgs[orgId];
+    Object.keys(db.invites).forEach(function (k) { if (db.invites[k].orgId === orgId) delete db.invites[k]; });
+    ['payoutsBy', 'referralBy'].forEach(function (k) { if (db.demo && db.demo[k]) delete db.demo[k][orgId]; });
+  }
+
+  /** What deleting the Personal account takes with it: the person goes, so the accounts they own go and they leave the others. */
+  api.deletionImpact = function () {
+    var db = store.get(), email = db.session && db.session.email;
+    var owned = [], member = [];
+    orgsOf(db, email).forEach(function (o) {
+      (memberOf(o, email).role === 'owner' ? owned : member).push({ id: o.id, name: o.name, role: memberOf(o, email).role });
+    });
+    return { owned: owned, member: member };
+  };
+
+  /** Deleting the Personal account deletes the person: the accounts they own are deleted, they are removed from the rest. */
+  api.deleteUser = function () {
+    return withUser(function (user, db) {
+      orgsOf(db, user.email).forEach(function (o) {
+        if (memberOf(o, user.email).role === 'owner') removeOrg(db, o.id);
+        else o.members = o.members.filter(function (m) { return m.email !== user.email; });
+      });
+      Object.keys(db.invites).forEach(function (k) { if (db.invites[k].email === user.email) delete db.invites[k]; });
+      delete db.users[user.email];
+      db.session = null;
+      return { ok: true };
+    });
+  };
+
   /* ---------- Demo helpers (Prototype panel, screen map) ---------- */
 
   api.demo = {
-    /** The demo login has (or hasn't) a Personal account next to its Developer account. */
-    setPersonalAccount: function (exists) {
-      withUser(function (user) {
-        var has = user.accounts.indexOf('personal') > -1;
-        if (exists && !has) { user.accounts.unshift('personal'); user.peerStage = user.peerStage || 'new'; }
-        if (!exists && has) { user.accounts = user.accounts.filter(function (a) { return a !== 'personal'; }); delete user.peerStage; }
-      });
-    },
-    /** Signs in as a login with exactly these accounts, for screen-map links. */
+    /**
+     * Signs in as the demo login, for screen-map links. With 'developer' in `accounts` it also gets a Developer account of its
+     * own to shape ("Studio Apps LLC", id 'demo', shaped by opts.dev); the seeded Acme, Side Project and Studio Nine stay as they are.
+     */
     signInWith: function (accounts, opts) {
       opts = opts || {};
       store.update(function (db) {
         var email = DEMO_EMAIL;
         var user = db.users[email];
-        user.accounts = accounts.slice();
         if (accounts.indexOf('developer') > -1) {
-          user.dev = Object.assign(newDev(), { details: { company: 'Studio Apps LLC' } }, opts.dev || {});
-        } else {
-          delete user.dev;
-        }
-        if (accounts.indexOf('personal') < 0) delete user.peerStage;
+          var org = Object.assign(newDev(), { details: { company: 'Studio Apps LLC' } }, opts.dev || {});
+          var keep = db.orgs.demo;
+          org.id = 'demo'; org.name = 'Studio Apps LLC'; org.createdAt = Date.now();
+          org.appsSeed = 'default'; org.referralDefault = 'default';
+          org.members = [{ email: email, name: user.name, role: opts.role || 'owner', addedAt: Date.now() }];
+          if (keep && keep.members) org.members = keep.members.filter(function (m) { return m.email !== email; }).concat(org.members);
+          db.orgs.demo = org;
+        } else delete db.orgs.demo;
         if (opts.peerStage) user.peerStage = opts.peerStage;
         startSession(db, email, false);
-        db.session.account = opts.account || accounts[0];
+        var wantDev = (opts.account || accounts[0]) === 'developer' && db.orgs.demo;
+        db.session.account = wantDev ? 'developer' : 'personal';
+        db.session.orgId = wantDev ? 'demo' : null;
       });
+    },
+    /** Makes the signed-in person Owner, Admin or Member of the account in use, keeping exactly one Owner. */
+    setRole: function (role) {
+      store.update(function (db) {
+        var org = activeOrg(db);
+        var me = memberOf(org, db.session.email);
+        if (!org || !me || ['owner', 'admin', 'member'].indexOf(role) < 0) return;
+        if (role === 'owner') {
+          org.members.forEach(function (m) { if (m !== me && m.role === 'owner') m.role = 'admin'; });
+        } else if (!org.members.some(function (m) { return m !== me && m.role === 'owner'; })) {
+          // somebody else has to own the account
+          var other = org.members.filter(function (m) { return m !== me; })[0];
+          if (other) other.role = 'owner';
+          else org.members.push({ email: 'jordan.lee@' + org.id + '.example', name: 'Jordan Lee', role: 'owner', addedAt: Date.now() - 400 * 864e5 });
+        }
+        me.role = role;
+      });
+    },
+    /** Forces the balance of the account in use to 'zero' or 'positive' (what Payouts, Danger zone and the deletion blocks read). */
+    setBalance: function (kind) {
+      store.update(function (db) {
+        var key = db.session.account === 'developer' && db.session.orgId ? db.session.orgId : 'personal';
+        var holder = key === 'personal' ? db.users[db.session.email] : db.orgs[key];
+        if (!holder) return;
+        holder.demoBalance = kind;
+        var st = db.demo && db.demo.payoutsBy && db.demo.payoutsBy[key];
+        if (st) { st.balance.available = kind === 'zero' ? 0 : 12840; st.balance.pending = kind === 'zero' ? 0 : 1460; }
+      });
+    },
+    setOwnerInactive: function (on) {
+      store.update(function (db) { var org = activeOrg(db); if (org) org.ownerInactive = !!on; });
     },
     lock: function (email) {
       store.update(function (db) {
@@ -623,7 +972,7 @@
       store.update(function (db) {
         if (db.pending) return;
         var email = type === 'developer' ? 'new.dev@studio.dev' : 'new.user@example.com';
-        db.users[email] = newUser(email, type, { password: 'cashful123' });
+        addUser(db, email, type, { password: 'cashful123' });
         startPending(db, email, type);
       });
     },

@@ -124,12 +124,13 @@
     else { S.step = 'entry'; render(); }
   });
 
-  var STEPS = { entry: entry, welcome: welcome, 'link-sent': linkSent, type: pickType, create: create, unsupported: unsupported, link: link };
+  var STEPS = { entry: entry, welcome: welcome, 'link-sent': linkSent, type: pickType, rules: sdkRules, create: create, unsupported: unsupported, link: link };
 
   function render() {
     if (stopTimer) { stopTimer(); stopTimer = null; }
     if (S.step === 'create' && !S.type) S.step = 'type';   // a Back into the form without a type
-    if ((S.step === 'create' || S.step === 'type') && !supported(S.country)) S.step = 'unsupported';
+    if (S.step === 'create' && S.type === 'developer' && !S.rulesAccepted) S.step = 'rules';   // a developer agrees to the SDK rules first, every time
+    if ((S.step === 'create' || S.step === 'type' || S.step === 'rules') && !supported(S.country)) S.step = 'unsupported';
     view.innerHTML = STEPS[S.step]();
     var after = AFTER[S.step];
     if (after) after();
@@ -232,7 +233,7 @@
   }
 
   /** A new person: not served in this country → the dedicated screen, else the type (when the CTA gave none) or the form. */
-  function newUserStep() { return !supported(S.country) ? 'unsupported' : S.type ? 'create' : 'type'; }
+  function newUserStep() { return !supported(S.country) ? 'unsupported' : !S.type ? 'type' : S.type === 'developer' && !S.rulesAccepted ? 'rules' : 'create'; }
 
   /* ---------- Providers ---------- */
 
@@ -372,8 +373,21 @@
   }
   AFTER.type = function () {
     ui.$$('[data-type]', view).forEach(function (b) {
-      b.addEventListener('click', function () { S.type = b.dataset.type; go('create'); });
+      b.addEventListener('click', function () { S.type = b.dataset.type; go(newUserStep()); });
     });
+  };
+
+  /* ---------- 03b New developer: the SDK rules, before the password ---------- */
+
+  function sdkRules() {
+    return head('Before you start', 'Cashful only works with apps that respect their users. To create a developer account, agree to these three SDK rules.') +
+      chip('Developer account for <strong>' + esc(S.email) + '</strong>', 'change-email') +
+      ui.sdkRulesHtml() +
+      '<button type="button" class="cf-btn cf-btn--primary cf-btn--block" data-act="accept-rules">I agree / I understand</button>' +
+      '<p class="auth__note">You can read the full SDK requirements later, in the SDK section.</p>';
+  }
+  AFTER.rules = function () {
+    ui.$('[data-act="accept-rules"]', view).addEventListener('click', function () { S.rulesAccepted = true; go('create'); });
   };
 
   /* ---------- 04 New user: create account ---------- */
@@ -506,10 +520,11 @@
     link: function () { S.email = cfg.seedUsers[1].email; S.provider = 'github'; S.step = 'link'; },
     'link-sent': function () { S.email = existing; S.step = 'link-sent'; },
     type: function () { S.email = 'new.person@example.com'; S.step = 'type'; },
-    create: function () { S.email = 'new.person@example.com'; S.type = S.type || 'personal'; S.step = 'create'; },
+    rules: function () { S.email = 'new.dev@studio.dev'; S.type = 'developer'; S.step = 'rules'; },
+    create: function () { S.email = 'new.person@example.com'; S.type = S.type || 'personal'; S.rulesAccepted = true; S.step = 'create'; },
     unsupported: function () { S.email = 'new.person@example.com'; S.type = S.type || 'personal'; S.country = allCountries().indexOf(ui.params.get('geo')) > -1 ? ui.params.get('geo') : 'Brazil'; S.step = 'unsupported'; }
   };
-  if (STARTS[demo] && !location.hash) { var startDemo = demo; if (demo === 'link-sent' || demo === 'type' || demo === 'create' || demo === 'unsupported' || demo === 'link') demo = null; STARTS[startDemo](); }
+  if (STARTS[demo] && !location.hash) { var startDemo = demo; if (demo === 'link-sent' || demo === 'type' || demo === 'rules' || demo === 'create' || demo === 'unsupported' || demo === 'link') demo = null; STARTS[startDemo](); }
 
   history.replaceState(snapshot(), '', location.pathname + location.search + location.hash);
   render();

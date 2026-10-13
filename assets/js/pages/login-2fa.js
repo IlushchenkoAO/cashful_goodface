@@ -23,6 +23,8 @@
   function done(res) {
     if (res.ok) {
       // A Developer or Personal CTA (?type) from the entry: open that profile, or start its onboarding
+      var invite = Cashful.store.takeFlash('inviteToken');
+      if (invite) { ui.go('invite.html?token=' + encodeURIComponent(invite)); return res; }
       var intent = Cashful.store.takeFlash('authIntent');
       (intent ? api.applyIntent(intent) : Promise.resolve(null)).then(function (url) { ui.go(url || res.redirect); });
     }

@@ -78,19 +78,58 @@ Overview switches to `day1`. Use `dashboard.html?state=…` or the Prototype pan
 - **Resuming.** Logging in with an unfinished onboarding opens the saved step with "Welcome back".
 - **Action needed.** "Resubmit documents" goes back to the identity step and shows the reason.
 
-### Accounts and switching
+### Accounts, teams and roles
 
-One login can have a personal account, a developer account, or both. Adding the second one never needs a new
-sign-up.
+A **login is not an account.** Every login has exactly one **Personal** account (always, even when it signed up as a
+developer) and any number of **Developer** accounts, owned or joined by invitation. Developer accounts are independent:
+each has its own verification (KYC), apps, balance, payout methods and history, members.
 
-- **One account:** the sidebar shows a prompt. On a personal account it says "Become a developer" and opens a
-  confirmation modal, then onboarding. On a developer account it says "Earn from your devices" and adds a
-  personal account right away ("Personal account added").
-- **Both accounts:** the sidebar shows the Personal | Developer switcher. Each account has its own menu and
-  home page.
+- **Account menu** (sidebar, bottom): its button always shows the account in use (name and type). The list opens upward: who is signed in, Personal first,
+  then the developer accounts; each shows its KYC badge (Not started, Pending, Verified, Rejected) and, when it is not
+  yours, your role. A check marks the current one, then "Create developer account", then **User settings** and **Logout**.
+  Switching opens Overview (Personal) or Analytics (Developer), and remembers the account for the next login.
+- **Seeded accounts for the demo login:** Personal; **Acme Apps LLC** (Owner, Verified, 3 apps, a balance, an Admin, a
+  Member and one pending invitation); **Side Project LLC** (Owner, KYC Pending, no apps, balance 0, locked);
+  **Studio Nine Inc.** (you are a Member).
+- **SDK rules:** every developer account starts with three rules and an "I agree / I understand" button: explicit opt-in for all users, opt-out at any time from the application, and the app and SDK removed from the device at uninstallation. It is the step before the password at sign-up, and a dialog in "Create developer account". It is shown every time.
+- **Create developer account:** from the account menu, the same onboarding as a first sign-up. The first field is the account
+  name; when the login already has a developer account, the person and address fields are prefilled with the hint
+  "Prefilled from Acme Apps LLC. Each developer account is verified separately." Verification is done again per
+  account. Afterwards the account is in the switcher with KYC Pending and opens locked.
+- **Roles** (`Cashful.can(role, action)` in `assets/js/core/config.js`, one matrix): Owner, Admin, Member.
 
-Opening a page that belongs to the other account switches to that account. Opening a page for an account the
-login doesn't have redirects to the login's home page.
+  | | Owner | Admin | Member |
+  |---|---|---|---|
+  | Analytics, apps, SDK download, create and submit apps | yes | yes | yes |
+  | Referral | yes | yes | yes |
+  | Payouts (request, methods) | yes | yes | no |
+  | Settings → Members | yes | yes | no |
+  | Edit company data, sign agreements, start verification | yes | yes | no |
+  | Delete the developer account | yes | no | no |
+  | Leave the account | no | yes | yes |
+
+  Menu items a role can't use are hidden. A Member who opens such a URL sees "You don't have access to this page. Ask an
+  account admin." (`data-requires="<action>"` on the page `<body>`).
+- **Settings → Members** (Owner, Admin): a table (Name/Email, Role, Status, Added, actions) with the Owner first and not
+  changeable or removable. Active members: Change role, Remove (confirmation). Pending invitations: Resend invite,
+  Revoke invite, Open the invitation (prototype). "Invite member" takes an email and a role (Admin or Member, with what each
+  can do) and checks: invalid email, already on the team, already invited. It adds a "Pending invite" row and shows the toast
+  "Invitation sent". Invitations are valid for 7 days (`inviteValidDays`).
+- **Invitation screens** (`invite.html?token=…`): "Join <account> on Cashful" with who invited you and your role. If the
+  email has an account: Sign in, then "Accept invitation", then the account opens in the switcher (a 2FA step returns
+  here). If it has none: sign up with the email prefilled and locked, a Personal account is created automatically, and the
+  invited account opens. An expired, revoked or used invitation shows "This invitation is no longer valid". Demo links
+  (made again on every open): `demo-new`, `demo-existing`, `demo-expired`.
+- **Leave account** (Admin, Member; Settings → Leave account, with confirmation): the person loses access and lands on
+  Personal. The only Admin cannot leave while the Owner is inactive: the button is disabled and says why.
+- **Danger zone** (Owner only): Delete account is blocked while the balance is above 0 ("Withdraw your remaining balance of
+  $X before deleting this account", link to Payouts); with a zero balance a dialog lists what goes (apps, members, SDK
+  keys, payouts) and asks to type the account name. Personal and other accounts are not touched. Deleting the **Personal**
+  account deletes the login: the dialog lists the owned developer accounts (deleted too) and the ones you are a member of
+  (you are removed), and it is blocked while any owned account still holds a balance (they are listed).
+- **Referrals** exist only for the Personal account. A Developer account has no Referrals item; opening the route sends it to Analytics.
+- **Demo panel** (floating, prototype only; `page-demo.js`): your role in the current account, KYC status, balance
+  (zero or more than zero), "Owner is inactive", and links to the invitation screens.
 
 The chart data is taken 1:1 from the design (`assets/js/data/earnings.js`). The devices, alerts and
 cards are in `assets/js/data/peer.js`.
@@ -121,7 +160,7 @@ assets/
     core/api.js           mock backend: same response shapes a real API should return
     core/demo.js          the Prototype panel (remove the script tag to hide it)
     data/                 sample data for Overview (chart, devices) and install instructions
-    app/shell.js          session/account guard, sidebar, account switcher, "Become a developer"
+    app/shell.js          session/account guard, sidebar, account switcher, role-based menu, "no access" screen
     app/install.js        "Add a device" and "How to install" modals
     pages/*.js            logic for each page
 ```
@@ -165,6 +204,8 @@ and a direct visit shows a locked page with the way to unlock it. A Personal acc
 - **Demo control:** "Apps data" (Default, No apps, Only Drafts, Only Active; `?data=`) next to "KYC status".
 - **Components:** new `ui.timeline`, `Cashful.controls.fileDropzone`, `Cashful.apps.badge` (status badge); reused:
   segmented control, dropdown, modal, cards, table, `ui.copyText`, `ui.alertHtml`, `track()`.
+
+**Platforms and IDs:** an app can run on several platforms (checkboxes in Create app and in the Draft). It gets an Application ID and an Application Release ID (one per app) as soon as it is created, shown with Copy buttons on its page and on the SDK page, and filled into the SDK snippets. Until the app is Active a note says: install the SDK with both IDs so telemetry can be collected; once approved, the installation becomes active and starts earning.
 
 ### Analytics (Developer)
 
@@ -268,7 +309,17 @@ design file, so it is built from the existing components.
 - **Rewards and payouts:** referral earnings are described as part of the Available balance. There is no
   separate withdrawal. The Payouts mock balance is independent of the Referrals mock numbers.
 
+### Billing information and SMS on payout
+
+- **Billing information** (Personal and each Developer account; Owner and Admin): name or company, country, address and an optional Tax ID, asked once before the first payout. It has its own card in Settings; requesting a payout opens the same dialog when it is empty.
+- **SMS code on payout:** after the amount is confirmed, a 6-digit code is texted to the phone in the profile (asked for first when there is none). Prototype: any 6 digits work; in strict mode the code is `demo.smsCode` in `config.js`.
+- **"User settings"** in the account menu (bottom of the sidebar) opens the Profile section of Settings.
+
 ### Settings (Personal)
+
+Both account types share the layout: a sticky "Settings sections" navigation in two groups, **Account settings** (the account in use) and
+**User settings** (the person, the same in every account), and a small heading above the first card of each group.
+Personal: Account settings = Verification, Billing information; User settings = Profile, Security, Notifications, Legal, Delete account.
 
 `settings.html` serves both account types (`data-account="auto"`): Personal sees the stack below, Developer sees
 the Developer Settings described in the next section. It is not in the design file, so it is built from the existing components. Six stacked cards, and the ones
@@ -285,18 +336,15 @@ Delete account.
   starts that scenario afresh; without it the saved state continues.
 - **Mock rules:** current password `wrong-password` fails; any 6 digits pass the 2FA check and `000000` fails.
   Passwords and codes are never logged or stored.
-- **Profile photo:** a round 96px avatar with Upload photo and Remove. The accepted types and the size limit
-  are in `settings.config.js` (`avatar`), and the error texts are generated from them. A chosen image is
-  centre-cropped to a square and shown as a preview; it is applied with the Save button like the other fields
-  and stored as a data URL on the login. The user card in the sidebar shows the same photo (or the initials).
-- **No Account type card:** adding the Developer account is done with the card at the bottom of the sidebar (accent purple, above
-  the profile card, with a small button), or with the account switcher once both accounts exist.
-- **Presets:** `?state=default|profile-dirty|avatar-none|avatar-set|avatar-preview|avatar-invalid|avatar-too-large|email-pending|password-error|password-success|2fa-setup|2fa-wrong-code|2fa-on|2fa-hidden|notifications-on|notifications-off|delete-blocked|delete-balance|delete-zero`.
+- **No profile photo:** the avatar is the initials. There is nothing to upload.
+- **Phone number:** a field in the profile. It is where the SMS code for a payout is sent.
+- **No Account type card:** a developer account is added from the account switcher ("Create developer account").
+- **Presets:** `?state=default|profile-dirty|email-pending|password-error|password-success|2fa-setup|2fa-wrong-code|2fa-on|2fa-hidden|verification-none|verification-review|verification-done|notifications-on|notifications-off|delete-blocked|delete-balance|delete-zero`.
 
 ### Settings (Developer)
 
-Same route, `settings.html`. Eight cards in this order, each with an anchor (`#verification`, `#business`,
-`#agreements`, `#profile`, `#security`, `#notifications`, `#close-account`), a sticky
+Same route, `settings.html`. Cards in this order, each with an anchor (`#verification`, `#business`,
+`#agreements`, `#members` (Owner, Admin), `#profile`, `#security`, `#notifications`, `#leave` (Admin, Member), `#danger` (Owner)), a sticky
 "Settings sections" navigation with scroll-spy, and a URL hash that scrolls to the section and focuses its heading.
 Each form saves on its own (Save stays disabled until something changes, then an inline "saved" message).
 
@@ -307,20 +355,20 @@ Each form saves on its own (Save stays disabled until something changes, then an
   In review and Approved. The apps and installs numbers must be whole numbers, 0 or more.
 - **Agreements:** the Developer Agreement is signed in a dialog (checkbox + full name of 2+ characters; the
   name is stored, never logged). Terms, Privacy and AUP show their accepted date and a link.
-- **Profile, Security, Notifications:** the Personal components. Name, photo, pending email and 2FA are stored
+- **Profile, Security, Notifications:** the Personal components. Name, phone, pending email and 2FA are stored
   on the login and shared with Personal. Notifications use the Developer set (stored per account type);
   there is no Country field.
-- **No Account type card:** a developer switches (or adds a Personal account) with the sidebar switcher.
-- **Close account:** support email only.
+- **Members, Leave account, Danger zone:** see "Accounts, teams and roles". A Member sees Verification, Business details and
+  Agreements read-only.
 - **Config:** `assets/js/data/developer-settings.config.js` (support email, what KYC unlocks, locked business
   statuses, agreements, notifications, alert texts, `agreementsBlockFeatures`).
 - **`featuresUnlocked`:** `api.kyc.featuresUnlocked()` = KYC approved and (flag off, or Developer Agreement
   signed). The SDK download and the Payout requests read it; `api.kyc.lockReason()` picks the hint, which links
   to `#agreements` or `#verification`.
-- **Demo control (Settings, Developer):** KYC status (Not started, In progress, In review, Changes requested, Rejected, Approved),
-  Developer Agreement (Unsigned, Signed), Personal account (Exists, None; reloads the page).
+- **Demo control (Settings, Developer):** role, balance, KYC status (Not started, In progress, Pending, Changes requested, Rejected,
+  Verified), Developer Agreement (Unsigned, Signed).
 - **Events:** `settings_anchor_clicked`, `kyc_start_clicked`, `kyc_update_info_clicked`, `business_details_saved`,
-  `agreement_viewed`, `agreement_signed`, `account_switch_clicked`, `close_account_support_clicked`.
+  `agreement_viewed`, `agreement_signed`, `account_switch_clicked`, `member_invited`, `member_invite_resent`, `member_invite_revoked`, `member_role_changed`, `member_removed`, `account_left`, `developer_account_deleted`.
 
 ### Log in or sign up (identifier-first)
 

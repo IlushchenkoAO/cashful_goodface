@@ -79,6 +79,32 @@
     </section>
 
     <section class="cf-card cf-card--flush">
+      <div class="cf-card__head"><h3 class="cf-card__title">Accounts and teams</h3></div>
+      <table class="cf-table">
+        <tbody>
+          <tr><td class="map__key">AccountPersonal</td><td>Personal account (the login always has one). Open the switcher in the sidebar</td><td><a href="dashboard.html?state=active" data-seed="personal">dashboard.html?state=active</a></td></tr>
+          <tr><td class="map__key">AccountAcme</td><td>Acme Apps LLC: Owner, Verified, 3 apps, balance, 3 team members</td><td><a href="analytics.html" data-seed="acme" data-role="owner">analytics.html</a></td></tr>
+          <tr><td class="map__key">AccountSide</td><td>Side Project LLC: Owner, KYC Pending, no apps, balance 0 (locked)</td><td><a href="analytics.html" data-seed="side" data-role="owner">analytics.html</a></td></tr>
+          <tr><td class="map__key">AccountNine</td><td>Studio Nine Inc.: you are a Member (no Payouts, Members, Danger zone)</td><td><a href="analytics.html" data-seed="nine" data-role="member">analytics.html</a></td></tr>
+          <tr><td class="map__key">AccountNoAccess</td><td>A Member opens Payouts by URL: “You don’t have access to this page”</td><td><a href="payouts.html" data-seed="nine" data-role="member">payouts.html</a></td></tr>
+          <tr><td class="map__key">AcmeAdmin</td><td>Acme as Admin (Payouts and Members yes, Danger zone no)</td><td><a href="settings.html#members" data-seed="acme" data-role="admin">settings.html#members</a></td></tr>
+          <tr><td class="map__key">Members</td><td>Settings → Members: invite, resend, revoke, change role, remove</td><td><a href="settings.html#members" data-seed="acme" data-role="owner">settings.html#members</a></td></tr>
+          <tr><td class="map__key">DangerZone</td><td>Delete a developer account (blocked while the balance is above 0; the demo panel switches it)</td><td><a href="settings.html#danger" data-seed="acme" data-role="owner">settings.html#danger</a></td></tr>
+          <tr><td class="map__key">LeaveAccount</td><td>Leave account (Admin, Member)</td><td><a href="settings.html#leave" data-seed="nine" data-role="member">settings.html#leave</a></td></tr>
+          <tr><td class="map__key">LeaveBlocked</td><td>Last Admin while the Owner is inactive: Leave is disabled with a reason</td><td><a href="settings.html#leave" data-seed="acme" data-role="admin" data-owner-inactive="1">settings.html#leave</a></td></tr>
+          <tr><td class="map__key">CreateDeveloper</td><td>Create developer account (the switcher’s last item): confirm, then Account name and the verification with details prefilled</td><td><a href="dashboard.html?modal=become-developer" data-seed="personal">dashboard.html?modal=become-developer</a></td></tr>
+          <tr><td class="map__key">SdkRules</td><td>Developer sign-up, before the password: the three SDK rules, “I agree / I understand” (shown every time)</td><td><a href="auth.html?type=developer&amp;demo=rules" >auth.html?type=developer&amp;demo=rules</a></td></tr>
+          <tr><td class="map__key">UserSettings</td><td>“User settings” in the account menu at the bottom of the sidebar opens the Profile section</td><td><a href="settings.html#profile" data-seed="acme" data-role="owner">user-settings.html</a></td></tr>
+          <tr><td class="map__key">Billing</td><td>Settings → Billing information (Developer account)</td><td><a href="settings.html#billing" data-seed="acme" data-role="owner">settings.html#billing</a></td></tr>
+          <tr><td class="map__key">PayoutBilling</td><td>Request payout: billing information first, then the SMS code (Personal)</td><td><a href="payouts.html" data-seed="personal">payouts.html</a></td></tr>
+          <tr><td class="map__key">InviteNew</td><td>Invitation, the email has no Cashful account: sign up with a locked email</td><td><a href="invite.html?token=demo-new" >invite.html?token=demo-new</a></td></tr>
+          <tr><td class="map__key">InviteExisting</td><td>Invitation, the email has an account: sign in, then Accept invitation</td><td><a href="invite.html?token=demo-existing" >invite.html?token=demo-existing</a></td></tr>
+          <tr><td class="map__key">InviteInvalid</td><td>This invitation is no longer valid (expired, revoked, used)</td><td><a href="invite.html?token=demo-expired" >invite.html?token=demo-expired</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cf-card cf-card--flush">
       <div class="cf-card__head"><h3 class="cf-card__title">From the earn app</h3></div>
       <table class="cf-table">
         <tbody>
@@ -199,8 +225,6 @@
           <tr><td class="map__key">—</td><td>2FA section off in the config</td><td><a href="settings.html?state=2fa-hidden" data-accounts="personal">settings.html?state=2fa-hidden</a></td></tr>
           <tr><td class="map__key">—</td><td>Verification (needed only to withdraw): not started / in review / verified</td><td><a href="settings.html?state=verification-none" data-accounts="personal">verification-none</a> · <a href="settings.html?state=verification-review" data-accounts="personal">verification-review</a> · <a href="settings.html?state=verification-done" data-accounts="personal">verification-done</a></td></tr>
           <tr><td class="map__key">—</td><td>Notifications: all on / all off</td><td><a href="settings.html?state=notifications-on" data-accounts="personal">notifications-on</a> · <a href="settings.html?state=notifications-off" data-accounts="personal">notifications-off</a></td></tr>
-          <tr><td class="map__key">—</td><td>Avatar: no photo / photo set / preview before save</td><td><a href="settings.html?state=avatar-none" data-accounts="personal">avatar-none</a> · <a href="settings.html?state=avatar-set" data-accounts="personal">avatar-set</a> · <a href="settings.html?state=avatar-preview" data-accounts="personal">avatar-preview</a></td></tr>
-          <tr><td class="map__key">—</td><td>Avatar: invalid format / file too large</td><td><a href="settings.html?state=avatar-invalid" data-accounts="personal">avatar-invalid</a> · <a href="settings.html?state=avatar-too-large" data-accounts="personal">avatar-too-large</a></td></tr>
           <tr><td class="map__key">—</td><td>Delete: blocked by a payout in progress</td><td><a href="settings.html?state=delete-blocked" data-accounts="personal">settings.html?state=delete-blocked</a></td></tr>
           <tr><td class="map__key">—</td><td>Delete: balance warning</td><td><a href="settings.html?state=delete-balance" data-accounts="personal">settings.html?state=delete-balance</a></td></tr>
           <tr><td class="map__key">—</td><td>Delete: zero balance</td><td><a href="settings.html?state=delete-zero" data-accounts="personal">settings.html?state=delete-zero</a></td></tr>

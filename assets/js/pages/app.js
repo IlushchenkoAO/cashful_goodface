@@ -79,7 +79,7 @@
       { label: 'Name', ok: !!d.name.trim() },
       { label: 'Type', ok: !!d.type },
       { label: 'Description', ok: !!d.description.trim() },
-      { label: 'Platform', ok: !!d.platform },
+      { label: 'Platforms', ok: d.platforms.length > 0 },
       { label: 'App link', ok: !!d.appLink && validUrl(d.appLink) },
       { label: 'Screenshot', ok: !!d.screenshot }
     ];
@@ -87,7 +87,7 @@
 
   function isDirty() {
     return d.name !== app.name || d.type !== app.type || d.description !== app.description ||
-      d.platform !== (app.platforms[0] || '') || d.appLink !== app.appLink || d.screenshot !== app.screenshot;
+      d.platforms.slice().sort().join() !== app.platforms.slice().sort().join() || d.appLink !== app.appLink || d.screenshot !== app.screenshot;
   }
 
   /** The Save and Submit buttons, the dirty marker and the checklist follow what is typed. */
@@ -112,12 +112,16 @@
 
   /* ---------- Sections ---------- */
 
+  function idBlock(labelId, label, value, which) {
+    return '<div class="app-head__id"><span class="cf-input__label" id="' + labelId + '">' + label + '</span><div class="cf-copy"><span class="cf-copy__value cf-mono" aria-labelledby="' + labelId + '">' + esc(value) + '</span>' +
+      '<button type="button" class="cf-btn cf-btn--secondary cf-btn--sm" data-copy-id="' + which + '" aria-label="Copy ' + label + '">' + icon('copy', 16) + '<span>Copy</span></button></div></div>';
+  }
+
   function headerHtml() {
     return '<div class="sr-only" role="status" aria-live="polite" id="app-live"></div>' +
       '<div class="app-head"><a href="apps.html" class="cf-pagehead__back">' + icon('chevron-left', 16) + '<span>Apps</span></a>' +
       '<div class="app-head__row"><h1 class="cf-pagehead__title">' + esc(app.name) + '</h1>' + A.statusControl(app) + '</div>' +
-      '<div class="app-head__id"><span class="cf-input__label" id="app-id-label">App ID</span><div class="cf-copy"><span class="cf-copy__value cf-mono" aria-labelledby="app-id-label">' + esc(app.id) + '</span>' +
-        '<button type="button" class="cf-btn cf-btn--secondary cf-btn--sm" data-copy-id>' + icon('copy', 16) + '<span>Copy</span></button></div></div></div>';
+      '<div class="app-head__ids">' + idBlock('app-id-label', 'Application ID', app.id, 'app') + idBlock('app-release-label', 'Application Release ID', app.releaseId, 'release') + '</div></div>';
   }
 
   function bannerHtml() {
@@ -127,6 +131,7 @@
     var fb = A.feedback(app);
     if (app.status === 'in_review' && cfg.reviewEtaText) extra = cfg.reviewEtaText;
     var html = ui.alertHtml({ tone: tone, title: text, text: extra });
+    if (app.status !== 'active') html += '<p class="app-install-note">' + icon('info', 16) + '<span>' + esc(cfg.installNote) + '</span></p>';
     if (app.status === 'changes_requested' && fb) {
       html += '<div class="app-feedback" id="feedback" tabindex="-1"><div class="app-feedback__head"><strong>' + esc(fb.reviewer || cfg.reviewerFallback) + '</strong>' +
         '<time>' + fmt.date(fb.at) + '</time></div><p>' + esc(fb.comment || '') + '</p>' +
@@ -143,7 +148,7 @@
     if (!editable) {
       return '<section class="cf-card" id="app-details" aria-labelledby="app-details-title"><h2 class="cf-card__title" id="app-details-title">Details</h2>' +
         '<dl class="app-dl"><div><dt>Name</dt><dd>' + esc(app.name) + '</dd></div><div><dt>Type</dt><dd>' + esc(app.type) + '</dd></div>' +
-        '<div><dt>Platform</dt><dd>' + esc(A.platformLabel(app)) + '</dd></div>' +
+        '<div><dt>Platforms</dt><dd>' + esc(A.platformLabel(app)) + '</dd></div>' +
         '<div class="is-wide"><dt>Description</dt><dd>' + (app.description ? esc(app.description) : '—') + '</dd></div></dl></section>';
     }
     var types = cfg.types.indexOf(d.type) > -1 ? cfg.types : cfg.types.concat(d.type ? [d.type] : []);
@@ -155,7 +160,11 @@
         '<div class="cf-input"><label class="cf-input__label" for="app-desc">Description</label><div class="cf-field cf-field--area">' +
           '<textarea class="cf-field__input" id="app-desc" name="description" rows="3" maxlength="' + cfg.descriptionMaxLength + '" aria-describedby="app-count">' + esc(d.description) + '</textarea></div>' +
           '<div class="cf-input__helper"></div><div class="apps-count" id="app-count">' + d.description.length + ' / ' + cfg.descriptionMaxLength + '</div></div>' +
-        ui.selectHtml({ id: 'app-platform', name: 'platform', label: 'Platform', options: [{ value: '', label: 'Select a platform' }].concat(platformNames()), value: d.platform }) +
+        '<div class="cf-input" role="group" aria-labelledby="app-platforms-label"><span class="cf-input__label" id="app-platforms-label">Platforms</span><div class="apps-platforms" id="app-platform">' +
+          platformNames().map(function (n) {
+            return '<label class="cf-check"><input class="cf-check__input" type="checkbox" name="platforms" value="' + esc(n) + '"' + (d.platforms.indexOf(n) > -1 ? ' checked' : '') + '>' +
+              '<span class="cf-checkbox__box"><cf-icon name="check" size="14" stroke-width="2.75"></cf-icon></span><span class="cf-check__label">' + esc(n) + '</span></label>';
+          }).join('') + '</div><div class="cf-input__helper">Choose every platform this app runs on.</div></div>' +
       '</div>' +
       '<div class="app-actions"><span class="set-saved" id="app-saved" role="status"></span><button type="button" class="cf-btn cf-btn--primary" id="app-save" data-act="save" disabled>Save changes</button></div>' +
     '</section>';
@@ -218,7 +227,7 @@
     if (!app) { root.innerHTML = notFoundHtml(); document.title = 'App not found · Cashful'; return; }
     document.title = app.name + ' · Cashful';
     var editable = A.isEditable(app);
-    d = { name: app.name, type: app.type, description: app.description, platform: app.platforms[0] || '', appLink: app.appLink, screenshot: app.screenshot };
+    d = { name: app.name, type: app.type, description: app.description, platforms: app.platforms.slice(), appLink: app.appLink, screenshot: app.screenshot };
     root.innerHTML = headerHtml() + bannerHtml() + detailsHtml(editable) + reviewHtml(editable) + historyHtml() + deleteHtml() + '<div id="app-review-sim"></div>';
 
     dropzone = C.fileDropzone(ui.$('#app-shot', root), {
@@ -254,7 +263,7 @@
 
   function persist() {
     selfWrite = true;
-    app = A.update(id, { name: d.name.trim(), type: d.type, description: d.description.trim(), platforms: [d.platform], appLink: d.appLink.trim(), screenshot: d.screenshot });
+    app = A.update(id, { name: d.name.trim(), type: d.type, description: d.description.trim(), platforms: d.platforms.slice(), appLink: d.appLink.trim(), screenshot: d.screenshot });
     selfWrite = false;
   }
 
@@ -265,7 +274,7 @@
     persist();
     track('app_details_saved', { app: id });
     var note = ui.$('#app-saved', root);
-    d = { name: app.name, type: app.type, description: app.description, platform: app.platforms[0] || '', appLink: app.appLink, screenshot: app.screenshot };
+    d = { name: app.name, type: app.type, description: app.description, platforms: app.platforms.slice(), appLink: app.appLink, screenshot: app.screenshot };
     updateDerived();
     if (note) note.innerHTML = icon('check-circle', 16) + '<span>Changes saved.</span>';
     announce('Changes saved');
@@ -305,6 +314,7 @@
 
   root.addEventListener('input', function (e) {
     var t = e.target;
+    if (t.name === 'platforms') return;   // the checkboxes are read on change
     if (!t.name || !(t.name in d)) return;
     d[t.name] = t.value;
     if (t.name === 'description') ui.$('#app-count', root).textContent = t.value.length + ' / ' + cfg.descriptionMaxLength;
@@ -316,6 +326,12 @@
     if (t.matches && t.matches('[data-review-result]')) {
       A.applyReview(id, t.value);   // the page re-draws from the store event
       ui.toast(t.value === 'active' ? 'App approved. It is now Active and shows in Analytics.' : t.value === 'in_review' ? 'Back in review.' : 'Changes requested. The comments are below.');
+      return;
+    }
+    if (t.name === 'platforms') {
+      d.platforms = ui.$$('input[name="platforms"]:checked', root).map(function (i) { return i.value; });
+      var saved = ui.$('#app-saved', root); if (saved) saved.innerHTML = '';
+      updateDerived();
       return;
     }
     if (t.name && t.name in d && t.tagName === 'SELECT') { d[t.name] = t.value; updateDerived(); }
@@ -337,10 +353,12 @@
     }
     var copy = e.target.closest('[data-copy-id]');
     if (copy) {
-      ui.copyText(app.id).then(function (ok) {
-        if (!ok) { announce('Couldn’t copy the App ID.'); return; }
-        track('app_id_copied', { source: 'details' });
-        announce('App ID copied');
+      var which = copy.dataset.copyId === 'release' ? 'release' : 'app';
+      var name = which === 'release' ? 'Release ID' : 'App ID';
+      ui.copyText(which === 'release' ? app.releaseId : app.id).then(function (ok) {
+        if (!ok) { announce('Couldn’t copy the ' + name + '.'); return; }
+        track('app_id_copied', { source: 'details', which: which });
+        announce(name + ' copied');
         ui.flashCopied(copy);
       });
     }

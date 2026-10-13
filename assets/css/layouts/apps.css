@@ -73,3 +73,10 @@ tr.is-clickable { cursor: pointer; }
 .status-select cf-icon { position: absolute; right: 7px; pointer-events: none; color: var(--text-warning); }
 .status-select--active .status-select__input { background: var(--bg-success-subtle); color: var(--text-success); }
 .status-select--active cf-icon { color: var(--text-success); }
+
+/* Platforms: several can be chosen */
+.apps-platforms { display: flex; flex-wrap: wrap; gap: var(--space-8) var(--space-20); padding: var(--space-4) 0; }
+/* The two IDs of an app side by side under its title */
+.app-head__ids { display: flex; flex-wrap: wrap; gap: var(--space-16) var(--space-24); }
+.app-install-note { display: flex; align-items: flex-start; gap: var(--space-8); margin: 0; font: 500 14px/20px var(--font-text); color: var(--text-secondary); }
+.app-install-note cf-icon { flex: none; margin-top: 2px; color: var(--icon-brand); }

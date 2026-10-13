@@ -1,7 +1,8 @@
 /* Settings — one route, content by account type. Stacked cards that save on their own.
    Personal:  Profile · Security (password, two-factor) · Verification · Notifications · Legal · Delete account.
-   Developer: Verification · Business details · Agreements · Profile · Security · Notifications · Account type ·
-              Close account, with a sticky anchor navigation (#verification, #business, …).
+   Developer: Verification · Business details · Agreements · Members · Profile · Security · Notifications · Leave account or
+              Danger zone, with a sticky anchor navigation (#verification, #business, …). What shows depends on the person's role in
+              the Developer account (Cashful.can): a Member has no Members and no Danger zone, and cannot edit company data.
    Profile, Security and Notifications are the same components for both: name, photo, email change, 2FA and the
    notification choices are kept on the login, so a change in one account type shows in the other.
    Business values: settings.config.js (Personal) and developer-settings.config.js (Developer).
@@ -19,6 +20,9 @@
   var user = Cashful.app.user;
   var account = Cashful.app.account;
   var isDev = account === 'developer';
+  var org = Cashful.app.org;          // the Developer account in use (null on Personal)
+  var role = Cashful.app.role;        // 'owner' | 'admin' | 'member' (null on Personal)
+  function canEdit() { return Cashful.can(role, 'company.edit'); }
   var DS = Cashful.developerSettingsConfig;
   var presetId = isDev ? 'default' : S.preset(ui.params.get('state'));
   var c = S.settings(presetId);
@@ -63,51 +67,6 @@
 
   /* ---------- Profile ---------- */
 
-  // The photo waiting for Save (a data URL, or null for "no photo"); saved with the other fields
-  var avatarDraft = state.profile.avatar;
-
-  function avatarButtons() {
-    return '<button type="button" class="cf-btn cf-btn--secondary cf-btn--sm" data-act="avatar-upload">' + icon('upload', 16) + '<span>Upload photo</span></button>' +
-      (avatarDraft ? '<button type="button" class="cf-btn cf-btn--ghost cf-btn--sm" data-act="avatar-remove">Remove</button>' : '');
-  }
-  function avatarContent() {
-    return avatarDraft ? '<img src="' + esc(avatarDraft) + '" alt="">' : esc(Cashful.app.initials(state.profile.name));
-  }
-  function avatarHtml() {
-    return '<div class="set-avatar">' +
-      '<span class="cf-avatar cf-avatar--xl" id="avatar-img" role="img" aria-label="Profile photo">' + avatarContent() + '</span>' +
-      '<div class="set-avatar__body">' +
-        '<div class="set-avatar__buttons" id="avatar-buttons">' + avatarButtons() + '</div>' +
-        '<div class="cf-input__helper" id="avatar-hint">' + esc(S.avatarHint()) + '</div>' +
-        '<p class="set-avatar__error" id="avatar-error" role="alert" hidden></p>' +
-      '</div>' +
-      '<input type="file" id="avatar-file" accept="' + esc(c.avatar.acceptedTypes.join(',')) + '" hidden aria-label="Upload a profile photo">' +
-    '</div>';
-  }
-  function refreshAvatar() {
-    ui.$('#avatar-img', root).innerHTML = avatarContent();
-    ui.$('#avatar-buttons', root).innerHTML = avatarButtons();
-  }
-  function showAvatarError(message) {
-    var el = ui.$('#avatar-error', root);
-    el.textContent = message;
-    el.hidden = !message;
-  }
-  /** Checks the file, crops it to a square and shows the preview. Resolves true when it was accepted. */
-  function pickAvatar(file) {
-    var error = S.checkAvatarFile(file);
-    showAvatarError(error);
-    if (error) return Promise.resolve(false);
-    return S.cropToSquare(file).then(function (url) {
-      avatarDraft = url;
-      refreshAvatar();
-      return true;
-    }, function () {
-      showAvatarError('We couldn’t read this image. Try another one.');
-      return false;
-    });
-  }
-
   function renderProfile(savedText) {
     var p = state.profile;
     var pending = state.emailPending;
@@ -126,11 +85,14 @@
           '<button type="button" class="cf-btn cf-btn--ghost cf-btn--sm" data-act="cancel-email">Cancel change</button></div></div>'
       : '';
 
-    body('profile').innerHTML = '<form class="set-form" id="profile-form" novalidate>' + avatarHtml() +
+    var phone = ui.fieldHtml({ id: 'set-phone', name: 'phone', label: 'Phone number', type: 'tel', value: p.phone || '', autocomplete: 'tel', placeholder: '+1 415 555 0132',
+      spellcheck: false, noSample: true, helper: 'We text a code to this number to confirm payouts.' });
+
+    body('profile').innerHTML = '<form class="set-form" id="profile-form" novalidate>' +
       ui.fieldHtml({ id: 'set-name', name: 'name', label: 'Name', value: p.name, autocomplete: 'name' }) +
       ui.fieldHtml({ id: 'set-email', name: 'email', label: 'Email', value: p.email, type: 'email', autocomplete: 'email', spellcheck: false, disabled: !!pending,
         helper: pending ? '' : 'If you change it, we send a link to confirm the new address.' }) +
-      pendingBox + country + actions('Save changes') + '</form>';
+      phone + pendingBox + country + actions('Save changes') + '</form>';
 
     var form = ui.$('#profile-form', root);
     var save = ui.$('button[type="submit"]', form);
@@ -139,12 +101,13 @@
     function dirty() {
       var v = readProfile();
       return v.name !== p.name || (!pending && v.email !== p.email) || (hasCountry && c.countryEditable && v.country !== p.country) ||
-        avatarDraft !== (p.avatar || null);
+        v.phone !== (p.phone || '');
     }
     function readProfile() {
       return {
         name: form.elements.name.value.trim(),
         email: form.elements.email.value.trim(),
+        phone: form.elements.phone.value.trim(),
         country: hasCountry && c.countryEditable ? form.elements.country.value : p.country
       };
     }
@@ -158,16 +121,17 @@
       var emailChanged = !pending && v.email !== p.email;
       ui.setError(form.elements.name, v.name ? '' : 'Enter your name.');
       ui.setError(form.elements.email, emailChanged && !ui.isEmail(v.email) ? 'Enter a valid email, like you@example.com.' : '');
+      ui.setError(form.elements.phone, v.phone && !/^\+?[\d\s().-]{7,}$/.test(v.phone) ? 'Enter a valid phone number, like +1 415 555 0132.' : '');
       var bad = firstInvalid(form);
       if (bad) { bad.focus(); return; }
 
       ui.withLoading(save, function () { return later(400); }).then(function () {
         p.name = v.name;
         p.country = v.country;
-        p.avatar = avatarDraft;
+        p.phone = v.phone;
         if (emailChanged) state.emailPending = v.email;
         // Saved on the login, so the user card on every page (and the other account type) shows the same data
-        api.updateProfile({ name: p.name, avatar: p.avatar, emailPending: state.emailPending });
+        api.updateProfile({ name: p.name, phone: p.phone || null, emailPending: state.emailPending });
         Cashful.app.refreshUser();
         renderProfile(emailChanged ? 'Saved. Verify your new email to finish.' : 'Changes saved.');
       });
@@ -176,14 +140,7 @@
     form.addEventListener('click', function (e) {
       var b = e.target.closest('[data-act]');
       if (!b) return;
-      if (b.dataset.act === 'avatar-upload') ui.$('#avatar-file', form).click();
-      else if (b.dataset.act === 'avatar-remove') {
-        avatarDraft = null;
-        showAvatarError('');
-        refreshAvatar();
-        sync();
-        ui.$('[data-act="avatar-upload"]', form).focus();
-      } else if (b.dataset.act === 'resend') {
+      if (b.dataset.act === 'resend') {
         ui.toast('Verification email sent again');
       } else if (b.dataset.act === 'cancel-email') {
         state.emailPending = null;
@@ -193,11 +150,6 @@
       }
     });
 
-    ui.$('#avatar-file', form).addEventListener('change', function (e) {
-      var file = e.target.files[0];
-      e.target.value = '';   // so choosing the same file again still fires
-      if (file) pickAvatar(file).then(sync);
-    });
   }
 
   /* ---------- Security: password ---------- */
@@ -481,7 +433,22 @@
 
   function openDelete() {
     var d = c.deletion;
-    var payouts = P.loadState(null, P.earnedFor(user, account), account);
+    var impact = api.deletionImpact();
+    // An account the person owns that still holds money blocks deleting the person
+    var heldBack = impact.owned.map(function (o) { return { name: o.name, cents: P.balanceFor(user, o.id) }; }).filter(function (o) { return o.cents > 0; });
+    if (heldBack.length) {
+      ui.modal({
+        title: 'Delete account',
+        width: 480,
+        body: ui.alertHtml({ tone: 'warning', title: 'Withdraw the balance of your developer accounts first',
+          text: 'Deleting your Personal account deletes you, and the developer accounts you own with you. These still hold money:' }) +
+          '<ul class="set-consequences">' + heldBack.map(function (o) { return '<li><strong>' + esc(o.name) + '</strong>: ' + fmt.money(o.cents) + '</li>'; }).join('') + '</ul>' +
+          '<p class="t-muted">Switch to each account, open Payouts and withdraw its balance. Then come back here.</p>',
+        footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Close</button>'
+      });
+      return;
+    }
+    var payouts = P.loadState(null, P.earnedFor(user, 'personal'), 'personal');
     var blocked = d.blockedWhenPayoutInProgress && !!P.inProgress(payouts);
     var total = payouts.balance.available + payouts.balance.pending;
     var warn = total > fmt.toCents(d.warnWhenBalanceAbove);
@@ -500,11 +467,14 @@
       title: 'Delete account',
       width: 480,
       body: '<form class="set-form" id="delete-form" novalidate>' +
-        '<p class="cf-modal__desc">This permanently deletes your account, your earnings history and your payout methods. You can’t undo it.</p>' +
+        '<p class="cf-modal__desc">This permanently deletes you: your Personal account, your earnings history and your payout methods. You can’t undo it.</p>' +
+        (impact.owned.length || impact.member.length ? '<div class="set-impact">' +
+          (impact.owned.length ? '<p><strong>These developer accounts are deleted with you</strong>, as you own them:</p><ul class="set-consequences">' + impact.owned.map(function (o) { return '<li>' + esc(o.name) + '</li>'; }).join('') + '</ul>' : '') +
+          (impact.member.length ? '<p><strong>You are removed as a member from</strong>:</p><ul class="set-consequences">' + impact.member.map(function (o) { return '<li>' + esc(o.name) + ' (' + esc(Cashful.ROLE_LABELS[o.role]) + ')</li>'; }).join('') + '</ul>' : '') + '</div>' : '') +
         (warn ? ui.alertHtml({ tone: 'warning', title: 'You still have ' + fmt.money(total) + ' in your balance',
           text: fmt.money(payouts.balance.available) + ' available and ' + fmt.money(payouts.balance.pending) + ' pending. Withdraw it first, because it is lost when the account is deleted.' }) +
           '<a href="payouts.html">Go to Payouts</a>' : '') +
-        ui.fieldHtml({ id: 'del-confirm', name: 'confirm', label: 'Type ' + d.confirmWord + ' to confirm', autocomplete: 'off', spellcheck: false, autofocus: true }) +
+        ui.fieldHtml({ id: 'del-confirm', name: 'confirm', label: 'Type ' + d.confirmWord + ' to confirm', autocomplete: 'off', spellcheck: false, autofocus: true, noSample: true }) +
         '</form>',
       footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button>' +
         '<button type="submit" form="delete-form" class="cf-btn cf-btn--destructive" id="del-go" disabled>Delete account</button>',
@@ -519,7 +489,7 @@
       if (input.value !== d.confirmWord) return;
       ui.withLoading(go, function () { return later(700); }).then(function () {
         deleted = true;
-        api.logOut();
+        api.deleteUser();
         m.update({
           title: 'Account deleted',
           body: ui.alertHtml({ tone: 'success', title: 'Your account has been deleted.', text: 'We’re sorry to see you go.' }),
@@ -566,10 +536,10 @@
   var STATUS_META = {
     not_started: { tone: 'neutral', label: 'Not started' },
     in_progress: { tone: 'brand', label: 'In progress' },
-    in_review: { tone: 'warning', label: 'In review' },
+    in_review: { tone: 'warning', label: 'Pending' },
     changes_requested: { tone: 'error', label: 'Changes requested' },
     rejected: { tone: 'error', label: 'Rejected' },
-    approved: { tone: 'success', label: 'Approved' }
+    approved: { tone: 'success', label: 'Verified' }
   };
   // "In progress" is Not started with the onboarding begun
   function shownStatus(status) { return status === 'not_started' && devNow().started ? 'in_progress' : status; }
@@ -622,10 +592,12 @@
       : status === 'changes_requested'
         ? '<button type="button" class="cf-btn cf-btn--primary" data-act="kyc-update">Update information</button>' : '';
     comment = comment + trust;
+    var readonly = !canEdit();
+    if (readonly) { action = ''; comment = comment.replace(trust, ''); }
 
     body('verification').innerHTML =
       '<div class="set-row"><div class="set-row__text"><h3 class="set-sub">Status ' + statusBadge(status) + '</h3><p class="t-muted">' + esc(text) + '</p></div>' + action + '</div>' +
-      comment + stageListHtml(status) +
+      comment + (readonly && (status === 'not_started' || status === 'changes_requested') ? '<p class="t-muted">Only an account admin can complete verification.</p>' : '') + stageListHtml(status) +
       '<div class="set-unlocks"><h3 class="set-sub">What this unlocks:</h3><ul class="set-unlocks__list">' +
         DS.kyc.unlocks.map(function (u) {
           return '<li>' + icon(status === 'approved' ? 'check-circle' : 'lock', 16) + '<span>' + esc(u) + (status === 'approved' ? ' — unlocked' : '') + '</span></li>';
@@ -648,12 +620,13 @@
 
   function renderBusiness(savedText) {
     var status = api.kyc.status();
-    var locked = DS.businessDetails.lockedStatuses.indexOf(status) > -1;
+    var memberOnly = !canEdit();
+    var locked = memberOnly || DS.businessDetails.lockedStatuses.indexOf(status) > -1;
     var b = S.businessOf(api.currentUser());
     var indie = b.kind === 'indie';
 
     body('business').innerHTML = '<form class="set-form" id="business-form" novalidate>' +
-      (locked ? ui.alertHtml({ tone: 'info', title: status === 'approved' ? 'Your business is verified' : status === 'rejected' ? 'Your application wasn’t approved' : 'Your details are being reviewed',
+      (memberOnly ? ui.alertHtml({ tone: 'info', title: 'Only account admins can change these details', text: 'You can see them, but not edit them.' }) : locked ? ui.alertHtml({ tone: 'info', title: status === 'approved' ? 'Your business is verified' : status === 'rejected' ? 'Your application wasn’t approved' : 'Your details are being reviewed',
         text: 'These details are read-only. To change them, contact support.' }) +
         '<div><a href="' + esc(mailto('Change my business details')) + '">Contact support</a></div>' : '') +
       ui.selectHtml({ id: 'biz-kind', name: 'kind', label: 'Account type', options: S.BUSINESS_KINDS, value: b.kind }) +
@@ -713,7 +686,7 @@
       if (a.kind === 'signable') {
         badge = sig ? badgeHtml('success', 'Signed') : badgeHtml('warning', 'Not signed');
         meta = sig ? 'Version ' + a.version + ' · signed by ' + esc(sig.name) + ' on ' + dateOf(sig.at) : 'Version ' + a.version + ' · needs your signature';
-        act = '<button type="button" class="cf-btn ' + (sig ? 'cf-btn--secondary' : 'cf-btn--primary') + '" data-agreement="' + a.id + '">' + (sig ? 'View' : 'Review and sign') + '</button>';
+        act = '<button type="button" class="cf-btn ' + (sig ? 'cf-btn--secondary' : 'cf-btn--primary') + '" data-agreement="' + a.id + '">' + (sig || !canEdit() ? 'View' : 'Review and sign') + '</button>';
       } else {
         badge = badgeHtml('success', 'Accepted');
         meta = 'Version ' + a.version + ' · accepted on ' + dateOf(a.acceptedAt);
@@ -737,8 +710,8 @@
     track('agreement_viewed', { id: id });
     var text = '<pre class="set-contract" tabindex="0" aria-label="' + esc(a.title) + ' text">' + esc(a.bodyText) + '</pre>';
 
-    if (sig) {
-      ui.modal({ title: a.title, width: 560, body: text + '<p class="t-muted">Signed by ' + esc(sig.name) + ' on ' + dateOf(sig.at) + '.</p>',
+    if (sig || !canEdit()) {
+      ui.modal({ title: a.title, width: 560, body: text + (sig ? '<p class="t-muted">Signed by ' + esc(sig.name) + ' on ' + dateOf(sig.at) + '.</p>' : '<p class="t-muted">Not signed yet. An account admin signs it.</p>'),
         footer: '<button type="button" class="cf-btn cf-btn--primary" data-close>Close</button>' });
       return;
     }
@@ -777,25 +750,278 @@
     });
   }
 
-  /* ---------- Developer: closing the account ---------- */
+  /* ---------- Developer: members ----------
+     The team of the Developer account: the Owner first, then the others, then pending invitations. Owner and Admin manage it. */
 
-  function renderClose() {
-    body('close-account').innerHTML = '<p class="t-muted">' + esc(DS.closeAccount.text) + '</p>' +
-      '<div><a class="cf-btn cf-btn--secondary" data-act="close-support" href="' + esc(mailto(DS.closeAccount.mailSubject)) + '">Contact support</a></div>';
-    ui.$('[data-act="close-support"]', root).addEventListener('click', function () { track('close_account_support_clicked'); });
+  var ROLE_HELP = {
+    admin: 'Can manage apps, payouts, the team and company details.',
+    member: 'Can see analytics and work on apps and the SDK. No payouts, no team management.'
+  };
+  var EMAIL_ERRORS = {
+    invalid: 'Enter a valid email, like name@company.com.',
+    member: 'This person is already on the team.',
+    pending: 'There is already a pending invitation for this email.'
+  };
+
+  function roleChoices(selected) {
+    return '<div class="auth__stack" role="radiogroup" aria-label="Role">' + ['admin', 'member'].map(function (r) {
+      return '<label class="cf-radio-card"><span class="cf-check"><input class="cf-check__input" type="radio" name="role" value="' + r + '"' + (r === selected ? ' checked' : '') + '><span class="cf-radio__box"></span></span>' +
+        '<span class="cf-radio-card__text"><span class="cf-radio-card__title">' + Cashful.ROLE_LABELS[r] + '</span><span class="cf-radio-card__desc">' + ROLE_HELP[r] + '</span></span></label>';
+    }).join('') + '</div>';
+  }
+
+  function memberRow(r) {
+    var mine = r.kind === 'member' && r.email === user.email;
+    var who = r.kind === 'member'
+      ? '<span class="mem-who"><span class="mem-avatar" aria-hidden="true">' + esc(Cashful.app.initials(r.name || r.email)) + '</span><span class="mem-who__text"><span class="mem-who__name">' + esc(r.name) + (mine ? ' <span class="mem-you">You</span>' : '') + '</span><span class="mem-who__email">' + esc(r.email) + '</span></span></span>'
+      : '<span class="mem-who"><span class="mem-avatar is-pending" aria-hidden="true">' + icon('clock', 16) + '</span><span class="mem-who__text"><span class="mem-who__name">' + esc(r.email) + '</span><span class="mem-who__email">Invitation sent</span></span></span>';
+    var items = '';
+    if (r.kind === 'invite') {
+      items = '<button type="button" role="menuitem" data-mem="resend" data-token="' + esc(r.token) + '">Resend invite</button>' +
+        '<button type="button" role="menuitem" data-mem="revoke" data-token="' + esc(r.token) + '">Revoke invite</button>' +
+        '<button type="button" role="menuitem" data-mem="open-invite" data-token="' + esc(r.token) + '">Open the invitation (prototype)</button>';
+    } else if (r.role !== 'owner' && !mine) {
+      items = '<button type="button" role="menuitem" data-mem="change-role" data-email="' + esc(r.email) + '">Change role</button>' +
+        '<button type="button" role="menuitem" data-mem="remove" data-email="' + esc(r.email) + '">Remove</button>';
+    }
+    var label = r.kind === 'member' ? r.name : r.email;
+    return '<tr><td>' + who + '</td><td>' + esc(Cashful.ROLE_LABELS[r.role]) + '</td>' +
+      '<td>' + (r.status === 'active' ? badgeHtml('success', 'Active') : badgeHtml('warning', 'Pending invite')) + '</td>' +
+      '<td>' + fmt.date(r.at) + '</td>' +
+      '<td class="is-right">' + (items ? '<span class="mem-menu-wrap"><button type="button" class="cf-ibtn cf-ibtn--ghost cf-ibtn--sm" data-mem-menu aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ' + esc(label) + '">' + icon('more', 20) + '</button>' +
+        '<div class="mem-menu" role="menu" hidden>' + items + '</div></span>' : '') + '</td></tr>';
+  }
+
+  function renderMembers() {
+    var rows = api.team.rows(org.id);
+    var active = rows.filter(function (r) { return r.kind === 'member'; }).length;
+    var pending = rows.length - active;
+    body('members').innerHTML =
+      '<div class="set-row"><div class="set-row__text"><p class="t-muted" role="status">' + active + (active === 1 ? ' member' : ' members') + (pending ? ' and ' + pending + ' pending ' + (pending === 1 ? 'invitation' : 'invitations') : '') + '.</p></div>' +
+        '<button type="button" class="cf-btn cf-btn--primary" data-act="invite">' + icon('plus', 16) + '<span>Invite member</span></button></div>' +
+      '<div class="cf-table-wrap"><table class="cf-table mem-table"><caption class="sr-only">Members of ' + esc(org.name) + '</caption>' +
+        '<thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Added</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>' +
+        '<tbody>' + rows.map(memberRow).join('') + '</tbody></table></div>';
+  }
+
+  function openInvite() {
+    var m = ui.modal({
+      title: 'Invite member',
+      width: 500,
+      body: '<form class="set-form" id="invite-form" novalidate>' +
+        '<p class="cf-modal__desc">They get an email with a link to join ' + esc(org.name) + '.</p>' +
+        ui.fieldHtml({ id: 'inv-email', name: 'email', label: 'Email', type: 'email', placeholder: 'name@company.com', autocomplete: 'off', spellcheck: false, noSample: true, autofocus: true }) +
+        roleChoices('member') + '</form>',
+      footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button><button type="submit" form="invite-form" class="cf-btn cf-btn--primary" id="inv-go">Send invitation</button>'
+    });
+    var form = ui.$('#invite-form', m.el);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = form.elements.email.value.trim();
+      var role = form.querySelector('input[name="role"]:checked').value;
+      var res = api.team.invite(org.id, email, role);
+      if (!res.ok) { ui.setError(form.elements.email, EMAIL_ERRORS[res.error] || 'Something went wrong.'); form.elements.email.focus(); return; }
+      track('member_invited', { role: role });
+      m.close();
+      renderMembers();
+      ui.toast('Invitation sent');
+    });
+  }
+
+  function openChangeRole(email) {
+    var row = api.team.rows(org.id).filter(function (r) { return r.kind === 'member' && r.email === email; })[0];
+    if (!row) return;
+    var m = ui.modal({
+      title: 'Change role',
+      width: 500,
+      body: '<form class="set-form" id="role-form" novalidate><p class="cf-modal__desc">' + esc(row.name) + ' (' + esc(row.email) + ')</p>' + roleChoices(row.role) + '</form>',
+      footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button><button type="submit" form="role-form" class="cf-btn cf-btn--primary">Save role</button>'
+    });
+    ui.$('#role-form', m.el).addEventListener('submit', function (e) {
+      e.preventDefault();
+      var role = e.target.querySelector('input[name="role"]:checked').value;
+      api.team.changeRole(org.id, email, role);
+      track('member_role_changed', { role: role });
+      m.close();
+      renderMembers();
+      ui.toast(row.name + ' is now ' + (role === 'admin' ? 'an Admin' : 'a Member'));
+    });
+  }
+
+  function openRemove(email) {
+    var row = api.team.rows(org.id).filter(function (r) { return r.kind === 'member' && r.email === email; })[0];
+    if (!row) return;
+    var m = ui.modal({
+      title: 'Remove ' + row.name + '?',
+      width: 460,
+      body: '<p class="cf-modal__desc">They will lose access to ' + esc(org.name) + ' right away: its apps, analytics and settings. Their own Personal account isn’t affected.</p>',
+      footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button><button type="button" class="cf-btn cf-btn--destructive" data-confirm>Remove</button>'
+    });
+    ui.$('[data-confirm]', m.el).addEventListener('click', function () {
+      api.team.remove(org.id, email);
+      track('member_removed', {});
+      m.close();
+      renderMembers();
+      ui.toast('Member removed');
+    });
+  }
+
+  function closeRowMenus(except) {
+    ui.$$('.mem-menu', root).forEach(function (menu) {
+      if (menu === except) return;
+      menu.hidden = true;
+      var btn = ui.$('[data-mem-menu]', menu.parentNode);
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  if (isDev) {
+    root.addEventListener('click', function (e) {
+      var mb = e.target.closest('[data-mem-menu]');
+      if (mb) {
+        var menu = ui.$('.mem-menu', mb.parentNode);
+        closeRowMenus(menu);
+        menu.hidden = !menu.hidden;
+        mb.setAttribute('aria-expanded', String(!menu.hidden));
+        if (!menu.hidden) { var first = ui.$('button', menu); if (first) first.focus(); }
+        return;
+      }
+      var act = e.target.closest('[data-mem]');
+      if (act) {
+        closeRowMenus(null);
+        var kind = act.dataset.mem;
+        if (kind === 'change-role') openChangeRole(act.dataset.email);
+        else if (kind === 'remove') openRemove(act.dataset.email);
+        else if (kind === 'resend') { api.team.resend(act.dataset.token); track('member_invite_resent', {}); renderMembers(); ui.toast('Invitation sent again'); }
+        else if (kind === 'revoke') { api.team.revoke(act.dataset.token); track('member_invite_revoked', {}); renderMembers(); ui.toast('Invitation revoked'); }
+        else if (kind === 'open-invite') ui.go('invite.html?token=' + encodeURIComponent(act.dataset.token));
+        return;
+      }
+      if (e.target.closest('[data-act="invite"]')) { openInvite(); return; }
+      closeRowMenus(null);
+    });
+    root.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeRowMenus(null); });
+  }
+
+  /* ---------- Developer: leaving the account (Admin, Member) and deleting it (Owner) ---------- */
+
+  function renderLeave() {
+    var block = api.team.leaveBlock(org.id, user.email);
+    var button = '<button type="button" class="cf-btn cf-btn--secondary" data-act="leave"' + (block ? ' disabled' : '') + '>Leave account</button>';
+    body('leave').innerHTML =
+      '<p class="t-muted">You will lose access to ' + esc(org.name) + ': its apps, analytics and settings. Your Personal account and your other accounts stay as they are.</p>' +
+      (block === 'last_admin'
+        ? '<div><span class="mem-tip" tabindex="0" title="You are the only admin and the owner is inactive. Make another member an admin before you leave." aria-describedby="leave-why">' + button + '</span></div>' +
+          '<p class="t-caption t-secondary" id="leave-why">You are the only admin and the owner is inactive. Make another member an admin before you leave.</p>'
+        : '<div>' + button + '</div>');
+    var go = ui.$('[data-act="leave"]', root);
+    if (go && !block) go.addEventListener('click', openLeave);
+  }
+
+  function openLeave() {
+    var m = ui.modal({
+      title: 'Leave ' + org.name + '?',
+      width: 460,
+      body: '<p class="cf-modal__desc">You will lose access to its apps, analytics and settings. To come back, an admin has to invite you again.</p>',
+      footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button><button type="button" class="cf-btn cf-btn--destructive" data-confirm>Leave account</button>'
+    });
+    ui.$('[data-confirm]', m.el).addEventListener('click', function () {
+      var res = api.team.leave(org.id);
+      if (!res.ok) { m.close(); return; }
+      track('account_left', {});
+      Cashful.store.flash('shellToast', 'You left ' + org.name);
+      ui.go('dashboard.html');
+    });
+  }
+
+  function renderDanger() {
+    var cents = P.balanceFor(user, org.id);
+    var blocked = cents > 0;
+    body('danger').innerHTML =
+      '<p class="t-muted">Deleting ' + esc(org.name) + ' is permanent. Your Personal account and your other developer accounts are not affected.</p>' +
+      (blocked
+        ? ui.alertHtml({ tone: 'warning', title: 'Withdraw your remaining balance of ' + fmt.money(cents) + ' before deleting this account', text: 'The balance is lost when the account is deleted.' }) +
+          '<div><a href="payouts.html">Go to Payouts</a></div>'
+        : '') +
+      '<div><button type="button" class="cf-btn cf-btn--destructive" data-act="delete-org"' + (blocked ? ' disabled' : '') + '>Delete account</button></div>';
+    var go = ui.$('[data-act="delete-org"]', root);
+    if (go && !blocked) go.addEventListener('click', openDeleteOrg);
+  }
+
+  function openDeleteOrg() {
+    var apps = Cashful.apps ? Cashful.apps.forOrg(org.id).length : 0;
+    var members = api.team.rows(org.id).filter(function (r) { return r.kind === 'member' && r.role !== 'owner'; }).length;
+    var m = ui.modal({
+      title: 'Delete ' + org.name + '?',
+      width: 500,
+      body: '<form class="set-form" id="delete-org-form" novalidate>' +
+        '<p class="cf-modal__desc">This permanently deletes the account. You can’t undo it. What goes with it:</p>' +
+        '<ul class="set-consequences">' +
+          '<li>' + apps + (apps === 1 ? ' app' : ' apps') + ' and their analytics</li>' +
+          '<li>' + members + (members === 1 ? ' team member loses' : ' team members lose') + ' access</li>' +
+          '<li>The SDK keys: SDK integrations of this account stop working</li>' +
+          '<li>Payout methods and payout history</li></ul>' +
+        ui.fieldHtml({ id: 'del-org-name', name: 'confirm', label: 'Type ' + org.name + ' to confirm', autocomplete: 'off', spellcheck: false, noSample: true, autofocus: true }) + '</form>',
+      footer: '<button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button><button type="submit" form="delete-org-form" class="cf-btn cf-btn--destructive" id="del-org-go" disabled>Delete account</button>'
+    });
+    var input = ui.$('#del-org-name', m.el), go = ui.$('#del-org-go', m.el);
+    input.addEventListener('input', function () { go.disabled = input.value.trim() !== org.name; });
+    ui.$('#delete-org-form', m.el).addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (input.value.trim() !== org.name) return;
+      ui.withLoading(go, function () { return later(600); }).then(function () {
+        var res = api.deleteOrg(org.id);
+        if (!res.ok) { m.close(); return; }
+        track('developer_account_deleted', {});
+        Cashful.store.flash('shellToast', org.name + ' was deleted');
+        ui.go('dashboard.html');
+      });
+    });
+  }
+
+  /* ---------- Billing information (Personal and Developer accounts) ---------- */
+
+  function renderBilling() {
+    var has = Cashful.billing.has();
+    body('billing').innerHTML = (has ? Cashful.billing.summaryHtml() : '<p class="t-muted">Not added yet. We need it before your first payout.</p>') +
+      '<div><button type="button" class="cf-btn cf-btn--secondary" data-act="billing-edit">' + (has ? 'Edit billing information' : 'Add billing information') + '</button></div>';
+    ui.$('[data-act="billing-edit"]', root).addEventListener('click', function () {
+      Cashful.billing.open({ onSaved: function () { renderBilling(); ui.toast('Billing information saved'); } });
+    });
   }
 
   /* ---------- Developer: anchor navigation ---------- */
 
-  var DEV_SECTIONS = [
-    ['verification', 'Verification'], ['business', 'Business details'], ['agreements', 'Agreements'], ['profile', 'Profile'],
-    ['security', 'Security'], ['notifications', 'Notifications'], ['close-account', 'Close account']
-  ];
+  /* The sections of this page in two groups: the account in use, and the person (the same in every account). */
+  function sectionGroups() {
+    var account = [['verification', 'Verification']];
+    if (isDev) account.push(['business', 'Business details'], ['agreements', 'Agreements']);
+    if (!isDev || Cashful.can(role, 'payouts')) account.push(['billing', 'Billing information']);
+    if (isDev && Cashful.can(role, 'members')) account.push(['members', 'Members']);
+    if (isDev && Cashful.can(role, 'account.leave')) account.push(['leave', 'Leave account']);
+    if (isDev && Cashful.can(role, 'account.delete')) account.push(['danger', 'Danger zone']);
+    var user = [['profile', 'Profile'], ['security', 'Security'], ['notifications', 'Notifications']];
+    if (!isDev) user.push(['legal', 'Legal'], ['delete', 'Delete account']);
+    return [
+      { title: 'Account settings', hint: isDev ? org.name : 'Personal account', items: account },
+      { title: 'User settings', hint: 'The same in every account', items: user }
+    ];
+  }
+  var GROUPS = sectionGroups();
+  var DEV_SECTIONS = GROUPS.reduce(function (all, g) { return all.concat(g.items); }, []);
 
   function anchorNavHtml() {
-    return '<nav class="set-anchors" aria-label="Settings sections"><ul>' + DEV_SECTIONS.map(function (s) {
-      return '<li><a href="#' + s[0] + '" data-anchor="' + s[0] + '">' + s[1] + '</a></li>';
-    }).join('') + '</ul></nav>';
+    return '<nav class="set-anchors" aria-label="Settings sections">' + GROUPS.map(function (g) {
+      return '<p class="set-anchors__group">' + esc(g.title) + '</p><ul>' + g.items.map(function (s) {
+        return '<li><a href="#' + s[0] + '" data-anchor="' + s[0] + '">' + s[1] + '</a></li>';
+      }).join('') + '</ul>';
+    }).join('') + '</nav>';
+  }
+
+  /** A small heading above the first card of a group. */
+  function groupHead(i) {
+    var g = GROUPS[i];
+    return '<div class="set-group"><h2 class="set-group__title">' + esc(g.title) + '</h2><span class="set-group__hint">' + esc(g.hint) + '</span></div>';
   }
 
   function setupAnchors() {
@@ -846,31 +1072,39 @@
   /* ---------- Page ---------- */
 
   function renderDeveloper() {
+    var billing = Cashful.can(role, 'payouts');
     root.innerHTML =
       '<header class="cf-pagehead"><div class="cf-pagehead__row"><div class="cf-pagehead__titles">' +
         '<h1 class="cf-pagehead__title">Settings</h1>' +
-        '<p class="cf-pagehead__desc">Verification, business details, agreements and your profile.</p></div></div></header>' +
-      '<div class="set-layout">' + anchorNavHtml() + '<div class="set-stack">' +
+        '<p class="cf-pagehead__desc">' + esc(org.name) + ': verification, business details, agreements' + (billing ? ', billing' : '') + (Cashful.can(role, 'members') ? ', team' : '') + ' and your profile.</p></div></div></header>' +
+      '<div class="set-layout">' + anchorNavHtml() + '<div class="set-stack">' + groupHead(0) +
         card('verification', 'Verification', 'Verify your business to unlock SDK download and payouts.') +
         card('business', 'Business details', 'The business behind your apps.') +
         card('agreements', 'Agreements', 'What you have accepted and signed.') +
+        (billing ? card('billing', 'Billing information', 'Who we pay, and where. Needed before your first payout.') : '') +
+        (Cashful.can(role, 'members') ? card('members', 'Members', 'The people who can work in ' + esc(org.name) + '.') : '') +
+        (Cashful.can(role, 'account.leave') ? card('leave', 'Leave account', 'Stop being part of this account.') : '') +
+        (Cashful.can(role, 'account.delete') ? card('danger', 'Danger zone', '', 'set-danger') : '') +
+        groupHead(1) +
         card('profile', 'Profile', 'How you appear in Cashful.') +
         card('security', 'Security', 'Keep your account and your earnings safe.') +
         card('notifications', 'Notifications', 'Choose which emails you get.') +
-        card('close-account', 'Close account', '', 'set-danger') +
       '</div></div>';
     body('security').innerHTML = '<div data-part="password"></div><div class="set-divider" role="separator"></div><div data-part="tfa"></div>' +
       '<div class="set-divider" role="separator"></div><div data-part="sso"></div>';
     renderVerification();
     renderBusiness();
     renderAgreements();
+    if (billing) renderBilling();
     renderProfile();
     renderPassword();
     renderTfa();
     renderSso();
     if (!c.twoFactorEnabled) ui.$('.set-divider', root).hidden = true;
     renderNotifications();
-    renderClose();
+    if (Cashful.can(role, 'members')) renderMembers();
+    if (Cashful.can(role, 'account.leave')) renderLeave();
+    if (Cashful.can(role, 'account.delete')) renderDanger();
     setupAnchors();
     if (Cashful.store.takeFlash('kycDone')) ui.toast('Verification complete. Apps, the SDK download and payouts are unlocked.');
   }
@@ -890,15 +1124,17 @@
     root.innerHTML =
       '<header class="cf-pagehead"><div class="cf-pagehead__row"><div class="cf-pagehead__titles">' +
         '<h1 class="cf-pagehead__title">Settings</h1>' +
-        '<p class="cf-pagehead__desc">Manage your profile, security and notifications.</p></div></div></header>' +
-      '<div class="set-stack">' +
+        '<p class="cf-pagehead__desc">Your Personal account, and your profile, security and notifications.</p></div></div></header>' +
+      '<div class="set-layout">' + anchorNavHtml() + '<div class="set-stack">' + groupHead(0) +
+        card('verification', 'Verification', 'Needed only when you withdraw money.') +
+        card('billing', 'Billing information', 'Who we pay, and where. Needed before your first payout.') +
+        groupHead(1) +
         card('profile', 'Profile', 'How you appear in Cashful.') +
         card('security', 'Security', 'Keep your account and your earnings safe.') +
-        card('verification', 'Verification', 'Needed only when you withdraw money.') +
         card('notifications', 'Notifications', 'Choose which emails you get.') +
         card('legal', 'Legal') +
         card('delete', 'Delete account', '', 'set-danger') +
-      '</div>';
+      '</div></div>';
     body('security').innerHTML = '<div data-part="password"></div><div class="set-divider" role="separator"></div><div data-part="tfa"></div>' +
       '<div class="set-divider" role="separator"></div><div data-part="sso"></div>';
     renderProfile();
@@ -907,10 +1143,12 @@
     renderSso();
     if (!c.twoFactorEnabled) ui.$('.set-divider', root).hidden = true;
     renderPeerVerification();
+    renderBilling();
     if (Cashful.store.takeFlash('kycDone')) ui.toast('Verification complete. You can withdraw.');
     renderNotifications();
     renderLegal();
     renderDelete();
+    setupAnchors();
   }
 
   render();
@@ -931,34 +1169,12 @@
     P.saveState(s);
   }
 
-  /** Removes the saved photo (on the login too), so a preset starts from "no photo". */
-  function clearAvatar() {
-    api.updateProfile({ avatar: null });
-    state.profile.avatar = null;
-    avatarDraft = null;
-    Cashful.app.refreshUser();
-    renderProfile();
-  }
-  function syncProfile() { ui.$('#profile-form', root).dispatchEvent(new Event('input', { bubbles: true })); }
-
   if (presetId === 'profile-dirty') {
     var nameInput = ui.$('#set-name', root);
     nameInput.value = 'Alex Morgan';
     nameInput.dispatchEvent(new Event('input', { bubbles: true }));
-  } else if (presetId === 'avatar-none') clearAvatar();
-  else if (presetId === 'avatar-set') {
-    S.sampleFile().then(S.cropToSquare).then(function (url) {
-      state.profile.avatar = avatarDraft = url;
-      api.updateProfile({ avatar: url });
-      Cashful.app.refreshUser();
-      renderProfile();
-    });
-  } else if (presetId === 'avatar-preview') {
-    clearAvatar();
-    S.sampleFile().then(pickAvatar).then(syncProfile);
-  } else if (presetId === 'avatar-invalid') { clearAvatar(); pickAvatar(S.badFile('format')); }
-  else if (presetId === 'avatar-too-large') { clearAvatar(); pickAvatar(S.badFile('size')); }
-  else if (presetId === 'password-error') fillPassword('wrong-password', 'new-password-1');
+  }
+    else if (presetId === 'password-error') fillPassword('wrong-password', 'new-password-1');
   else if (presetId === 'password-success') fillPassword('old-password-1', 'new-password-1');
   else if (presetId === '2fa-setup') openTfaSetup();
   else if (presetId === '2fa-wrong-code') openTfaSetup({ wrongCode: true });

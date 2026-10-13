@@ -27,11 +27,12 @@
   <script src="assets/js/data/developer-settings.config.js" defer></script>
   <script src="assets/js/app/shell.js" defer></script>
   <script src="assets/js/app/kyc.js" defer></script>
+  <script src="assets/js/app/billing.js" defer></script>
   <script src="assets/js/pages/payouts.js" defer></script>
   <!-- Dev-only: remove this line to hide the state switcher -->
   <script src="assets/js/pages/page-demo.js" defer></script>
 </head>
-<body data-page="payouts" data-account="auto">
+<body data-page="payouts" data-account="auto" data-requires="payouts">
   <!-- Shared by Personal and Developer. Scenario: ?state=default|no-methods|below-minimum|in-progress|empty-history.
        A Developer account is locked until its KYC is approved. -->
   <div class="cf-shell">

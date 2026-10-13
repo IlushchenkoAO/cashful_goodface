@@ -33,6 +33,19 @@
     });
   });
 
+  // data-seed="personal|acme|side|nine": the seeded login with several accounts, opened in that account
+  // (+ data-role="owner|admin|member" for the role in it, data-owner-inactive)
+  ui.$$('[data-seed]').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var d = a.dataset;
+      Cashful.store.reset();
+      api.demo.signInWith(['personal'], { account: 'personal', peerStage: 'active' });
+      if (d.seed !== 'personal') api.switchAccount('developer', d.seed);
+      if (d.role) api.demo.setRole(d.role);
+      if (d.ownerInactive) api.demo.setOwnerInactive(true);
+    });
+  });
+
   ui.$('#reset').addEventListener('click', function () {
     Cashful.store.reset();
     ui.toast('Demo data reset');

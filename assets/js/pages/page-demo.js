@@ -4,12 +4,14 @@
    To add a page: give it a PAGES entry. `states` + `url` jump between states; `accounts` switches which
    accounts the demo login has; `kyc` adds the KYC status select (developer account only). */
 (function () {
-  if (!Cashful.app) return;
   var ui = Cashful.ui;
   var api = Cashful.api;
   var page = document.body.dataset.page;
 
-  var user = Cashful.app.user;
+  // Cashful.app is missing on a "no access" screen: the panel still has to be there, or a Member could not change their role back
+  var user = api.currentUser();
+  if (!user) return;
+  var hasApp = !!Cashful.app;
   var BOTH = ['personal', 'developer'];
 
   // When the demo login becomes a developer it keeps a real KYC value, never "not started"
@@ -21,12 +23,7 @@
       url: 'payouts.html',
       states: Cashful.payouts && Cashful.payouts.SCENARIOS,
       current: function () { return ui.params.get('state') || 'default'; },
-      kyc: true,
-      accounts: [
-        { id: 'personal', label: 'Personal', accounts: BOTH, active: 'personal' },
-        { id: 'developer', label: 'Developer', accounts: BOTH, active: 'developer', dev: function () { return { kycStatus: keptKyc() }; } }
-      ],
-      currentAccount: function () { return Cashful.app.account === 'personal' ? 'personal' : 'developer'; }
+      kyc: true
     },
     referrals: {
       title: 'Dev only · Referrals states',
@@ -81,13 +78,14 @@
       kyc: true
     }
   };
-  var cfg = PAGES[page];
-  if (!cfg) return;  var isDevPage = Cashful.app.account === 'developer';
-  // The Personal presets and account switch only apply to a Personal Settings page
+  var cfg = PAGES[page] || { title: 'Dev only · ' + page, kyc: true };
+  var org = api.activeOrg();                       // the Developer account in use (null on Personal)
+  var isDevPage = !!org;
+  // The Personal presets only apply to a Personal Settings page
   if (page === 'settings' && isDevPage) { cfg = Object.assign({}, cfg, { states: null, accounts: null }); }
-  var hasStates = !!cfg.states;
+  var hasStates = !!cfg.states && hasApp;
   var showKyc = !!cfg.kyc && isDevPage;
-  if (!hasStates && !showKyc) return;
+  var role = org ? api.role() : null;
 
   function select(id, label, options, value) {
     return '<div class="cf-input"><label class="cf-input__label" for="' + id + '">' + label + '</label>' +
@@ -96,10 +94,10 @@
       '</select><cf-icon name="chevron-down" size="20"></cf-icon></div></div>';
   }
 
-  // "In progress" is Not started with the onboarding begun (dev.started)
+  // "In progress" is Not started with the onboarding begun (dev.started). The labels are the ones the product shows.
   var KYC_OPTIONS = [
-    { id: 'not_started', label: 'Not started' }, { id: 'in_progress', label: 'In progress' }, { id: 'in_review', label: 'In review' },
-    { id: 'changes_requested', label: 'Changes requested' }, { id: 'rejected', label: 'Rejected' }, { id: 'approved', label: 'Approved' }
+    { id: 'not_started', label: 'Not started' }, { id: 'in_progress', label: 'In progress' }, { id: 'in_review', label: 'Pending' },
+    { id: 'changes_requested', label: 'Changes requested' }, { id: 'rejected', label: 'Rejected' }, { id: 'approved', label: 'Verified' }
   ];
   function kycOptions() { return KYC_OPTIONS; }
   function kycValue() {
@@ -112,12 +110,34 @@
     api.kyc.set(started ? 'not_started' : value);
   }
 
-  // Developer Settings: the Developer Agreement and whether this login also has a Personal account
-  var showExtras = !!cfg.extras && Cashful.app.account === 'developer';
+  // Developer Settings: whether the Developer Agreement is signed
+  var showExtras = !!cfg.extras && isDevPage && hasApp;
   var AGREEMENT_OPTIONS = [{ id: 'unsigned', label: 'Unsigned' }, { id: 'signed', label: 'Signed' }];
-  var PERSONAL_OPTIONS = [{ id: 'exists', label: 'Exists' }, { id: 'none', label: 'None' }];
 
-  var currentAccount = cfg.accounts ? cfg.currentAccount() : null;
+  /* The account in use: the role of the signed-in person, the balance and the team, and the invitation screens */
+  var ROLE_OPTIONS = [{ id: 'owner', label: 'Owner' }, { id: 'admin', label: 'Admin' }, { id: 'member', label: 'Member' }];
+  var BALANCE_OPTIONS = [{ id: 'zero', label: 'Zero' }, { id: 'positive', label: 'More than zero' }];
+  function balanceValue() {
+    var holder = org || user;
+    if (holder.demoBalance) return holder.demoBalance;
+    if (Cashful.payouts) return Cashful.payouts.balanceFor(user, org ? org.id : 'personal') > 0 ? 'positive' : 'zero';
+    // Pages without the payouts data: an account earns when it has an Active app, a login once a device is connected
+    return (org ? api.orgHasActiveApps(org) : user.peerStage && user.peerStage !== 'new') ? 'positive' : 'zero';
+  }
+  function accountSection() {
+    if (!org) return '<div class="demo__group"><div class="demo__subtitle">Account: Personal</div>' + select('demo-balance', 'Balance', BALANCE_OPTIONS, balanceValue()) + '</div>';
+    var inactive = !!org.ownerInactive;
+    return '<div class="demo__group"><div class="demo__subtitle">Account: ' + ui.esc(org.name) + '</div>' +
+      select('demo-role', 'Your role here', ROLE_OPTIONS, role) +
+      select('demo-balance', 'Balance', BALANCE_OPTIONS, balanceValue()) +
+      '<label class="demo__check"><input type="checkbox" id="demo-owner-inactive"' + (inactive ? ' checked' : '') + '> Owner is inactive</label></div>';
+  }
+  function inviteLinks() {
+    return '<div class="demo__group"><div class="demo__subtitle">Invitation screens</div>' +
+      '<a class="demo__link" href="invite.html?token=demo-new">New to Cashful (sign up)</a>' +
+      '<a class="demo__link" href="invite.html?token=demo-existing">Has an account (sign in)</a>' +
+      '<a class="demo__link" href="invite.html?token=demo-expired">Expired invitation</a></div>';
+  }
 
   var el = document.createElement('div');
   el.className = 'demo';
@@ -125,13 +145,12 @@
     '<button type="button" class="demo__toggle" aria-expanded="false" aria-controls="page-demo">Demo · ' + ui.esc(page) + '</button>' +
     '<div class="demo__panel" id="page-demo" hidden>' +
       '<div class="demo__title">' + ui.esc(cfg.title) + '</div>' +
-      (cfg.accounts ? select('demo-account', 'Account', cfg.accounts, currentAccount) : '') +
+      accountSection() +
       (showKyc ? select('demo-kyc', 'KYC status', kycOptions(), kycValue()) : '') +
-      (showExtras ? select('demo-agreement', 'Developer Agreement', AGREEMENT_OPTIONS, api.kyc.signed('developer-agreement') ? 'signed' : 'unsigned') +
-        select('demo-personal', 'Personal account', PERSONAL_OPTIONS, user.accounts.indexOf('personal') > -1 ? 'exists' : 'none') : '') +
+      (showExtras ? select('demo-agreement', 'Developer Agreement', AGREEMENT_OPTIONS, api.kyc.signed('developer-agreement') ? 'signed' : 'unsigned') : '') +
       (hasStates ? select('demo-state', cfg.stateLabel || 'State', cfg.states, cfg.current()) : '') +
-      '<div class="demo__actions"><button type="button" class="cf-btn cf-btn--ghost cf-btn--sm" id="demo-reset">' +
-        (hasStates ? 'Reset this state' : 'Reset: KYC in review') + '</button></div>' +
+      inviteLinks() +
+      '<div class="demo__actions">' + (showKyc && !hasStates ? '<button type="button" class="cf-btn cf-btn--ghost cf-btn--sm" id="demo-reset">Reset: KYC pending</button>' : hasStates ? '<button type="button" class="cf-btn cf-btn--ghost cf-btn--sm" id="demo-reset">Reset this state</button>' : '') + '</div>' +
     '</div>';
   document.body.appendChild(el);
 
@@ -154,27 +173,21 @@
   }
 
   el.addEventListener('change', function (e) {
-    if (e.target.id === 'demo-kyc') { setKyc(e.target.value); return; }
-    if (e.target.id === 'demo-agreement') {
+    var id = e.target.id;
+    // Role, balance and "owner inactive" change what the page shows: the page is drawn again
+    if (id === 'demo-role') { api.demo.setRole(e.target.value); location.reload(); return; }
+    if (id === 'demo-balance') { api.demo.setBalance(e.target.value); location.reload(); return; }
+    if (id === 'demo-owner-inactive') { api.demo.setOwnerInactive(e.target.checked); location.reload(); return; }
+    if (id === 'demo-kyc') { setKyc(e.target.value); if (!hasApp) location.reload(); return; }
+    if (id === 'demo-agreement') {
       if (e.target.value === 'signed') api.kyc.sign('developer-agreement', user.name || 'Demo Developer'); else api.kyc.unsign('developer-agreement');
       return;
     }
-    if (e.target.id === 'demo-personal') {
-      api.demo.setPersonalAccount(e.target.value === 'exists');
-      location.reload();   // the sidebar's account switcher is drawn once
-      return;
-    }
-    var accountSelect = ui.$('#demo-account', el);
-    var state = hasStates ? ui.$('#demo-state', el).value : null;
-    if (accountSelect && accountSelect.value !== currentAccount) {
-      var o = cfg.accounts.filter(function (a) { return a.id === accountSelect.value; })[0];
-      var dev = typeof o.dev === 'function' ? o.dev() : o.dev;
-      api.demo.signInWith(o.accounts, { account: o.active, dev: dev || { kycStatus: keptKyc() } });
-    }
-    location.href = cfg.url + '?' + (cfg.param || 'state') + '=' + state;
+    if (id === 'demo-state' && hasStates) location.href = cfg.url + '?' + (cfg.param || 'state') + '=' + e.target.value;
   });
 
-  ui.$('#demo-reset', el).addEventListener('click', function () {
+  var reset = ui.$('#demo-reset', el);
+  if (reset) reset.addEventListener('click', function () {
     if (hasStates) location.reload(); else setKyc('in_review');
   });
 })();

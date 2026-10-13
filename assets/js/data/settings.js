@@ -17,11 +17,6 @@
   var PRESETS = [
     { id: 'default', label: 'Default' },
     { id: 'profile-dirty', label: 'Profile with unsaved changes' },
-    { id: 'avatar-none', label: 'Avatar: no photo' },
-    { id: 'avatar-set', label: 'Avatar: photo set' },
-    { id: 'avatar-preview', label: 'Avatar: preview before save' },
-    { id: 'avatar-invalid', label: 'Avatar: invalid format' },
-    { id: 'avatar-too-large', label: 'Avatar: file too large' },
     { id: 'email-pending', label: 'Email verification pending' },
     { id: 'password-error', label: 'Password: wrong current password' },
     { id: 'password-success', label: 'Password: updated' },
@@ -73,7 +68,7 @@
     list.forEach(function (item) { if (conf[item.key].locked) n[item.key] = true; });
 
     return {
-      profile: { name: user.name || user.email.split('@')[0], email: user.email, country: 'Germany', avatar: user.avatar || null },
+      profile: { name: user.name || user.email.split('@')[0], email: user.email, country: 'Germany', phone: user.phone || '' },
       emailPending: presetId === 'email-pending' ? 'alex.morgan@example.com' : (user.emailPending || null),
       tfa: { enabled: presetId === '2fa-on' ? true : !!user.tfaEnabled },
       notifications: n

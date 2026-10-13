@@ -50,6 +50,7 @@
             <h1 class="auth__title">Who is the developer?</h1>
             <p class="auth__lead">This decides which details and documents we ask for.</p>
           </div>
+          <div class="cf-input"><label class="cf-input__label" for="acct-name">Account name</label><div class="cf-field"><input class="cf-field__input" id="acct-name" name="accountName" placeholder="Northwind Apps LLC" autocomplete="organization"></div><div class="cf-input__helper">How this developer account appears in the account switcher.</div></div>
           <div class="auth__stack" role="radiogroup" aria-label="Developer type">
             <label class="cf-radio-card">
               <span class="cf-check"><input class="cf-check__input" type="radio" name="kind" value="indie"><span class="cf-radio__box"></span></span>
@@ -68,6 +69,7 @@
           <div class="auth__head">
             <h1 class="auth__title">Business details</h1>
             <p class="auth__lead">Use the details from your company registration documents.</p>
+            <p class="auth__lead onb__prefilled" data-prefilled hidden></p>
           </div>
           <div class="auth__fields">
             <div class="cf-input"><label class="cf-input__label" for="company">Legal company name</label><div class="cf-field"><input class="cf-field__input" id="company" name="company" placeholder="Studio Apps LLC" autocomplete="organization"></div><div class="cf-input__helper"></div></div>
@@ -91,6 +93,7 @@
           <div class="auth__head">
             <h1 class="auth__title">Your details</h1>
             <p class="auth__lead">Use your legal name and address exactly as they appear on your ID.</p>
+            <p class="auth__lead onb__prefilled" data-prefilled hidden></p>
           </div>
           <div class="auth__fields">
             <div class="cf-field-row">

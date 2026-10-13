@@ -48,7 +48,7 @@
 
   function restore(form) {
     var saved = dev[SECTION[form.dataset.view]];
-    if (form.dataset.view === 'type') saved = { kind: dev.kind };
+    if (form.dataset.view === 'type') saved = { kind: dev.kind, accountName: dev.nameSet ? dev.name : '' };
     if (!saved) return;
     Array.prototype.forEach.call(form.elements, function (el) {
       if (!el.name || !(el.name in saved)) return;
@@ -76,7 +76,7 @@
 
   /** Sample answers, in the fields until the person types their own. Nothing here is required. */
   var SAMPLES = {
-    company: 'Studio Apps LLC', regno: '12-3456789', street: '500 Market Street', city: 'San Francisco', region: 'California', zip: '94105',
+    accountName: 'Northwind Apps LLC', company: 'Studio Apps LLC', regno: '12-3456789', street: '500 Market Street', city: 'San Francisco', region: 'California', zip: '94105',
     website: 'studio.dev', firstName: 'Alex', lastName: 'Morgan', count: '3', installs: '120000', signature: 'Alex Morgan'
   };
   function prefill(form) {
@@ -141,13 +141,22 @@
     if (STEPS.indexOf(step) < 0) step = 'type';
     var view = viewFor(step);
     var form = ui.$('[data-view="' + view + '"]');
-    if (form.tagName === 'FORM') { restore(form); prefill(form); }
+    if (form.tagName === 'FORM') {
+      restore(form);
+      // The legal name starts as the account name the person gave in the first step
+      if (view === 'details-company' && dev.nameSet && !form.elements.company.value.trim()) form.elements.company.value = dev.name;
+      prefill(form);
+    }
 
     // Copy that depends on earlier answers
     var signing = dev.kind === 'indie'
       ? 'You’re signing as ' + (companyName() || 'an independent developer') + '.'
       : 'You’re signing on behalf of ' + companyName() + '.';
     ui.$('#signing-as').textContent = signing;
+    ui.$$('[data-prefilled]').forEach(function (el) {
+      el.hidden = !dev.prefilledFrom;
+      if (dev.prefilledFrom) el.textContent = 'Prefilled from ' + dev.prefilledFrom + '. Each developer account is verified separately.';
+    });
     ui.$$('[data-company-only]').forEach(function (el) { el.hidden = dev.kind === 'indie'; });
     ui.$$('[data-company-name]').forEach(function (el) { el.textContent = companyName(); });
 
@@ -187,7 +196,7 @@
 
       var data = collect(form);
       var patch = {};
-      if (step === 'type') patch.kind = data.kind;
+      if (step === 'type') { patch.kind = data.kind; patch.name = data.accountName || SAMPLES.accountName; patch.nameSet = true; }
       else patch[SECTION[form.dataset.view]] = data;
 
       ui.withLoading(submit, function () {

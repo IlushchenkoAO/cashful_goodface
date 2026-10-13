@@ -1,6 +1,7 @@
-/* Referrals — Personal accounts. Sections: summary, share, how it works, funnel, milestones, table, rules.
+/* Referrals — every account has its own link, code and stats: the Personal account and each Developer account (the header says which).
+   Sections: summary, share, how it works, funnel, milestones, table, rules.
    Reward amounts and all reward copy come from referrals.config.js (see data/referrals.js).
-   A Developer account has no Referrals page and is sent to its own home. */
+   Every role can see the page. */
 (function () {
   if (!Cashful.app) return;
   var ui = Cashful.ui;
@@ -8,11 +9,6 @@
   var fmt = Cashful.fmt;
   var track = Cashful.track;
   var esc = ui.esc;
-
-  if (Cashful.app.account === 'developer') {
-    location.replace(Cashful.api.homeFor(Cashful.app.user, 'developer'));
-    return;
-  }
 
   var c = R.settings();
   var root = ui.$('#referrals');
@@ -62,7 +58,7 @@
     return '<header class="cf-pagehead"><div class="cf-pagehead__row"><div class="cf-pagehead__titles">' +
       '<h1 class="cf-pagehead__title">Referrals</h1>' +
       '<p class="cf-pagehead__desc">' + (c.enabled ? 'Invite friends and earn when they do.' : '') + '</p>' +
-    '</div></div></header>';
+      '</div></div></header>';
   }
 
   function unavailable() {

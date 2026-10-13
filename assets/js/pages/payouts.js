@@ -13,7 +13,7 @@
   // ?state= starts a scenario; without it the saved state continues (shared with Settings).
   // Nothing saved: an empty page. The balance follows what was earned (a connected device, an Active app), there are
   // no payout methods and no history. It is only saved once the person changes something (adds a method, withdraws).
-  var state = P.loadState(ui.params.get('state'), P.earnedFor(Cashful.app.user, Cashful.app.account), Cashful.app.account);
+  var state = P.loadState(ui.params.get('state'), P.earnedFor(Cashful.app.user, Cashful.app.accountKey), Cashful.app.accountKey);
   var persist = !state._virtual;
   function touch() { persist = true; }
   function earnedNothing() { return state.balance.available + state.balance.pending === 0 && !state.payouts.length; }
@@ -60,7 +60,7 @@
 
   function render() {
     refreshLock();
-    if (persist) P.saveState(state, Cashful.app.account);
+    if (persist) P.saveState(state, Cashful.app.accountKey);
     root.innerHTML =
       '<header class="cf-pagehead"><div class="cf-pagehead__row"><div class="cf-pagehead__titles">' +
         '<h1 class="cf-pagehead__title">Payouts</h1>' +
@@ -223,6 +223,10 @@
   function openRequest() {
     if (locked) return;
     if (!state.methods.length) return openRequestEmpty();
+    // Billing information is asked for once, before the first payout
+    if (!Cashful.billing.has()) {
+      return Cashful.billing.open({ title: 'Add billing information', lead: 'We need it once, before your first payout. It is who we pay and where.', cta: 'Save and continue', onSaved: openRequest });
+    }
 
     var def = state.methods.filter(function (m) { return m.isDefault; })[0] || state.methods[0];
     var options = state.methods.map(function (m) {
@@ -292,16 +296,74 @@
       ui.setError(amountInput, error);
       if (error) { amountInput.focus(); return; }
 
-      var btn = ui.$('#req-confirm', m.el);
-      ui.withLoading(btn, function () { return later(500); }).then(function () {
-        var payout = P.requestPayout(state, cents, methodSelect.value);
+      var methodId = methodSelect.value;
+      m.close();
+      confirmBySms(cents, function () {
+        var payout = P.requestPayout(state, cents, methodId);
         touch();
-        m.close();
         render();
         ui.toast('Payout of ' + P.money(payout.amount) + ' requested');
         focusOn('#pay-history-title');
       });
     });
+  }
+
+  /* ---------- Confirm a payout by SMS ----------
+     A payout moves money, so it is confirmed with a code texted to the person's phone (the one in User settings → Profile).
+     No phone saved yet: it is asked for first and saved to the profile. Prototype: any 6 digits pass; in strict mode the code is in config. */
+
+  function maskPhone(phone) { return '•••• ' + String(phone).replace(/\D/g, '').slice(-4); }
+  var PHONE_RE = /^\+?[\d\s().-]{7,}$/;
+
+  function confirmBySms(cents, onConfirmed) {
+    var m = ui.modal({ title: 'Confirm with SMS', width: 440, body: '<div id="sms-view"></div>' });
+    var view = ui.$('#sms-view', m.el);
+    var strict = Cashful.api.strict;
+
+    function phoneStep() {
+      view.innerHTML = '<form class="pay-form" id="sms-phone-form" novalidate>' +
+        '<p class="cf-modal__desc">To confirm your payout of ' + P.money(cents) + ', we text you a code. Add the phone number to send it to. It is saved in your profile.</p>' +
+        ui.fieldHtml({ id: 'sms-phone', name: 'phone', label: 'Phone number', type: 'tel', placeholder: '+1 415 555 0132', autocomplete: 'tel', spellcheck: false, autofocus: true, sample: '+1 415 555 0132' }) +
+        '<div class="sms-actions"><button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button><button type="submit" class="cf-btn cf-btn--primary">Send code</button></div></form>';
+      var form = ui.$('#sms-phone-form', view);
+      var input = form.elements.phone;
+      input.focus();
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var v = input.value.trim() || '+1 415 555 0132';   // nothing is required: a sample number
+        if (!PHONE_RE.test(v)) { ui.setError(input, 'Enter a valid phone number, like +1 415 555 0132.'); input.focus(); return; }
+        Cashful.api.updateProfile({ phone: v });
+        codeStep(v);
+      });
+    }
+
+    function codeStep(phone) {
+      view.innerHTML = '<form class="pay-form" id="sms-code-form" novalidate>' +
+        '<p class="cf-modal__desc">We sent a 6-digit code to <strong>' + esc(maskPhone(phone)) + '</strong>. Enter it to confirm your payout of ' + P.money(cents) + '.</p>' +
+        '<div class="cf-otp" id="sms-otp"></div>' +
+        '<p class="t-caption t-secondary">' + (strict ? 'Prototype code: ' + esc(Cashful.config.demo.smsCode) + '.' : 'Prototype: any 6 digits work.') + '</p>' +
+        '<div class="sms-actions"><button type="button" class="cf-btn cf-btn--ghost" data-act="resend">Send a new code</button>' +
+          '<button type="button" class="cf-btn cf-btn--secondary" data-close>Cancel</button><button type="submit" class="cf-btn cf-btn--primary" id="sms-confirm">Confirm payout</button></div></form>';
+      var otp = ui.otp(ui.$('#sms-otp', view), { onComplete: function () { form.requestSubmit(); } });
+      var form = ui.$('#sms-code-form', view);
+      otp.focus();
+      view.addEventListener('click', function (e) {
+        if (e.target.closest('[data-act="resend"]')) ui.toast('New code sent to ' + maskPhone(phone));
+      });
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var code = otp.value();
+        if (code.length < 6 && !(!strict && code.length === 0)) { otp.setError('Enter all 6 digits.'); return; }
+        if (strict && code !== Cashful.config.demo.smsCode) { otp.setError('That code isn’t right. Check the text message and try again.'); return; }
+        ui.withLoading(ui.$('#sms-confirm', form), function () { return later(500); }).then(function () {
+          m.close();
+          onConfirmed();
+        });
+      });
+    }
+
+    var phone = Cashful.api.currentUser().phone;
+    if (phone) codeStep(phone); else phoneStep();
   }
 
   function openRequestEmpty() {

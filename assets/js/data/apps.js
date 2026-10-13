@@ -1,4 +1,4 @@
-/* Developer apps — the shared mock store. Analytics, SDK and the Apps pages all read apps and statuses from here,
+/* Developer apps — the shared mock store. Each Developer account (org) has its own apps, kept on the account (org.appList). Analytics, SDK and the Apps pages all read apps and statuses from here,
    so a change on one page is what the others show (they also listen to the "cashful:apps" event).
    Apps live in the prototype store (localStorage); the first read seeds them. Status ids:
    draft | in_review | changes_requested | active. Only Active apps have analytics.
@@ -78,6 +78,16 @@ window.Cashful = window.Cashful || {};
     ];
   }
 
+  /** The apps a seeded Developer account starts with (org.appsSeed). A new account has none. */
+  function seedForOrg(key) {
+    var all = seedApps();
+    function pick(ids) { return all.filter(function (a) { return ids.some(function (id) { return a.id.slice(-2) === id; }); }); }
+    if (key === 'acme') return pick(['01', '02', '05']);       // two Active apps and one in review
+    if (key === 'nine') return pick(['03', '06']);             // an Active app and one that needs changes
+    if (key === 'default') return all;
+    return [];
+  }
+
   function seedFor(scenario) {
     var all = seedApps();
     if (scenario === 'no-apps') return [];
@@ -88,18 +98,30 @@ window.Cashful = window.Cashful || {};
 
   /* ---------- Store ---------- */
 
-  function read() {
+  /** The apps of a Developer account (default: the one in use). They are seeded the first time they are read. */
+  function listOf(orgId) {
     var db = store.get();
-    if (!db.apps) {
-      var seeded = seedApps();
-      store.update(function (d) { d.apps = seeded; });
+    var id = orgId || (db.session && db.session.orgId);
+    var org = id && db.orgs ? db.orgs[id] : null;
+    if (!org) return [];
+    if (!org.appList) {
+      var seeded = seedForOrg(org.appsSeed);
+      store.update(function (d) { if (d.orgs[id]) d.orgs[id].appList = seeded; });
       return seeded;
     }
-    return db.apps;
+    return org.appList;
   }
-  function write(apps) { store.update(function (db) { db.apps = apps; }); emit(); }
+  function read() { return listOf(); }
+  function write(apps) {
+    store.update(function (db) { var org = db.session && db.orgs[db.session.orgId]; if (org) org.appList = apps; });
+    emit();
+  }
   function emit() { window.dispatchEvent(new CustomEvent('cashful:apps')); }
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
+  /** The Application Release ID every app has from the moment it is a Draft. Seeded apps get one derived from their id. */
+  function withRelease(a) { if (a && !a.releaseId) a.releaseId = a.id.replace(/^[0-9a-f]{8}/, '9e4c1b7f'); return a; }
+  /** A copy for the pages: an app saved before Release IDs existed gets one too. */
+  function view(x) { var c = clone(x); if (Array.isArray(c)) c.forEach(withRelease); else withRelease(c); return c; }
   function find(apps, id) { return apps.filter(function (a) { return a.id === id; })[0]; }
 
   function uuid() {
@@ -114,8 +136,10 @@ window.Cashful = window.Cashful || {};
 
   var Apps = {
     STATUSES: STATUSES, SCENARIOS: SCENARIOS,
-    all: function () { return clone(read()); },
-    get: function (id) { var a = find(read(), id); return a ? clone(a) : null; },
+    all: function () { return view(read()); },
+    /** The apps of another Developer account of the same person (read only: for balances and deleting accounts). */
+    forOrg: function (orgId) { return view(listOf(orgId)); },
+    get: function (id) { var a = find(read(), id); return a ? view(a) : null; },
     isActive: function (a) { return a.status === 'active'; },
     isEditable: function (a) { return a.status === 'draft' || a.status === 'changes_requested'; },
     label: function (a) { return statusOf(a).label; },
@@ -127,11 +151,11 @@ window.Cashful = window.Cashful || {};
     create: function (f) {
       var apps = read();
       var now = Date.now();
-      var app = { id: uuid(), name: f.name, type: f.type, description: f.description || '', platforms: [f.platform], status: 'draft',
+      var app = { id: uuid(), releaseId: uuid(), name: f.name, type: f.type, description: f.description || '', platforms: (f.platforms && f.platforms.length ? f.platforms : [f.platform]).filter(Boolean), status: 'draft',
         appLink: '', screenshot: null, createdAt: now, updatedAt: now, history: [{ type: 'created', at: now }] };
       apps.push(app);
       write(apps);
-      return clone(app);
+      return view(app);
     },
     /** Saves the editable fields of a Draft or Changes requested app. */
     update: function (id, patch) {
@@ -141,7 +165,7 @@ window.Cashful = window.Cashful || {};
       FIELDS.forEach(function (k) { if (k in patch) app[k] = patch[k]; });
       app.updatedAt = Date.now();
       write(apps);
-      return clone(app);
+      return view(app);
     },
     /** Draft → In review, Changes requested → In review (resubmit). */
     submit: function (id) {
@@ -153,7 +177,7 @@ window.Cashful = window.Cashful || {};
       app.updatedAt = Date.now();
       app.history.push({ type: resubmit ? 'resubmitted' : 'submitted', at: app.updatedAt });
       write(apps);
-      return clone(app);
+      return view(app);
     },
     /** The review simulation (the real review is not part of the MVP): 'approve' or 'changes'. */
     review: function (id, outcome, comment, reviewer) {
@@ -169,7 +193,7 @@ window.Cashful = window.Cashful || {};
         app.history.push({ type: 'changes_requested', at: app.updatedAt, reviewer: reviewer || null, comment: comment });
       }
       write(apps);
-      return clone(app);
+      return view(app);
     },
     /**
      * Status simulation (the real review is not part of the MVP): any status, from any status.
@@ -197,7 +221,7 @@ window.Cashful = window.Cashful || {};
         } else { delete app.base; delete app.weekend; delete app.activeDaysAgo; }
       }
       write(apps);
-      return clone(app);
+      return view(app);
     },
     /**
      * The status badge of an app that is In review turns into a dropdown: the prototype's way to choose the review
